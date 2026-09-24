@@ -49,4 +49,5 @@ Labyrinth(2D 회전 미로) 프로젝트의 CLAUDE.md를 가져와 이 프로젝
   * 버전 관리 부재 — Git 초기화
   * 씬/프리팹 텍스트 직접 편집 사고 가능성 — 훅으로 차단(새 MCP의 `write_text_file` 경로 포함)
   * WebGL Build Support 미설치 — 사용자 설치 후 에디터 인식 확인
-* **남은 일**: Task.md 작성(Labyrinth 체계 · Phase 0~6 구성 확정됨)
+* **Task.md 작성** (사용자가 Phase 구성 확정): Labyrinth 체계(완료 기준 7조 · 태그 5종 · 트랙 · Phase 헤더 규약) 이식. Phase 0(개발 환경 · WebGL 파이프라인) ~ Phase 5(챕터 그림 완성)가 이번 학기 목표, Phase 6 이후는 기믹 · 아트 · 🚀출시. 0.1 작업 환경 5항목은 확인 근거와 함께 `[x]`. GDD §15 미정 사항을 필요한 Phase에 연결한 "결정 대기" 표 추가. 기계 검사: 74항목 모두 태그 1개 · 모든 Phase에 선행/완료 조건과 `[QA]` 존재.
+* **남은 일**: Task.md 커밋(승인 대기) → Phase 0.2 착수(빌드 타깃 WebGL 전환, 승인 후)
