@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|mcp__unity-editor-mcp__write_text_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e 'let d=\"\";process.stdin.on(\"data\",c=>d+=c).on(\"end\",()=>{try{const i=JSON.parse(d).tool_input||{};const p=i.file_path||i.path||\"\";if(/[.](unity|prefab)$/i.test(p)){console.error(\"BLOCKED: 씬(.unity)/프리팹(.prefab) 파일은 텍스트 직접 편집이 금지되어 있습니다. unity-editor-mcp 도구(create_gameobject / add_component / set_component_properties / set_serialized_field / save_prefab_contents 등)를 사용하세요 (CLAUDE.md §2).\");process.exit(2)}}catch(e){}})'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
