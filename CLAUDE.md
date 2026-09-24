@@ -146,7 +146,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB) — 로딩 시간은 Task.md 0.3에서 측정.
+* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정).
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
