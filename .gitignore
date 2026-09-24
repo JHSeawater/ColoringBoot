@@ -120,3 +120,6 @@ InitTestScene*.unity*
 
 # Claude Code: 개인 로컬 설정은 커밋하지 않음 (팀 공유 설정은 .claude/settings.json)
 /.claude/settings.local.json
+
+# Burst가 WebGL 빌드 중 프로젝트 루트에 남기는 중간 산출물
+/Data/Plugins/lib_burst_generated.*

@@ -75,6 +75,7 @@ MCP 안전 규칙:
 * `set_component_properties`의 열거형 값은 인스펙터 표시 이름을 쓴다(예: `Solid Color`, `SolidColor` 아님). 값 하나가 틀리면 그 호출 전체가 적용되지 않는다.
 * `set_serialized_field`로 오브젝트 참조를 비울(null) 수 없다 — 값이 문자열로 전달되어 "null"이라는 경로로 해석된다. 참조 해제는 `run_script`에서 `SerializedObject`로 한다.
 * 명령이 오래 걸리면 `editor_status`를 본다. `blocked_by_dialog`면 재시도를 멈추고 대화상자 내용(title/message/buttons)을 사용자에게 알린다(MCP로 클릭할 수 없다). 에디터가 비활성 창이라 멈춘 것이면 `set_autotick`(enable=true).
+* CLI `--json` 출력은 명령 결과를 `data.result`에 **이스케이프된 JSON 문자열**로 담는다. 폴링 스크립트는 원문을 grep하지 말고 파싱해서 판정한다(2026-09-24: 빌드는 6분 만에 끝났는데 완료를 못 잡아 30분 대기). `build_status` 응답은 전체 빌드 리포트라 수십만 자다 — 필요한 필드(`status` · `result` · `totalErrors` · `warnings`)만 뽑는다.
 * 에디터를 재시작한 직후 첫 MCP 호출이 60초 시간 초과로 실패할 수 있다(2026-09-24 실측 — `editor_status`는 정상, 재시도하자 즉시 응답). 같은 명령을 한 번 재시도하고, 계속 실패하면 CLI(`unity command`)로 확인한다.
 * C# 실행: 여러 줄 코드는 `eval`에 문자열로 넣지 말고 파일로 써서 `run_script`로 실행한다(빌더 스크립트는 `Assets/` 밖 `AgentScripts/`에 — 임포트·도메인 리로드 방지). `eval`은 한 줄짜리 조회용.
 * 상세 사용법·주의사항은 `unity-pipeline` 스킬.
@@ -91,7 +92,7 @@ MCP 안전 규칙:
 
 버전 관리 (Git):
 * 원격: `origin` = `https://github.com/JHSeawater/ColoringBoot.git` (`main`). **공개 저장소**(2026-09-24 확인) — 비밀값 · 인증 정보 · 개인정보를 커밋하지 않는다.
-* 테스트 배포: GitHub Pages — `gh-pages` 브랜치(WebGL 빌드 결과물 전용, main 기록과 분리).
+* 테스트 배포: GitHub Pages — `bash AgentScripts/deploy-pages.sh "메시지"`로 `Builds/WebGL`을 `gh-pages` 브랜치(빌드 결과물 전용, main 기록과 분리)에 올린다. 작업 트리는 `Builds/gh-pages`이고, 빌드 결과물 외 파일이 섞이면 스크립트가 중단한다. 주소: https://jhseawater.github.io/ColoringBoot/
 * 커밋은 사용자가 요청하거나 승인할 때만 한다. 커밋 전에 변경 파일 목록과 메시지를 제안한다. push·원격 설정 변경도 요청 시에만.
 * 에셋은 `.meta`와 **항상 함께** 커밋한다(누락 시 GUID가 깨져 참조가 끊긴다).
 
@@ -145,7 +146,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔(빌드 확인은 Task.md 0.3).
+* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB) — 로딩 시간은 Task.md 0.3에서 측정.
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
@@ -204,5 +205,6 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **플레이 모드 중 씬 수정** — Play Mode에서 바꾼 씬 값은 플레이를 멈추면 되돌아간다. 씬 수정·저장은 `editor_stop` 후에 한다.
 * **Windows 도구 환경** — ① 셸 명령에 넣은 백슬래시는 의도대로 전달되지 않을 수 있다(Labyrinth 실측, 2026-09-24에도 백슬래시가 든 grep 패턴이 오작동) → 문자 클래스(`[.]`) · Python `chr(92)` · `/` 경로로 우회한다. ② Windows Python의 표준 출력은 cp949라 한글·특수문자에서 깨진다 → `sys.stdout.reconfigure(encoding='utf-8')`. ③ Python `subprocess`로 `bash`를 부르면 WSL bash가 잡힌다 → Git Bash(`C:/Program Files/Git/usr/bin/bash.exe`)를 명시한다.
 * **`.meta` 누락 커밋** — 에셋과 `.meta`는 항상 함께.
-* **패키지 제거 뒤 옛 코드가 남음** — 패키지를 지운 뒤 도메인 리로드가 제대로 끝나지 않으면, 지워진 패키지 코드가 메모리에 남아 에러를 쏟아낸다(2026-09-24: AI Assistant 제거 후 에러 119건). 디스크의 컴파일 결과(`Library/ScriptAssemblies`)가 정상이면 에디터 재시작으로 해결된다. 패키지를 제거한 뒤에는 재시작을 먼저 안내한다.
+* **gh-pages 배포에 소스 섞임** — orphan 브랜치 작업 트리에는 main의 파일과 `.gitignore`가 딸려 온다(2026-09-24: 소스 71개가 함께 올라가고, `/Build/` 규칙 때문에 빌드 폴더가 빠짐). 배포는 `AgentScripts/deploy-pages.sh`로만 한다.
+* **패키지 제거 뒤 옛 코드가 남음** — 패키지를 지운 뒤 도메인 리로드가 제대로 끝나지 않으면, 지워진 패키지 코드가 메모리에 남아 에러를 쏟아낸다(2026-09-24: AI Assistant 제거 후 에러 119건). 디스크의 컴파일 결과(`Library/ScriptAssemblies`)가 정상이면 에디터 재시작으로 해결된다. 패키지를 제거한 뒤에는 재시작을 먼저 안내한다. 제거된 패키지의 IDE 프로젝트 파일(`.csproj`)도 루트에 남을 수 있는데, git이 무시해서 `git status`에 보이지 않는다 → 솔루션(`.slnx`)이 참조하지 않는 `.csproj`를 찾아 지운다(2026-09-24: 79개).
 * **낡은 조회 결과로 기록** — 에디터가 재시작되었거나 사용자가 에디터를 만졌다면 이전 조회 결과는 낡았다. 상태를 문서에 적기 전에 다시 조회한다(2026-09-24: 재시작 후 재확인 없이 "빌드 타깃은 아직 Windows"라고 기록했으나 실제로는 이미 WebGL이었다).

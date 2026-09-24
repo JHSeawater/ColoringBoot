@@ -71,7 +71,7 @@
 ### 0.3 첫 WebGL 빌드 · 기준선
 
 - [x] [Doc] 테스트 배포 경로 결정 — GitHub Pages · `gh-pages` 브랜치(빌드 결과물 전용, main 기록과 분리). 저장소 공개 확인(비로그인 HTTP 200) — 사용자 결정 2026-09-24
-- [ ] [QA] WebGL 빌드 성공(`build` → `build_status`) — 압축 후 빌드 용량 기록
+- [x] [QA] WebGL 빌드 성공(`build` → `build_status`) — 압축 후 빌드 용량 기록 → Succeeded · 에러 0 · 경고 3(무해) · 6.1분 · 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB · framework 66 KB · loader 119 KB). gh-pages 배포 `bde5385` → https://jhseawater.github.io/ColoringBoot/ (HTTP 200 확인)
 - [ ] [QA] (사용자) PC 브라우저에서 실행 확인 — 로컬 서버나 배포 URL로 연다(파일을 직접 열면 동작하지 않음)
 - [ ] [QA] (사용자) 휴대폰 브라우저에서 실행 확인 — 세로 화면 · 첫 로딩 시간 측정
 - [ ] [Doc] 기준선 기록(빌드 용량 · 첫 로딩 시간 PC/휴대폰) → DevelopLog. 이후 Phase마다 비교한다

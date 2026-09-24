@@ -8,6 +8,41 @@
 
 ---
 
+### 📅 [2026-09-24] Phase 0.3 — 첫 WebGL 빌드 · gh-pages 배포
+
+#### 1. 빌드
+
+| 항목 | 결과 |
+|---|---|
+| 결과 | Succeeded · 에러 0 · 경고 3 · 6.1분(22:36~22:42) |
+| 용량(압축 후) | 7.76 MB — wasm 5.66 MB · data 2.27 MB · framework 66 KB · loader 119 KB |
+| 경고 | Pipeline 런타임 설정 없음(정식 빌드에서 원격 제어가 꺼짐 — 의도한 동작) · URP 디버그 셰이더 2개 제외(미사용) |
+| 빌드 후 자동 변경 | URP 셰이더 사전 필터링 값 · 볼륨 컴포넌트 새 필드 · GraphicsSettings 기본 필드 · 입력 액션 사전 로드 등록 — Unity/URP가 빌드하며 저장한 정상 상태라 커밋 |
+| 빌드 산출물 | Burst가 프로젝트 루트에 `Data/Plugins/lib_burst_generated.*`를 남김 → 해당 파일만 `.gitignore`에 추가 |
+
+#### 2. 대기 스크립트가 완료를 못 잡음 (30분 허비)
+
+CLI `unity command build_status --json`은 결과를 `data.result`에 이스케이프된 JSON 문자열로 담는다. 원문을 `"status": "completed"`로 grep하던 대기 루프가 끝내 매치하지 못해 30분 시간 제한까지 돌았다(빌드는 6분 만에 완료). CLAUDE.md §2에 "파싱해서 판정" 규칙을 추가했다.
+
+#### 3. gh-pages 배포 — 첫 시도의 결함과 정정
+
+* **첫 push(`a08ab76`)**: `git worktree add --no-checkout` → `checkout --orphan` 뒤 인덱스를 비우는 명령이 에러 출력을 숨긴 채 실패해, **프로젝트 소스 71개가 함께 올라갔다.** 게다가 작업 트리에 딸려 온 main의 `.gitignore`(`/Build/`) 때문에 **빌드 핵심 파일(`Build/` 4개)이 빠졌다.** 저장소가 이미 공개라 새로 노출된 정보는 없다.
+* **정정(`bde5385`)**: 강제 push 대신 소스 71개 삭제 + `Build/` 4개 추가 커밋. 원격 트리가 빌드 결과물 18개뿐인 것을 확인했고, Pages도 최신 배포를 제공하는 것을 확인했다(`/` · `Build/` 200, `GDD.md` 404).
+* **재발 방지**: `AgentScripts/deploy-pages.sh` — 작업 트리를 비우고 빌드 결과물만 복사하며, 빌드 결과물 외 파일이 있으면 중단한다. 시험: 같은 빌드 → "변경 없음", 가짜 파일을 넣고 실행 → 중단(exit 1) 후 원상복구. `.gitattributes`에 `*.sh eol=lf` 추가(CRLF면 bash가 실행하지 못함).
+* GitHub Pages는 `gh-pages` 브랜치 push로 자동 활성화됐다 — https://jhseawater.github.io/ColoringBoot/
+
+#### 4. IDE 프로젝트 파일 찌꺼기 정리
+
+사용자가 프로젝트 루트에 `Unity.AI.*` 파일이 대거 생긴 것을 발견했다. 확인해 보니 스크립트가 아니라 **IDE 프로젝트 파일(`.csproj`)**이었다. 루트의 `.csproj` 81개 중 솔루션(`ColoringBoot.slnx`)이 참조하는 것은 2개(`ColoringBoot.Core` · `ColoringBoot.Core.Tests`)뿐이었고, 나머지 79개는 제거한 패키지의 것(AI 42 · AppUI 9 · Visual Scripting 9 · Sentis 8 · Plastic/Collab 4 · Timeline 2 · 기타 3)과 템플릿 스크립트가 사라져 더는 쓰이지 않는 `Assembly-CSharp` 2개였다. 모두 패키지 제거 도중(22:20) 생성됐다. `.gitignore`의 `*.csproj` 규칙 때문에 `git status`에 보이지 않았고, 커밋된 적도 없다. 사용자 승인 후 79개를 삭제했다(CLAUDE.md §8에 기록).
+
+* **해결된 이슈**:
+  * 첫 WebGL 빌드 성공 · 용량 기준선 확보
+  * gh-pages에 소스가 섞이고 빌드 파일이 빠진 배포 — 정정 + 배포 스크립트로 재발 방지
+  * 제거한 패키지의 IDE 프로젝트 파일 79개 — 삭제
+* **남은 일**: (사용자) PC · 휴대폰 브라우저 실행 확인과 첫 로딩 시간 측정 → 기준선 기록 → `/phase-close 0`
+
+---
+
 ### 📅 [2026-09-24] Phase 0.2 — WebGL 전환 확인 · 프로젝트 정리 · asmdef 골격
 
 #### 1. 빌드 타깃
