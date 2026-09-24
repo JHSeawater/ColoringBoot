@@ -8,6 +8,20 @@
 
 ---
 
+### 📅 [2026-09-25] Phase 1 착수 전 환경 점검 · 남은 스크립팅 심볼 정리
+
+* **점검(읽기 전용)**: MCP 연결(projectPath 일치) · 컴파일 정상 · 콘솔 창 에러 0 · EditMode 1/1 통과 · asmdef(`noEngineReferences: true`) · 활성 타깃 WebGL · WebGL Player 설정(Brotli · Fallback · 캐싱 · 스레드 끔 · Stripping High · 540×960) · 씬 루트 Main Camera만 · 패키지 직접 7개 · `main`/`gh-pages`가 원격과 일치 · 배포 URL 200 · 편집 가드 훅 파이프 테스트(`.unity` exit 2 / `.cs` exit 0) · 루트 `.csproj` 2개 모두 솔루션이 참조 — 모두 정상.
+* **발견**: WebGL 스크립팅 심볼에 `APP_UI_EDITOR_ONLY`가 남아 있었다. 0.2 커밋(`58fde2f`)은 Standalone을 비우고 WebGL은 `SENTIS_ANALYTICS_ENABLED`만 지웠다(App UI 패키지가 제거되는 도중에 다시 넣은 것으로 보인다). 쓰는 코드가 없어서 동작에는 영향이 없었다.
+* **조치**: `AgentScripts/Phase0WebGLSettings.cs`를 다시 실행(Preview → Apply, 멱등) → `defines(WebGL)=''`. 재컴파일 완료 · 에러 0 · EditMode 1/1 통과.
+* **함께 바뀐 값 — 0.3 기록 정정**: `preloadedAssets`에서 `InputSystem_Actions`가 빠졌다. Input System은 빌드 전처리에서 이 에셋을 사전 로드 목록에 넣고 후처리에서 뺀다(`BuildProviderHelpers.cs`). 그러니 0.3에서 "정상 상태"로 커밋한 값은 **빌드 도중에 저장된 임시 값**이었고, 빈 목록이 평소 상태다. WebGL 빌드 뒤 이 항목이 다시 diff에 나타나면 커밋하지 않는다.
+
+* **해결된 이슈**:
+  * 제거한 패키지의 스크립팅 심볼 잔여(WebGL) — 삭제
+  * 빌드 도중 값(`preloadedAssets`)이 커밋되어 있던 것 — 평소 상태로 복귀
+* **남은 일**: 커밋(승인 대기) → Phase 1.1 계획
+
+---
+
 ### 📅 [2026-09-24] Phase 0 종료 — WebGL 기준선 확보
 
 * **기준선**: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB), 첫 로딩 약 3초(PC · 휴대폰, gh-pages 배포본, 사용자 측정). 앱인토스 심사 기준(10초)보다 넉넉하다. 이후 Phase마다 이 값과 비교한다.
