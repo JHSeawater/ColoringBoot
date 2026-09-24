@@ -1,7 +1,7 @@
 # 프로젝트 작업 목록 (Task List)
 
 > 기획 근거는 `GDD.md`(무엇/왜), 작업 규칙 · 아키텍처 · 기술 스펙은 `CLAUDE.md`(TDD 없음 — CLAUDE.md §0), 작업 기록은 `DevelopLog.md`.
-> **현재 위치: Phase 0 (개발 환경 · WebGL 파이프라인)** — 0.1 작업 환경 구축 완료(2026-09-24). 다음은 0.2 빌드 타깃 WebGL 전환.
+> **현재 위치: Phase 0 (개발 환경 · WebGL 파이프라인)** — 0.1 작업 환경 · 0.2 WebGL 전환 · 프로젝트 정리 완료(2026-09-24). 다음은 0.3 첫 WebGL 빌드 · gh-pages 배포 · 기준선.
 > **이번 학기 목표 (GDD §14)**: 임시 아트로 챕터 1을 끝까지 플레이할 수 있는 WebGL 빌드 + 동아리원 플레이테스트 = **Phase 0~5**.
 > 최초 작성: 2026-09-24 (Labyrinth Task.md 체계 이식)
 
@@ -57,19 +57,20 @@
 
 ### 0.2 WebGL 전환 · 프로젝트 정리
 
-- [ ] [Editor] 활성 빌드 타깃을 WebGL로 전환 — `switch_build_target`(전체 리임포트 발생, 승인 후) → `switch_build_target_status`
-- [ ] [Doc] 렌더링 구성 결정 — URP 유지 여부 · 2D Renderer 전환 여부(보드와 UI만 그리는 2D 게임, WebGL 용량 기준으로 비교 보고 → 사용자 결정)
-- [ ] [Editor] 템플릿 정리 — `Assets/TutorialInfo` · `Readme.asset` 등 템플릿 에셋 삭제(삭제 목록을 먼저 보고)
-- [ ] [Editor] 메인 씬 준비 — SampleScene의 3D 요소(Directional Light · Global Volume) 정리, 2D 직교 카메라
-- [ ] [Editor] 불필요 패키지 정리 — 후보: AI Assistant · Sentis(`com.unity.ai.inference`) · AI Navigation · Visual Scripting · Timeline · Collab. 용량 · 컴파일 시간 근거와 함께 보고 → 승인 후 `package_remove`. ⚠️ `com.unity.pipeline`(MCP 연결)과 `com.unity.test-framework`는 유지
-- [ ] [Editor] WebGL Player Settings — 압축 Brotli + Decompression Fallback(GitHub Pages 대비) · Managed Stripping Level · 기본 캔버스 세로 비율. `dry_run` 결과 보고 → 승인 후 적용
-- [ ] [Doc] 폴더 · 네임스페이스 · asmdef 구조 결정(순수 로직 asmdef `noEngineReferences: true` · EditMode 테스트 asmdef · 표현 계층) → CLAUDE.md §3에 반영
-- [ ] [Code] asmdef 골격 생성 + 스모크 EditMode 테스트 1개
-- [ ] [QA] `recompile` → `run_tests`(mode=editor)로 스모크 테스트 통과
+- [x] [Editor] 활성 빌드 타깃 WebGL — 이미 전환되어 있었음(2026-09-24 19:40경, WebGL 모듈 설치 후 에디터 재시작 직전). `switch_build_target` 응답 "Already on build target 'WebGL'" · `get_build_settings`로 확인
+- [x] [Doc] 렌더링 구성 결정 — URP(Universal Renderer, WebGL은 품질 레벨 `Mobile`) 유지, 후처리는 걷어냄(사용자 결정 2026-09-24)
+- [x] [Editor] 템플릿 정리 — `Assets/TutorialInfo`(7개) · `Readme.asset` 삭제(참조 0 확인 후) — git 삭제 내역
+- [x] [Editor] 메인 씬 준비 — Directional Light · Global Volume 삭제, Main Camera 직교 · 단색 배경(#D9DFDC) · 위치 (0,0,-10) · 카메라 후처리 끔, 씬 저장 — `get_scene_hierarchy` 루트 = Main Camera만
+- [x] [Editor] 불필요 패키지 정리 — AI Assistant · Sentis · AI Navigation · Visual Scripting · Timeline · Collab 제거 + 딸린 의존 3개(2d.sprite · mathematics · dt.app-ui) 자동 제거, 남은 스크립팅 심볼 · App UI 설정 참조 · AI Assistant 설정 파일 정리 — lock 파일 · 캐시에서 제거 확인. 제거 후 에디터 재시작 필요했음(DevelopLog)
+- [x] [Editor] WebGL Player Settings — 압축 Brotli(기존) + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 — `ProjectSettings.asset` 저장 확인(빌드 확인은 0.3)
+- [x] [Editor] 파이프라인 볼륨 프로필 정리 — `SampleSceneProfile.asset`(Bloom · Vignette · Tonemapping): 사용자 결정(색 정확도 보호)으로 URP 에셋 2개(`Mobile_RPAsset` · `PC_RPAsset`)의 참조를 비운 뒤 삭제 — 참조 0 확인, `AgentScripts/Phase0ClearVolumeProfile.cs`
+- [x] [Doc] 폴더 · 네임스페이스 · asmdef 구조 결정 — `Assets/Scripts/Core` · `Assets/Scripts/Game`(Phase 1) · `Assets/Tests/EditMode`(사용자 결정 2026-09-24) → CLAUDE.md §3 반영
+- [x] [Code] asmdef 골격 생성 + 스모크 EditMode 테스트 1개 — `ColoringBoot.Core`(`noEngineReferences: true`) · `ColoringBoot.Core.Tests` · `PaintColor` · `PaintColorTests`
+- [x] [QA] `recompile` → `run_tests`(mode=editor)로 스모크 테스트 통과 — `PaintColorTests.RedOrYellow_IsOrange` 1/1 Passed(에디터 재시작 후)
 
 ### 0.3 첫 WebGL 빌드 · 기준선
 
-- [ ] [Doc] 테스트 배포 경로 결정 — GitHub Pages(GitHub Free는 공개 저장소에서만 가능) 또는 같은 Wi-Fi의 로컬 서버 → 사용자 결정
+- [x] [Doc] 테스트 배포 경로 결정 — GitHub Pages · `gh-pages` 브랜치(빌드 결과물 전용, main 기록과 분리). 저장소 공개 확인(비로그인 HTTP 200) — 사용자 결정 2026-09-24
 - [ ] [QA] WebGL 빌드 성공(`build` → `build_status`) — 압축 후 빌드 용량 기록
 - [ ] [QA] (사용자) PC 브라우저에서 실행 확인 — 로컬 서버나 배포 URL로 연다(파일을 직접 열면 동작하지 않음)
 - [ ] [QA] (사용자) 휴대폰 브라우저에서 실행 확인 — 세로 화면 · 첫 로딩 시간 측정

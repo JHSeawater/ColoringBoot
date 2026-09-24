@@ -8,6 +8,60 @@
 
 ---
 
+### 📅 [2026-09-24] Phase 0.2 — WebGL 전환 확인 · 프로젝트 정리 · asmdef 골격
+
+#### 1. 빌드 타깃
+
+`switch_build_target(WebGL)`을 실행하자 "Already on build target 'WebGL'"이 돌아왔다 — 이미 WebGL이었다. `Library/EditorUserBuildSettings.asset` 수정 시각이 19:40(모듈 설치 후 에디터 재시작 19:42 직전)이라 그때 전환된 것으로 보인다. git 추적 파일 변화는 없다. Task.md 0.2 첫 항목 `[x]`.
+
+#### 2. 기록 정정
+
+아래 로그의 "활성 타깃은 아직 StandaloneWindows64"와 CLAUDE.md §4의 "활성 빌드 타깃은 아직 Windows"는 에디터 재시작 후 다시 조회하지 않고 적은 것이었다. 둘 다 정정하고, CLAUDE.md §8에 "낡은 조회 결과로 기록" 항목을 추가했다.
+
+#### 3. 0.2 나머지 계획을 위한 실측 (읽기 전용)
+
+| 항목 | 결과 |
+|---|---|
+| 템플릿 에셋 | `Assets/TutorialInfo`(7개) · `Readme.asset` — 서로만 참조, 다른 곳 참조 0 |
+| 입력 | `InputSystem_Actions`는 프로젝트 전역 입력 액션으로 등록됨(EditorBuildSettings) → 유지 |
+| 패키지 후보 | AI Assistant 535.7MB(asmdef 40) · Timeline 38.7MB · Collab 37.3MB(에디터 전용) · Visual Scripting 24.8MB · Sentis 15.0MB · AI Navigation 12.7MB. 다른 패키지가 의존하지 않음. 함께 빠지는 의존: 2d.sprite · mathematics(AI Assistant), dt.app-ui(Sentis) |
+| WebGL 설정 | 압축 Brotli · 데이터 캐싱 · 엔진 코드 제거 · 스레드 끔은 이미 설정됨 / Decompression Fallback 꺼짐 · Managed Stripping 기본값 · IL2CPP OptimizeSpeed · 기본 캔버스 960×600(가로) |
+| 렌더링 | WebGL 기본 품질 레벨 = `Mobile` → `Mobile_RPAsset`(URP Universal Renderer). GraphicsSettings 기본 RP 없음(품질 레벨로 지정) |
+| MCP 제약 | `set_player_settings`는 WebGL 항목(Decompression Fallback · Stripping · 캔버스 크기)을 지원하지 않음 → `run_script` 빌더로 설정. IL2CPP 코드 생성은 `set_build_settings` |
+
+#### 4. 실행 (사용자 결정: URP 유지 · 패키지 6개 전부 제거 · Stripping High · `Assets/Scripts` 구조)
+
+* **씬**: Directional Light · Global Volume 삭제, Main Camera 직교 · 단색 배경(#D9DFDC, 프로토타입 바탕색) · (0,0,-10) · 카메라 후처리 끔. 첫 시도는 열거형 값을 `SolidColor`로 넣어 호출 전체가 거부됨 → 표시 이름 `Solid Color`로 재시도(CLAUDE.md §2에 기록).
+* **템플릿**: `Assets/TutorialInfo` · `Readme.asset` 삭제. `SampleSceneProfile.asset`은 계획 때 "Global Volume 전용"이라고 했으나, 참조를 확인해 보니 **URP 에셋 2개의 파이프라인 볼륨 프로필**이었다. 전제가 틀렸으므로 삭제하지 않고 결정 항목으로 남겼다 → 사용자 결정(색 정확도 보호)으로 참조를 비운 뒤 삭제(아래 볼륨 프로필).
+* **볼륨 프로필**: URP 에셋 2개의 `m_VolumeProfile` 참조를 비우고 `SampleSceneProfile.asset` 삭제(참조 0 확인). `set_serialized_field`에 null을 넣으면 "null"이라는 경로로 해석되어 실패 → `run_script`(`AgentScripts/Phase0ClearVolumeProfile.cs`)의 `SerializedObject`로 처리(CLAUDE.md §2에 기록).
+* **패키지**: `manifest.json`에서 6줄 삭제 → 에디터가 변경을 감지해 갱신(도중 `package_resolve`는 연결 끊김 — 리로드 중 정상). 딸린 의존 3개도 함께 제거됨. 남은 스크립팅 심볼(`SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY`) · App UI 설정 참조 · AI Assistant 설정 파일 정리.
+* **WebGL 설정**: `set_build_settings`(IL2CPP OptimizeSize) + `run_script` 빌더 `AgentScripts/Phase0WebGLSettings.cs`(`set_player_settings`가 WebGL 항목을 지원하지 않아서) — Decompression Fallback · Stripping High · 캔버스 540×960. `ProjectSettings.asset` diff로 저장 확인.
+* **asmdef**: `ColoringBoot.Core`(`noEngineReferences: true`) + `PaintColor`(색 비트마스크 — Phase 1의 첫 조각), `ColoringBoot.Core.Tests` + `PaintColorTests`.
+
+#### 5. 패키지 제거 후 에러 폭주 → 에디터 재시작으로 해결
+
+패키지 제거 직후 콘솔 에러 37건, asmdef 추가 후 재컴파일에서 119건. MCP `console` 버퍼에는 일부만 잡혀서(도메인 리로드 중 누락) 콘솔 창을 직접 읽는 `AgentScripts/ConsoleDump.cs`를 만들어 확인했다.
+
+* 제거 과정의 일회성 에러: `Failed to determine dll type`(32건) · collab-proxy DLL `FileNotFoundException` · 임포트 워커의 `[WorkerRecoverable] ... asmdef ... has been deleted`(로그의 "Aborting batchmode" 줄의 정체).
+* 원인이 된 에러: `[Tool Permissions] ... Unity.AI.Assistant.Tools.Editor.dll을 찾을 수 없음` — 지워진 AI Assistant 코드가 **메모리에 남아** 지워진 자기 DLL을 찾고 있었다. 디스크의 컴파일 결과(`Library/ScriptAssemblies`)는 정상(AI DLL 0개, 새 어셈블리 빌드됨)이었고 `compilationFailed` 플래그만 남아 있었다 → 도메인 리로드가 제대로 끝나지 않은 상태로 판단.
+* 사용자가 프로젝트를 새로 만들지 고민 → 재시작만 권함. **재시작 후 콘솔 에러는 무해 로그 1건, `compilationFailed: false`, "Account API" 경고도 사라짐.** CLAUDE.md §8에 "패키지 제거 뒤 옛 코드가 남음" 추가.
+* 에디터 로그 위치: 이 설치에서는 프로젝트의 `Logs/Editor.log`(사용자 폴더의 `Editor.log`는 19:55 이후 갱신 없음) — CLAUDE.md §2에 기록.
+
+#### 6. 검증
+
+* `run_tests`(mode=editor, filter=PaintColorTests) → `RedOrYellow_IsOrange` 1/1 Passed.
+* 씬 루트 = Main Camera만, 씬 저장됨. 제거한 패키지 9개가 lock 파일 · 캐시에서 사라진 것 확인.
+
+* **해결된 이슈**:
+  * 활성 빌드 타깃 기록 오류 정정
+  * 템플릿 에셋 · 3D 씬 요소 · 불필요 패키지 정리, WebGL 용량 설정 적용
+  * 패키지 제거 후 남은 옛 코드의 에러 폭주 — 에디터 재시작으로 해결
+  * 후처리 효과가 걸린 파이프라인 볼륨 프로필 — 참조 해제 후 삭제
+* **저장소 공개 확인**: 비로그인 요청에 HTTP 200 → 공개 저장소. 자동 모드 설정의 "비공개로 간주" 항목을 "공개 — 비밀값 · 개인정보 커밋 금지"로 정정했고, 이메일 등 개인정보가 커밋되지 않은 것을 확인했다. 테스트 배포 경로는 GitHub Pages `gh-pages` 브랜치로 결정(사용자).
+* **남은 일**: 0.3 첫 WebGL 빌드 · gh-pages 배포 · 기준선
+
+---
+
 ### 📅 [2026-09-24] 작업 환경 구축 — CLAUDE.md 재작성 · Git · 편집 가드 훅 · 스킬
 
 > **다른 AI 세션을 위한 요지**: 이 프로젝트는 Unity CLI 공식 MCP(`unity-editor-mcp`)로 에디터와 연결된다. Labyrinth의 `UnityMCP`(`manage_scene` 등)와 `coplay-mcp`는 쓰지 않는다. `.unity`/`.prefab` 텍스트 편집은 훅이 차단한다(의도된 가드).
@@ -23,7 +77,7 @@ Labyrinth(2D 회전 미로) 프로젝트의 CLAUDE.md를 가져와 이 프로젝
 | Unity | 6000.6.2f1, URP 17.6, Input System 1.20(New 전용), Test Framework 1.8 |
 | MCP | `unity-editor-mcp` = Unity CLI 1.0.0-beta.9의 `unity mcp` → `com.unity.pipeline` 0.7.0-exp.1 HTTP 서버. `editor_status` ready, projectPath 일치 |
 | `coplay-mcp` | 사용자 레벨 등록, 프로젝트에 Coplay 패키지 없음. `list_unity_project_roots` 응답 120초 초과 → 사용 안 함 |
-| 빌드 | 처음엔 WebGL Build Support 미설치(Android · Windows만) → 사용자가 설치, 에디터 재시작 후 `list_build_targets`에서 WebGL `isInstalled: true` 확인. 활성 타깃은 아직 StandaloneWindows64. 설치 직후 Unity가 ProjectSettings에 WebGL용 스크립팅 심볼 `SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY`(AI 패키지가 넣는 심볼, Standalone과 동일)를 자동 추가 |
+| 빌드 | 처음엔 WebGL Build Support 미설치(Android · Windows만) → 사용자가 설치, 에디터 재시작 후 `list_build_targets`에서 WebGL `isInstalled: true` 확인. 활성 타깃은 아직 StandaloneWindows64(→ **정정: 이미 WebGL이었음**, 위 로그 참조). 설치 직후 Unity가 ProjectSettings에 WebGL용 스크립팅 심볼 `SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY`(AI 패키지가 넣는 심볼, Standalone과 동일)를 자동 추가 |
 | 씬 | URP 3D 템플릿 `SampleScene`(Main Camera · Directional Light · Global Volume), 스크립트 0개 |
 | 콘솔 | 에러 1건 `Unable to join player connection multicast group (err: 10013)` — Windows 네트워크 권한 관련, 무해 |
 
