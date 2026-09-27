@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>육각 붓 퍼즐 프로토타입</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ground: #D9DFDC;
+  --panel: #EEF1EE;
+  --panel-edge: #C3CBC7;
+  --ink: #1C222C;
+  --muted: #56606C;
+  --lead: #1A1D23;
+  --empty: #F6F7F3;
+  --ghost: rgba(28, 34, 44, .14);
+  --warn: #E0246A;
+  --focus: #2E6BD1;
+  --p1: #D8402F; /* 빨강 */
+  --p2: #F1B928; /* 노랑 */
+  --p3: #EE7E27; /* 주황 */
+  --p4: #2D69CF; /* 파랑 */
+  --p5: #8A46B3; /* 보라 */
+  --p6: #2B9D57; /* 초록 */
+  --p7: #25262D; /* 검정 */
+  --hatch: rgba(255, 255, 255, .28);
+  --mark-edge: #1A1D23;
+  --btn: #FFFFFF;
+  --btn-ink: #1C222C;
+  --btn-strong: #1C222C;
+  --btn-strong-ink: #F6F7F3;
+  --serif: "Hahmlet", "Noto Serif KR", "Batang", serif;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #15181D; --panel: #1D2128; --panel-edge: #303640; --ink: #E6E9EC; --muted: #9BA3AE;
+    --lead: #07080A; --empty: #3E4550; --ghost: rgba(230, 233, 236, .12); --warn: #FF4F8E; --focus: #6FA0F0;
+    --p7: #111216; --hatch: rgba(255, 255, 255, .22); --mark-edge: rgba(230, 233, 236, .75);
+    --btn: #272C34; --btn-ink: #E6E9EC; --btn-strong: #E6E9EC; --btn-strong-ink: #15181D;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #15181D; --panel: #1D2128; --panel-edge: #303640; --ink: #E6E9EC; --muted: #9BA3AE;
+  --lead: #07080A; --empty: #3E4550; --ghost: rgba(230, 233, 236, .12); --warn: #FF4F8E; --focus: #6FA0F0;
+  --p7: #111216; --hatch: rgba(255, 255, 255, .22); --mark-edge: rgba(230, 233, 236, .75);
+  --btn: #272C34; --btn-ink: #E6E9EC; --btn-strong: #E6E9EC; --btn-strong-ink: #15181D;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--ground); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.wrap { max-width: 1160px; margin: 0 auto; padding: 20px 20px 48px; }
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--serif); font-weight: 800; font-size: clamp(26px, 4vw, 36px); line-height: 1.1; margin: 0; letter-spacing: -.01em; }
+h1 small { display: block; font-family: var(--sans); font-weight: 400; font-size: 14px; color: var(--muted); margin-top: 6px; letter-spacing: 0; }
+nav.tabs { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--panel-edge); padding: 4px; border-radius: 999px; }
+nav.tabs button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; cursor: pointer; color: var(--muted); font-weight: 500; }
+nav.tabs button[aria-selected="true"] { background: var(--btn-strong); color: var(--btn-strong-ink); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+@media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+.stage { position: relative; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 18px; padding: 14px; min-height: 420px; display: flex; flex-direction: column; }
+.stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 2px 6px 8px; }
+.stage-head h2 { font-family: var(--serif); font-weight: 600; font-size: 20px; margin: 0; }
+.counter { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.counter b { color: var(--ink); font-weight: 600; font-size: 18px; }
+svg.board { width: 100%; height: auto; max-height: 68vh; display: block; touch-action: none; user-select: none; -webkit-user-select: none; flex: 1; }
+.howto { color: var(--muted); font-size: 13.5px; padding: 8px 6px 0; margin: 0; }
+
+.cell-fill { transition: fill .16s ease; }
+.cell-hit { fill: transparent; cursor: pointer; }
+.lead { fill: none; stroke: var(--lead); stroke-linejoin: round; pointer-events: none; }
+.hatch { pointer-events: none; opacity: 0; transition: opacity .16s; }
+.hatch.on { opacity: 1; }
+.mark { pointer-events: none; stroke: var(--mark-edge); }
+.sym { pointer-events: none; font-family: var(--sans); font-weight: 600; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.55); text-anchor: middle; dominant-baseline: central; }
+.sym.dark { fill: #1C222C; stroke: rgba(255,255,255,.6); }
+.dead-ring { fill: none; stroke: var(--warn); stroke-dasharray: 5 4; pointer-events: none; animation: pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.sel-ring { fill: none; stroke: var(--focus); pointer-events: none; }
+.ghost-cell { fill: transparent; stroke: var(--ghost); stroke-dasharray: 4 4; }
+.arrow-btn { cursor: pointer; }
+.arrow-btn circle { fill: var(--btn-strong); stroke: var(--panel); }
+.arrow-btn path { fill: var(--btn-strong-ink); }
+.arrow-btn text { fill: var(--btn-strong-ink); font-size: 10px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+.arrow-btn:hover circle, .arrow-btn.hot circle { fill: var(--focus); }
+
+.banner { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--btn-strong); color: var(--btn-strong-ink); padding: 10px 16px; border-radius: 12px; display: none; align-items: center; gap: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.18); max-width: calc(100% - 28px); }
+.banner.show { display: flex; }
+.banner.warn { background: var(--warn); color: #fff; }
+.banner button { border: 0; border-radius: 8px; padding: 5px 12px; background: var(--btn); color: var(--btn-ink); cursor: pointer; font-weight: 600; white-space: nowrap; }
+
+aside.side { display: flex; flex-direction: column; gap: 14px; }
+.box { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px; padding: 14px 16px; }
+.box h3 { font-size: 14px; font-weight: 600; margin: 0 0 10px; }
+.box p { margin: 0 0 8px; }
+.box p:last-child { margin-bottom: 0; }
+.note { color: var(--muted); font-size: 13.5px; }
+svg.mini { width: 100%; max-height: 200px; display: block; }
+
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn { border: 1px solid var(--panel-edge); background: var(--btn); color: var(--btn-ink); border-radius: 10px; padding: 8px 10px; cursor: pointer; font-weight: 500; text-align: center; }
+.btn:hover:not(:disabled) { border-color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.strong { background: var(--btn-strong); color: var(--btn-strong-ink); border-color: var(--btn-strong); }
+.btn.wide { grid-column: 1 / -1; }
+
+.toggles { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13.5px; }
+.toggles label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.lv { border: 1px solid var(--panel-edge); background: var(--btn); border-radius: 10px; padding: 7px 10px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
+.lv[aria-current="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.lv span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.lv .done { color: var(--p6); font-weight: 600; }
+.group-label { font-size: 12.5px; color: var(--muted); margin: 12px 0 6px; }
+
+.mix { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; font-size: 13.5px; }
+.chips { display: inline-flex; align-items: center; gap: 4px; }
+.chip { width: 16px; height: 18px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); display: inline-block; }
+
+.field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 13.5px; }
+.field select, .field input[type=range] { width: 100%; }
+.field select, textarea { background: var(--btn); border: 1px solid var(--panel-edge); border-radius: 8px; padding: 6px 8px; }
+.field .row { display: flex; justify-content: space-between; }
+textarea { width: 100%; min-height: 90px; font-size: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
+
+.palette { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch { width: 38px; height: 42px; border: 0; padding: 0; cursor: pointer; background: transparent; position: relative; }
+.swatch svg { width: 100%; height: 100%; display: block; }
+.swatch[aria-pressed="true"]::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 16px; height: 3px; margin-left: -8px; background: var(--ink); border-radius: 2px; }
+.seg { display: inline-flex; border: 1px solid var(--panel-edge); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+.seg button { border: 0; background: var(--btn); padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--btn-strong); color: var(--btn-strong-ink); }
+.result { font-size: 13.5px; margin-top: 10px; min-height: 1.5em; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .cell-fill, .hatch { transition: none; } .dead-ring { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>육각 붓 퍼즐<small>규칙이 재미있는지 확인하기 위한 프로토타입</small></h1>
+    <nav class="tabs" role="tablist" aria-label="화면 선택">
+      <button role="tab" data-tab="play" aria-selected="true">플레이</button>
+      <button role="tab" data-tab="gen" aria-selected="false">랜덤 생성</button>
+      <button role="tab" data-tab="edit" aria-selected="false">에디터</button>
+    </nav>
+  </header>
+
+  <!-- 플레이 -->
+  <section data-panel="play" class="layout">
+    <div class="stage">
+      <div class="stage-head">
+        <h2 id="lvName">스테이지</h2>
+        <div class="counter"><b id="moveCount">0</b>수 / <span id="minInfo">최소 계산 중</span></div>
+      </div>
+      <svg class="board" id="playBoard" aria-label="퍼즐 보드"></svg>
+      <p class="howto">칸을 누른 채 여섯 방향 중 하나로 끌면 붓질이 됩니다. 칸을 탭하면 방향 버튼이 나오고, 키보드로는 방향키로 칸을 고르고 1, 3, 5, 7, 9, 0(11시) 키로 그을 수 있어요.</p>
+      <div class="banner" id="playBanner" role="status"></div>
+    </div>
+    <aside class="side">
+      <div class="box">
+        <h3>목표 그림</h3>
+        <svg class="mini" id="playTarget" aria-label="목표 그림"></svg>
+        <div class="toggles">
+          <label><input type="checkbox" id="optHints" checked> 보드에 목표 색 표시</label>
+          <label><input type="checkbox" id="optSym"> 색 기호 표시</label>
+        </div>
+      </div>
+      <div class="box">
+        <div class="btns">
+          <button class="btn" id="btnUndo">되돌리기</button>
+          <button class="btn" id="btnReset">처음부터</button>
+          <button class="btn" id="btnHint">다음 수 힌트</button>
+          <button class="btn" id="btnSolve">풀이 재생</button>
+        </div>
+        <p class="note" id="orderInfo" style="margin-top:10px"></p>
+      </div>
+      <div class="box">
+        <h3>스테이지</h3>
+        <div class="levels" id="levelList"></div>
+        <div id="customWrap" hidden>
+          <div class="group-label">내가 만든 스테이지</div>
+          <div class="levels" id="customList"></div>
+        </div>
+      </div>
+      <div class="box">
+        <h3>규칙</h3>
+        <p class="note">붓은 고른 칸이 속한 줄 전체를 반대편 끝에서부터 고른 방향 끝까지 쓸고 지나갑니다. 처음 만난 색을 묻히고, 그 뒤로 지나는 칸은 모두 붓 색이 됩니다.</p>
+        <p class="note">다른 색 칸을 지나면 그 칸과 붓이 함께 섞인 색으로 바뀝니다. 같은 색은 변화가 없습니다.</p>
+        <div class="mix" id="mixTable"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- 랜덤 생성 -->
+  <section data-panel="gen" class="layout" hidden>
+    <div class="stage">
+      <div class="stage-head"><h2>생성된 스테이지 미리보기</h2><div class="counter" id="genInfo"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1">
+        <div><div class="note" style="padding:0 6px">시작</div><svg class="board" id="genStart"></svg></div>
+        <div><div class="note" style="padding:0 6px">목표</div><svg class="board" id="genTarget"></svg></div>
+      </div>
+      <p class="howto">무작위 칸에 색을 두고 무작위 획을 그어 목표를 만든 뒤, 솔버로 최소 수와 순서 민감도를 확인해 조건에 맞는 것만 남깁니다.</p>
+    </div>
+    <aside class="side">
+      <div class="box">
+        <div class="field"><span>보드 모양</span>
+          <select id="gShape">
+            <option value="hex2">작은 육각형 (19칸)</option>
+            <option value="hex3">큰 육각형 (37칸)</option>
+            <option value="diamond">마름모 (16칸)</option>
+            <option value="tri">삼각형 (15칸)</option>
+            <option value="blob">불규칙 (14~21칸)</option>
+            <option value="random">아무거나</option>
+          </select></div>
+        <div class="field"><div class="row"><span>시작 색 칸</span><b id="gSeedsV">3</b></div><input type="range" id="gSeeds" min="2" max="6" value="3"></div>
+        <div class="field"><div class="row"><span>목표 수 (최소 풀이)</span><b id="gMovesV">5</b></div><input type="range" id="gMoves" min="2" max="8" value="5"></div>
+        <div class="field"><span>시작 색</span>
+          <select id="gPalette">
+            <option value="1,2,4">원색만 (빨강·노랑·파랑)</option>
+            <option value="1,2,4,3,5,6">섞인 색도 포함</option>
+            <option value="1,2">빨강·노랑만</option>
+          </select></div>
+        <div class="field"><span>순서가 얼마나 중요해야 하나</span>
+          <select id="gOrder">
+            <option value="0.05">엄격: 순서를 바꾸면 거의 실패</option>
+            <option value="0.2" selected>보통</option>
+            <option value="1">상관없음</option>
+          </select></div>
+        <div class="toggles" style="margin:0 0 12px"><label><input type="checkbox" id="gBlack" checked> 목표에 검정 허용</label></div>
+        <div class="btns">
+          <button class="btn strong" id="gMake">만들기</button>
+          <button class="btn" id="gPlay" disabled>플레이하기</button>
+          <button class="btn wide" id="gEdit" disabled>에디터에서 열기</button>
+        </div>
+        <p class="result" id="gResult"></p>
+      </div>
+    </aside>
+  </section>
+
+  <!-- 에디터 -->
+  <section data-panel="edit" class="layout" hidden>
+    <div class="stage">
+      <div class="stage-head">
+        <h2 id="edTitle">시작 상태 칠하기</h2>
+        <div class="counter" id="edCount"></div>
+      </div>
+      <svg class="board" id="editBoard" aria-label="에디터 보드"></svg>
+      <p class="howto" id="edHow">칸을 누르거나 끌어서 선택한 색을 칠합니다. 점선 칸에 칠하면 보드에 칸이 추가됩니다.</p>
+      <div class="banner" id="edBanner" role="status"></div>
+    </div>
+    <aside class="side">
+      <div class="box" id="edPaintBox">
+        <div class="seg" role="group" aria-label="편집할 층">
+          <button id="layerInit" aria-pressed="true">시작</button>
+          <button id="layerTarget" aria-pressed="false">목표</button>
+        </div>
+        <div class="palette" id="palette"></div>
+        <p class="note" id="palName" style="margin-top:12px"></p>
+      </div>
+      <div class="box" id="edRecordBox">
+        <h3>목표를 붓질로 만들기</h3>
+        <p class="note">시작 상태에서 직접 획을 그은 뒤 그 모습을 목표로 저장합니다. 퍼즐을 만드는 가장 빠른 방법이에요.</p>
+        <div class="btns">
+          <button class="btn strong wide" id="recStart">획 긋기 시작</button>
+          <button class="btn" id="recUndo" hidden>되돌리기</button>
+          <button class="btn" id="recCancel" hidden>취소</button>
+          <button class="btn strong wide" id="recSave" hidden>이 모습을 목표로 저장</button>
+        </div>
+      </div>
+      <div class="box">
+        <div class="field"><span>이름</span><input id="edName" value="새 스테이지" style="background:var(--btn);border:1px solid var(--panel-edge);border-radius:8px;padding:6px 8px"></div>
+        <div class="btns">
+          <button class="btn" id="edCheck">풀이 검사</button>
+          <button class="btn strong" id="edPlay">플레이하기</button>
+          <button class="btn" id="edSave">내 목록에 저장</button>
+          <button class="btn" id="edClear">모두 지우기</button>
+        </div>
+        <p class="result" id="edResult"></p>
+      </div>
+      <div class="box">
+        <h3>스테이지 코드</h3>
+        <textarea id="edCode" spellcheck="false" aria-label="스테이지 코드"></textarea>
+        <div class="btns" style="margin-top:8px">
+          <button class="btn" id="edExport">코드 만들기</button>
+          <button class="btn" id="edImport">코드 불러오기</button>
+        </div>
+      </div>
+    </aside>
+  </section>
+</div>
+
+<script>
+// ===== Hex brush engine =====
+const DIRS = [
+  { clock: 1, dq: 1, dr: -1 },  // 0 NE
+  { clock: 3, dq: 1, dr: 0 },   // 1 E
+  { clock: 5, dq: 0, dr: 1 },   // 2 SE
+  { clock: 7, dq: -1, dr: 1 },  // 3 SW
+  { clock: 9, dq: -1, dr: 0 },  // 4 W
+  { clock: 11, dq: 0, dr: -1 }, // 5 NW
+];
+function lineKey(axis, q, r) { return axis === 0 ? q + r : axis === 1 ? r : q; }
+function proj(d, q, r) { return q * DIRS[d].dq + r * DIRS[d].dr; }
+
+function buildBoard(level) {
+  const cells = level.cells.map(c => ({ q: c[0], r: c[1] }));
+  const init = Uint8Array.from(level.cells.map(c => c[2]));
+  const target = Uint8Array.from(level.cells.map(c => c[3]));
+  const index = new Map();
+  cells.forEach((c, i) => index.set(c.q + ',' + c.r, i));
+  const lines = []; // {axis, cells:[idx]}
+  const cellLines = cells.map(() => [0, 0, 0]);
+  for (let axis = 0; axis < 3; axis++) {
+    const groups = new Map();
+    cells.forEach((c, i) => {
+      const k = lineKey(axis, c.q, c.r);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(i);
+    });
+    for (const arr of groups.values()) {
+      arr.sort((a, b) => proj(axis, cells[a].q, cells[a].r) - proj(axis, cells[b].q, cells[b].r));
+      const li = lines.length;
+      lines.push({ axis, cells: arr });
+      arr.forEach(i => (cellLines[i][axis] = li));
+    }
+  }
+  // moves: each line with >=2 cells, two directions
+  const moves = [];
+  lines.forEach((L, li) => {
+    if (L.cells.length < 2) return;
+    moves.push({ line: li, dir: L.axis, order: L.cells.slice() });
+    moves.push({ line: li, dir: L.axis + 3, order: L.cells.slice().reverse() });
+  });
+  return { cells, init, target, index, lines, cellLines, moves };
+}
+
+function moveFor(board, cellIdx, dir) {
+  const li = board.cellLines[cellIdx][dir % 3];
+  return board.moves.find(m => m.line === li && m.dir === dir) || null;
+}
+
+// returns {state, steps:[{cell, brush}]}
+function applyMove(state, move, trace) {
+  const s = state.slice();
+  let brush = 0;
+  const steps = trace ? [] : null;
+  for (const i of move.order) {
+    const c = s[i];
+    if (c) brush |= c;
+    if (brush) s[i] = brush;
+    if (trace) steps.push({ cell: i, brush });
+  }
+  return trace ? { state: s, steps } : s;
+}
+
+function isDead(board, s) {
+  for (let i = 0; i < s.length; i++) if (s[i] & ~board.target[i]) return true;
+  return false;
+}
+function isWin(board, s) {
+  for (let i = 0; i < s.length; i++) if (s[i] !== board.target[i]) return false;
+  return true;
+}
+function keyOf(s) { let k = ''; for (let i = 0; i < s.length; i++) k += s[i]; return k; }
+
+function solve(board, start, limit = 300000) {
+  if (isWin(board, start)) return { path: [], explored: 1 };
+  if (isDead(board, start)) return { path: null, explored: 1, dead: true };
+  const startKey = keyOf(start);
+  const prev = new Map([[startKey, null]]);
+  let frontier = [start];
+  let explored = 1;
+  while (frontier.length) {
+    const next = [];
+    for (const s of frontier) {
+      const sk = keyOf(s);
+      for (let mi = 0; mi < board.moves.length; mi++) {
+        const ns = applyMove(s, board.moves[mi]);
+        const nk = keyOf(ns);
+        if (nk === sk || prev.has(nk)) continue;
+        if (isDead(board, ns)) continue;
+        prev.set(nk, [sk, mi]);
+        explored++;
+        if (isWin(board, ns)) {
+          const path = [];
+          let k = nk;
+          while (prev.get(k)) { const [pk, m] = prev.get(k); path.unshift(m); k = pk; }
+          return { path, explored };
+        }
+        if (explored > limit) return { path: null, explored, limited: true };
+        next.push(ns);
+      }
+    }
+    frontier = next;
+  }
+  return { path: null, explored };
+}
+
+function permutations(arr) {
+  if (arr.length <= 1) return [arr.slice()];
+  const out = [];
+  arr.forEach((x, i) => {
+    const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+    for (const p of permutations(rest)) out.push([x, ...p]);
+  });
+  return out;
+}
+// how many orderings of the given solution also win
+function orderSensitivity(board, start, path) {
+  if (path.length < 2 || path.length > 7) return null;
+  const perms = permutations(path);
+  let ok = 0;
+  for (const p of perms) {
+    let s = start;
+    for (const m of p) s = applyMove(s, board.moves[m]);
+    if (isWin(board, s)) ok++;
+  }
+  return { ok, total: perms.length };
+}
+
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function shapeCells(kind, rand) {
+  const out = [];
+  if (kind === 'hex2' || kind === 'hex3') {
+    const R = kind === 'hex2' ? 2 : 3;
+    for (let q = -R; q <= R; q++) for (let r = -R; r <= R; r++) if (Math.abs(q + r) <= R) out.push([q, r]);
+  } else if (kind === 'diamond') {
+    for (let q = 0; q < 4; q++) for (let r = 0; r < 4; r++) out.push([q, r]);
+  } else if (kind === 'tri') {
+    for (let q = 0; q < 5; q++) for (let r = 0; r < 5 - q; r++) out.push([q, r]);
+  } else { // blob
+    const set = new Set(['0,0']);
+    const target = 14 + Math.floor(rand() * 8);
+    while (set.size < target) {
+      const arr = [...set];
+      const [q, r] = arr[Math.floor(rand() * arr.length)].split(',').map(Number);
+      const d = DIRS[Math.floor(rand() * 6)];
+      const nq = q + d.dq, nr = r + d.dr;
+      if (Math.abs(nq) <= 3 && Math.abs(nr) <= 3 && Math.abs(nq + nr) <= 3) set.add(nq + ',' + nr);
+    }
+    for (const k of set) out.push(k.split(',').map(Number));
+  }
+  return out;
+}
+
+function generate(opts, rand) {
+  const { shape = 'hex2', seeds = 3, moves = 4, palette = [1, 2, 4], allowBlack = true, minSolve = 3, maxOrderRatio = 0.34, fill = 0.5 } = opts;
+  for (let attempt = 0; attempt < 400; attempt++) {
+    const kind = shape === 'random' ? ['hex2', 'diamond', 'tri', 'blob'][Math.floor(rand() * 4)] : shape;
+    const coords = shapeCells(kind, rand);
+    const n = coords.length;
+    const init = new Uint8Array(n);
+    const picks = new Set();
+    while (picks.size < Math.min(seeds, n - 1)) picks.add(Math.floor(rand() * n));
+    for (const p of picks) init[p] = palette[Math.floor(rand() * palette.length)];
+    const lvl = { cells: coords.map((c, i) => [c[0], c[1], init[i], 0]) };
+    const b = buildBoard(lvl);
+    let s = init;
+    let used = 0;
+    for (let t = 0; t < moves * 6 && used < moves; t++) {
+      const m = b.moves[Math.floor(rand() * b.moves.length)];
+      const ns = applyMove(s, m);
+      if (keyOf(ns) === keyOf(s)) continue;
+      s = ns; used++;
+    }
+    if (used < moves) continue;
+    if (!allowBlack && s.some(x => x === 7)) continue;
+    const painted = s.filter(x => x).length;
+    if (painted / n < fill) continue;
+    lvl.cells.forEach((c, i) => (c[3] = s[i]));
+    const b2 = buildBoard(lvl);
+    const res = solve(b2, b2.init, 120000);
+    if (!res.path || res.path.length < minSolve) continue;
+    const os = orderSensitivity(b2, b2.init, res.path);
+    if (os && os.ok / os.total > maxOrderRatio) continue;
+    return { level: lvl, min: res.path.length, order: os, shape: kind };
+  }
+  return null;
+}
+
+if (typeof module !== 'undefined') module.exports = { DIRS, buildBoard, moveFor, applyMove, isDead, isWin, solve, orderSensitivity, rng, generate, shapeCells };
+
+</script>
+<script>
+const BUILTIN = [{"name":"두 가지 색","cells":[[0,0,2,2],[0,1,0,2],[0,2,0,3],[0,3,0,3],[0,4,0,3],[1,0,0,0],[1,1,0,0],[1,2,0,1],[1,3,1,1],[2,0,0,0],[2,1,0,0],[2,2,0,1],[3,0,0,0],[3,1,0,1],[4,0,0,1]]},{"name":"붓 색이 바뀐다","cells":[[0,0,2,2],[0,1,0,0],[0,2,0,0],[0,3,0,0],[1,0,0,2],[1,1,0,0],[1,2,0,0],[1,3,0,0],[2,0,0,2],[2,1,0,0],[2,2,0,0],[2,3,4,4],[3,0,0,2],[3,1,0,2],[3,2,0,6],[3,3,0,2]]},{"name":"벌집","cells":[[-2,0,0,0],[-2,1,0,0],[-2,2,0,2],[-1,-1,0,0],[-1,0,0,0],[-1,1,0,2],[-1,2,0,0],[0,-2,0,3],[0,-1,0,3],[0,0,2,3],[0,1,0,1],[0,2,1,1],[1,-2,0,0],[1,-1,0,3],[1,0,0,2],[1,1,0,2],[2,-2,2,2],[2,-1,0,3],[2,0,0,0]]},{"name":"엇갈림","cells":[[-2,0,4,6],[-2,1,2,2],[-2,2,0,7],[-1,-1,0,6],[-1,0,0,6],[-1,1,1,7],[-1,2,0,0],[0,-2,0,6],[0,-1,0,6],[0,0,0,6],[0,1,0,0],[0,2,0,0],[1,-2,0,6],[1,-1,0,0],[1,0,0,6],[1,1,0,0],[2,-2,0,0],[2,-1,0,0],[2,0,0,6]]},{"name":"얼룩","cells":[[0,0,0,4],[1,0,2,6],[1,-1,0,0],[2,-2,0,0],[2,0,0,6],[0,1,0,2],[-1,1,0,0],[0,2,0,2],[3,-1,0,0],[-1,0,4,5],[-2,1,1,1],[1,2,0,2],[2,1,0,0],[0,-1,0,5]]},{"name":"검정 만들기","cells":[[-2,0,0,6],[-2,1,0,0],[-2,2,0,4],[-1,-1,0,0],[-1,0,4,6],[-1,1,0,4],[-1,2,0,4],[0,-2,0,0],[0,-1,0,6],[0,0,0,2],[0,1,1,5],[0,2,0,0],[1,-2,0,6],[1,-1,0,0],[1,0,2,7],[1,1,0,0],[2,-2,0,0],[2,-1,0,7],[2,0,0,0]]},{"name":"큰 벌집","cells":[[-3,0,0,6],[-3,1,0,0],[-3,2,0,0],[-3,3,0,0],[-2,-1,0,6],[-2,0,0,6],[-2,1,0,2],[-2,2,0,2],[-2,3,2,2],[-1,-2,4,6],[-1,-1,0,0],[-1,0,0,6],[-1,1,0,2],[-1,2,0,0],[-1,3,0,0],[0,-3,0,6],[0,-2,0,0],[0,-1,0,0],[0,0,0,6],[0,1,0,0],[0,2,0,0],[0,3,0,0],[1,-3,0,6],[1,-2,0,0],[1,-1,1,3],[1,0,2,6],[1,1,0,0],[1,2,0,0],[2,-3,0,6],[2,-2,0,3],[2,-1,0,0],[2,0,0,6],[2,1,0,0],[3,-3,0,7],[3,-2,0,0],[3,-1,0,0],[3,0,0,6]]},{"name":"마지막 한 획","cells":[[-3,0,0,0],[-3,1,0,0],[-3,2,0,7],[-3,3,0,0],[-2,-1,0,4],[-2,0,0,4],[-2,1,4,4],[-2,2,0,7],[-2,3,0,0],[-1,-2,0,0],[-1,-1,0,4],[-1,0,0,4],[-1,1,0,4],[-1,2,0,7],[-1,3,0,4],[0,-3,0,2],[0,-2,0,4],[0,-1,0,4],[0,0,0,0],[0,1,0,0],[0,2,0,3],[0,3,0,3],[1,-3,0,6],[1,-2,0,0],[1,-1,0,4],[1,0,0,0],[1,1,0,0],[1,2,2,3],[2,-3,0,2],[2,-2,0,0],[2,-1,0,4],[2,0,0,0],[2,1,1,1],[3,-3,2,2],[3,-2,0,0],[3,-1,0,4],[3,0,0,0]]}];
+const GRAPE = { name: '포도 (기획안 예시)', cells: [[4,0,0,6],[3,1,6,6],[2,2,0,5],[3,2,0,5],[1,3,0,5],[2,3,0,5],[3,3,5,5],[1,4,0,5],[2,4,0,5],[1,5,0,5]] };
+const LEVELS = [GRAPE, ...BUILTIN];
+const COLOR_NAMES = ['빈칸', '빨강', '노랑', '주황', '파랑', '보라', '초록', '검정'];
+const SQ3 = Math.sqrt(3);
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const STEP = REDUCED ? 0 : 75;
+const NS = 'http://www.w3.org/2000/svg';
+const opts = { hints: true, sym: false };
+
+function el(tag, attrs = {}, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function px(q, r, s) { return [s * SQ3 * (q + r / 2), s * 1.5 * r]; }
+function hexPts(cx, cy, s) {
+  let p = '';
+  for (let k = 0; k < 6; k++) { const a = Math.PI / 180 * (60 * k - 30); p += (cx + s * Math.cos(a)).toFixed(2) + ',' + (cy + s * Math.sin(a)).toFixed(2) + ' '; }
+  return p;
+}
+function dirVec(d) { const D = DIRS[d]; const x = SQ3 * (D.dq + D.dr / 2), y = 1.5 * D.dr; const l = Math.hypot(x, y); return [x / l, y / l]; }
+function fillOf(m) { return m ? `var(--p${m})` : 'var(--empty)'; }
+function symOf(m) { return m === 0 ? '' : (m & 1 ? 'R' : '') + (m & 2 ? 'Y' : '') + (m & 4 ? 'B' : ''); }
+function ensureDefs(svg) {
+  const defs = el('defs', {}, svg);
+  const id = 'hatch-' + svg.id;
+  const pat = el('pattern', { id, width: 7, height: 7, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  el('line', { x1: 0, y1: 0, x2: 0, y2: 7, stroke: 'var(--hatch)', 'stroke-width': 2 }, pat);
+  return id;
+}
+function fitView(svg, pts, s, pad = 0.4) {
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const m = s * (1 + pad);
+  const x0 = Math.min(...xs) - m, x1 = Math.max(...xs) + m, y0 = Math.min(...ys) - m, y1 = Math.max(...ys) + m;
+  svg.setAttribute('viewBox', `${x0.toFixed(1)} ${y0.toFixed(1)} ${(x1 - x0).toFixed(1)} ${(y1 - y0).toFixed(1)}`);
+}
+
+// 정적 보드 그리기 (목표 그림, 미리보기)
+function drawStatic(svg, cells, states) {
+  svg.innerHTML = '';
+  const s = 20;
+  const hid = ensureDefs(svg);
+  const pts = cells.map(c => px(c.q, c.r, s));
+  fitView(svg, pts, s, 0.15);
+  cells.forEach((c, i) => {
+    const [x, y] = pts[i];
+    el('polygon', { points: hexPts(x, y, s), style: `fill:${fillOf(states[i])}` }, svg);
+    if (states[i] === 7) el('polygon', { points: hexPts(x, y, s), fill: `url(#${hid})` }, svg);
+    if (opts.sym && states[i]) { const t = el('text', { x, y, class: 'sym' + (states[i] === 2 ? ' dark' : ''), 'font-size': 8, 'stroke-width': 2 }, svg); t.textContent = symOf(states[i]); }
+  });
+  cells.forEach((c, i) => { const [x, y] = pts[i]; el('polygon', { points: hexPts(x, y, s), class: 'lead', 'stroke-width': 2.6 }, svg); });
+}
+
+// ===== 인터랙티브 보드 =====
+class BoardView {
+  constructor(svg, { checkTarget = true, onChange = () => {}, banner = null } = {}) {
+    this.svg = svg; this.s = 40; this.checkTarget = checkTarget; this.onChange = onChange; this.banner = banner;
+    this.busy = false; this.sel = null; this.history = [];
+    this.bindPointer();
+  }
+  load(level) {
+    this.level = level;
+    this.board = buildBoard(level);
+    this.state = this.board.init.slice();
+    this.history = [];
+    this.sel = null;
+    this.build();
+    this.update();
+  }
+  build() {
+    const svg = this.svg, s = this.s, b = this.board;
+    svg.innerHTML = '';
+    this.hatchId = ensureDefs(svg);
+    this.pts = b.cells.map(c => px(c.q, c.r, s));
+    fitView(svg, this.pts, s, 0.8);
+    const gFill = el('g', {}, svg), gHatch = el('g', {}, svg), gMark = el('g', {}, svg), gSym = el('g', {}, svg);
+    this.gPrev = el('g', {}, svg);
+    const gLead = el('g', {}, svg);
+    this.gTrail = el('g', { 'pointer-events': 'none' }, svg);
+    this.gOver = el('g', {}, svg);
+    this.nodes = b.cells.map((c, i) => {
+      const [x, y] = this.pts[i];
+      const P = hexPts(x, y, s);
+      const fill = el('polygon', { points: P, class: 'cell-fill' }, gFill);
+      const hatch = el('polygon', { points: P, class: 'hatch', fill: `url(#${this.hatchId})` }, gHatch);
+      const mark = el('polygon', { points: hexPts(x, y, s * 0.3), class: 'mark', 'stroke-width': 2.4 }, gMark);
+      const sym = el('text', { x, y, class: 'sym', 'font-size': 15, 'stroke-width': 3 }, gSym);
+      el('polygon', { points: P, class: 'lead', 'stroke-width': s * 0.13 }, gLead);
+      return { fill, hatch, mark, sym };
+    });
+  }
+  update(anim) {
+    const b = this.board, st = this.state;
+    const delay = new Map();
+    if (anim) anim.forEach((i, k) => delay.set(i, (k + 0.6) * STEP));
+    this.nodes.forEach((n, i) => {
+      const d = delay.get(i) || 0;
+      n.fill.style.transitionDelay = d + 'ms';
+      n.hatch.style.transitionDelay = d + 'ms';
+      n.fill.style.fill = fillOf(st[i]);
+      n.hatch.classList.toggle('on', st[i] === 7);
+      const t = b.target[i];
+      const showMark = this.checkTarget && opts.hints && st[i] !== t && t !== 0;
+      n.mark.style.display = showMark ? '' : 'none';
+      if (showMark) n.mark.style.fill = fillOf(t);
+      n.sym.textContent = opts.sym ? symOf(st[i]) : '';
+      n.sym.setAttribute('class', 'sym' + (st[i] === 2 || st[i] === 0 ? ' dark' : ''));
+    });
+    this.drawOverlay();
+    this.onChange(this);
+  }
+  deadCells() {
+    if (!this.checkTarget) return [];
+    const out = [];
+    for (let i = 0; i < this.state.length; i++) if (this.state[i] & ~this.board.target[i]) out.push(i);
+    return out;
+  }
+  drawOverlay() {
+    const g = this.gOver; g.innerHTML = '';
+    const s = this.s;
+    for (const i of this.deadCells()) { const [x, y] = this.pts[i]; el('polygon', { points: hexPts(x, y, s * 0.78), class: 'dead-ring', 'stroke-width': 4 }, g); }
+    if (this.sel != null && !this.busy) {
+      const [x, y] = this.pts[this.sel];
+      el('polygon', { points: hexPts(x, y, s * 0.86), class: 'sel-ring', 'stroke-width': 4 }, g);
+      for (let d = 0; d < 6; d++) {
+        if (!moveFor(this.board, this.sel, d)) continue;
+        const [vx, vy] = dirVec(d);
+        const cx = x + vx * s * 1.32, cy = y + vy * s * 1.32;
+        const btn = el('g', { class: 'arrow-btn', 'data-dir': d, role: 'button', 'aria-label': `${DIRS[d].clock}시 방향으로 긋기` }, g);
+        el('circle', { cx, cy, r: s * 0.42, 'stroke-width': 3 }, btn);
+        const ang = Math.atan2(vy, vx) * 180 / Math.PI;
+        el('path', { d: `M ${s * 0.25} 0 L ${s * 0.02} ${-s * 0.2} L ${s * 0.02} ${-s * 0.075} L ${-s * 0.22} ${-s * 0.075} L ${-s * 0.22} ${s * 0.075} L ${s * 0.02} ${s * 0.075} L ${s * 0.02} ${s * 0.2} Z`, transform: `translate(${cx} ${cy}) rotate(${ang})` }, btn);
+        btn.addEventListener('pointerenter', () => this.preview(d));
+        btn.addEventListener('pointerleave', () => this.clearPreview());
+      }
+    }
+  }
+  trail(move, steps, animate) {
+    const g = this.gTrail, s = this.s;
+    const [vx, vy] = dirVec(move.dir);
+    const pts = move.order.map(i => this.pts[i]);
+    const first = [pts[0][0] - vx * s * 0.9, pts[0][1] - vy * s * 0.9];
+    const last = [pts[pts.length - 1][0] + vx * s * 0.9, pts[pts.length - 1][1] + vy * s * 0.9];
+    const chain = [first, ...pts, last];
+    const brushAt = [0, ...steps.map(t => t.brush)];
+    const group = el('g', { opacity: animate ? 0.9 : 0.5 }, g);
+    for (let k = 0; k < chain.length - 1; k++) {
+      const [x1, y1] = chain[k], [x2, y2] = chain[k + 1];
+      const br = brushAt[k];
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const line = el('line', { x1, y1, x2, y2, 'stroke-linecap': 'round' }, group);
+      if (br) { line.setAttribute('stroke', fillOf(br)); line.setAttribute('stroke-width', s * 0.5); }
+      else { line.setAttribute('stroke', 'var(--ink)'); line.setAttribute('stroke-width', s * 0.09); line.setAttribute('stroke-dasharray', '6 7'); line.setAttribute('opacity', .55); }
+      if (animate && STEP > 0) {
+        if (br) { line.style.strokeDasharray = len; line.style.strokeDashoffset = len; }
+        else line.style.opacity = 0;
+        line.style.transition = `stroke-dashoffset ${STEP}ms linear ${k * STEP}ms, opacity 1ms linear ${k * STEP}ms`;
+        requestAnimationFrame(() => requestAnimationFrame(() => { line.style.strokeDashoffset = 0; line.style.opacity = br ? 1 : .55; }));
+      }
+    }
+    // 붓 끝 표시
+    const [ex, ey] = last;
+    const ang = Math.atan2(vy, vx) * 180 / Math.PI;
+    el('path', { d: `M ${s * 0.35} 0 L ${-s * 0.15} ${-s * 0.3} L ${-s * 0.15} ${s * 0.3} Z`, transform: `translate(${ex} ${ey}) rotate(${ang})`, fill: 'var(--ink)', opacity: animate ? 0 : 0.8, style: animate ? `transition: opacity 1ms linear ${(chain.length - 1) * STEP}ms` : '' }, group);
+    if (animate) requestAnimationFrame(() => requestAnimationFrame(() => group.lastChild.setAttribute('opacity', .8)));
+    return group;
+  }
+  preview(d, cell = this.sel) {
+    this.clearPreview();
+    if (cell == null || this.busy) return;
+    const m = moveFor(this.board, cell, d);
+    if (!m) return;
+    const { state: ns, steps } = applyMove(this.state, m, true);
+    this.trail(m, steps, false);
+    const g = this.gPrev, s = this.s;
+    ns.forEach((v, i) => {
+      if (v === this.state[i]) return;
+      const [x, y] = this.pts[i];
+      el('polygon', { points: hexPts(x, y, s * 0.72), style: `fill:${fillOf(v)}`, opacity: .92 }, g);
+      if (v === 7) el('polygon', { points: hexPts(x, y, s * 0.72), fill: `url(#${this.hatchId})` }, g);
+    });
+    this.previewMove = m;
+  }
+  clearPreview() { this.gPrev.innerHTML = ''; if (!this.busy) this.gTrail.innerHTML = ''; this.previewMove = null; }
+  commit(move) {
+    if (this.busy || !move) return Promise.resolve();
+    const { state: ns, steps } = applyMove(this.state, move, true);
+    this.clearPreview();
+    this.history.push(this.state);
+    this.state = ns;
+    this.sel = null;
+    this.busy = true;
+    this.gTrail.innerHTML = '';
+    const grp = this.trail(move, steps, true);
+    this.update(move.order);
+    const total = (move.order.length + 2) * STEP + 260;
+    return new Promise(res => setTimeout(() => {
+      grp.style.transition = 'opacity .35s'; grp.style.opacity = 0;
+      setTimeout(() => grp.remove(), 380);
+      this.busy = false; this.drawOverlay(); this.onChange(this, 'moved'); res();
+    }, total));
+  }
+  undo() { if (this.busy || !this.history.length) return; this.state = this.history.pop(); this.sel = null; this.clearPreview(); this.update(); }
+  reset() { if (this.busy) return; this.state = this.board.init.slice(); this.history = []; this.sel = null; this.clearPreview(); this.update(); }
+  select(i) { this.sel = i; this.clearPreview(); this.drawOverlay(); }
+  toSvg(e) {
+    const pt = this.svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(this.svg.getScreenCTM().inverse());
+    return [p.x, p.y];
+  }
+  cellAt(x, y) {
+    let best = -1, bd = Infinity;
+    this.pts.forEach(([px_, py], i) => { const d = Math.hypot(px_ - x, py - y); if (d < bd) { bd = d; best = i; } });
+    return bd <= this.s * 0.95 ? best : -1;
+  }
+  bindPointer() {
+    const svg = this.svg;
+    let drag = null;
+    svg.addEventListener('pointerdown', e => {
+      if (this.busy || !this.board) return;
+      const arrow = e.target.closest && e.target.closest('.arrow-btn');
+      if (arrow) { e.preventDefault(); this.commit(moveFor(this.board, this.sel, +arrow.dataset.dir)); return; }
+      const [x, y] = this.toSvg(e);
+      const c = this.cellAt(x, y);
+      if (c < 0) { this.select(null); return; }
+      drag = { c, x, y, dir: null, id: e.pointerId };
+      svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const [x, y] = this.toSvg(e);
+      const dx = x - drag.x, dy = y - drag.y;
+      if (Math.hypot(dx, dy) < this.s * 0.45) { if (drag.dir != null) { drag.dir = null; this.clearPreview(); } return; }
+      const a = Math.atan2(dy, dx);
+      let best = 0, bd = Infinity;
+      for (let d = 0; d < 6; d++) { const [vx, vy] = dirVec(d); let diff = Math.abs(Math.atan2(vy, vx) - a); diff = Math.min(diff, 2 * Math.PI - diff); if (diff < bd) { bd = diff; best = d; } }
+      if (best !== drag.dir) { drag.dir = best; this.sel = null; this.drawOverlay(); this.preview(best, drag.c); }
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const d = drag; drag = null;
+      if (d.dir != null) this.commit(moveFor(this.board, d.c, d.dir));
+      else this.select(this.sel === d.c ? null : d.c);
+    };
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', e => { if (drag) { drag = null; this.clearPreview(); } });
+  }
+  key(e) {
+    if (this.busy || !this.board) return false;
+    const map = { '1': 0, '3': 1, '5': 2, '7': 3, '9': 4, '0': 5 };
+    if (e.key in map) {
+      if (this.sel == null) this.select(0);
+      else this.commit(moveFor(this.board, this.sel, map[e.key]));
+      return true;
+    }
+    if (e.key === 'Escape') { this.select(null); return true; }
+    if (e.key.startsWith('Arrow')) {
+      const cur = this.sel == null ? 0 : this.sel;
+      const [x, y] = this.pts[cur];
+      const want = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      let best = cur, bs = -Infinity;
+      this.pts.forEach(([px_, py], i) => {
+        if (i === cur) return;
+        const dx = px_ - x, dy = py - y, dist = Math.hypot(dx, dy);
+        const dot = (dx * want[0] + dy * want[1]) / dist;
+        if (dot < 0.45) return;
+        const score = dot - dist / (this.s * 6);
+        if (score > bs) { bs = score; best = i; }
+      });
+      this.select(best);
+      return true;
+    }
+    return false;
+  }
+}
+
+// ===== 유틸 =====
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+function showBanner(node, html, { warn = false, actions = [] } = {}) {
+  node.innerHTML = '';
+  node.className = 'banner show' + (warn ? ' warn' : '');
+  const span = document.createElement('span'); span.textContent = html; node.appendChild(span);
+  for (const [label, fn] of actions) { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; node.appendChild(b); }
+}
+function hideBanner(node) { node.className = 'banner'; }
+function orderText(os) {
+  if (!os) return '';
+  return `최적 풀이의 순서를 바꿔 보면 ${os.total}가지 중 ${os.ok}가지만 성공합니다.`;
+}
+const later = fn => new Promise(r => setTimeout(() => r(fn()), 30));
+
+// ===== 플레이 화면 =====
+const $ = id => document.getElementById(id);
+const play = {
+  view: null, idx: 0, list: 'builtin', current: null, min: null, helped: false, token: 0,
+};
+play.view = new BoardView($('playBoard'), { banner: $('playBanner'), onChange: (v, ev) => onPlayChange(v, ev) });
+
+function onPlayChange(v, ev) {
+  $('moveCount').textContent = v.history.length;
+  $('btnUndo').disabled = !v.history.length;
+  $('btnReset').disabled = !v.history.length;
+  drawStatic($('playTarget'), v.board.cells, v.board.target);
+  if (ev !== 'moved') return;
+  const banner = $('playBanner');
+  if (isWin(v.board, v.state)) {
+    const n = v.history.length;
+    const key = 'best:' + levelKey(play.current);
+    const best = store.get(key, null);
+    if (!play.helped && (best == null || n < best)) store.set(key, n);
+    const tail = play.min != null ? (n === play.min ? ' 최소 수로 풀었어요.' : ` 최소는 ${play.min}수예요.`) : '';
+    const again = ['다시 하기', () => { v.reset(); hideBanner(banner); }];
+    const nextAct = play.list === 'gen' ? ['새로 만들기', () => { switchTab('gen'); $('gMake').click(); }]
+      : play.list === 'edit' ? ['에디터로 돌아가기', () => switchTab('edit')]
+      : ['다음 스테이지', () => nextLevel()];
+    showBanner(banner, `완성! ${n}수.${tail}`, { actions: [nextAct, again] });
+    renderLevelList();
+  } else if (v.deadCells().length) {
+    showBanner(banner, '목표와 다른 색이 섞였어요. 이 상태로는 완성할 수 없어요.', { warn: true, actions: [['되돌리기', () => { v.undo(); hideBanner(banner); }]] });
+  } else hideBanner(banner);
+}
+function levelKey(lv) { return lv.cells.map(c => c.join('.')).join('|'); }
+
+function loadPlay(level, { helped = false } = {}) {
+  play.current = level; play.helped = helped; play.min = null;
+  const tok = ++play.token;
+  $('lvName').textContent = level.name || '스테이지';
+  hideBanner($('playBanner'));
+  play.view.load(level);
+  $('minInfo').textContent = '최소 계산 중';
+  $('orderInfo').textContent = '';
+  later(() => {
+    if (tok !== play.token) return;
+    const b = play.view.board;
+    const res = solve(b, b.init, 400000);
+    if (res.path) {
+      play.min = res.path.length;
+      $('minInfo').textContent = `최소 ${res.path.length}수`;
+      $('orderInfo').textContent = orderText(orderSensitivity(b, b.init, res.path));
+    } else $('minInfo').textContent = res.limited ? '최소 수 계산 한도 초과' : '풀이 없음';
+  });
+  renderLevelList();
+}
+function renderLevelList() {
+  const mk = (wrap, arr, kind) => {
+    wrap.innerHTML = '';
+    arr.forEach((lv, i) => {
+      const b = document.createElement('button');
+      b.className = 'lv';
+      b.setAttribute('aria-current', play.current && play.list === kind && levelKey(play.current) === levelKey(lv) ? 'true' : 'false');
+      const best = store.get('best:' + levelKey(lv), null);
+      const name = document.createElement('b'); name.style.fontWeight = 500; name.textContent = `${i + 1}. ${lv.name}`;
+      const sp = document.createElement('span');
+      if (best != null) { sp.className = 'done'; sp.textContent = `✓ ${best}수`; }
+      b.append(name, sp);
+      b.onclick = () => { play.list = kind; play.idx = i; loadPlay(lv); };
+      if (kind === 'custom') b.oncontextmenu = ev => { ev.preventDefault(); if (confirm(`'${lv.name}'을(를) 삭제할까요?`)) { const c = store.get('custom', []); c.splice(i, 1); store.set('custom', c); renderLevelList(); } };
+      wrap.appendChild(b);
+    });
+  };
+  mk($('levelList'), LEVELS, 'builtin');
+  const custom = store.get('custom', []);
+  $('customWrap').hidden = !custom.length;
+  mk($('customList'), custom, 'custom');
+}
+function nextLevel() {
+  const arr = play.list === 'custom' ? store.get('custom', []) : LEVELS;
+  if (play.idx + 1 < arr.length) { play.idx++; loadPlay(arr[play.idx]); }
+  else hideBanner($('playBanner'));
+}
+$('btnUndo').onclick = () => { play.view.undo(); hideBanner($('playBanner')); };
+$('btnReset').onclick = () => { play.view.reset(); hideBanner($('playBanner')); };
+$('btnHint').onclick = async () => {
+  const v = play.view; if (v.busy) return;
+  const res = await later(() => solve(v.board, v.state, 400000));
+  if (res.path && res.path.length) {
+    play.helped = true;
+    const m = v.board.moves[res.path[0]];
+    const cell = m.order[m.order.length - 1];
+    v.sel = cell; v.drawOverlay(); v.preview(m.dir, cell);
+    showBanner($('playBanner'), `${DIRS[m.dir].clock}시 방향으로 이 줄을 그어 보세요. 여기서 ${res.path.length}수 남았어요.`);
+  } else if (res.path) showBanner($('playBanner'), '이미 완성된 상태예요.');
+  else if (res.limited) showBanner($('playBanner'), '경우의 수가 너무 많아 힌트를 계산하지 못했어요.', { warn: true });
+  else showBanner($('playBanner'), '이 상태에서는 풀 수 없어요. 되돌려 보세요.', { warn: true, actions: [['되돌리기', () => { v.undo(); hideBanner($('playBanner')); }]] });
+};
+$('btnSolve').onclick = async () => {
+  const v = play.view; if (v.busy) return;
+  const res = await later(() => solve(v.board, v.state, 400000));
+  if (!res.path) { showBanner($('playBanner'), res.limited ? '경우의 수가 너무 많아 풀이를 계산하지 못했어요.' : '이 상태에서는 풀 수 없어요. 처음부터 다시 해 보세요.', { warn: true }); return; }
+  play.helped = true;
+  hideBanner($('playBanner'));
+  for (const mi of res.path) { await v.commit(v.board.moves[mi]); await new Promise(r => setTimeout(r, 250)); }
+};
+$('optHints').onchange = e => { opts.hints = e.target.checked; play.view.update(); };
+$('optSym').onchange = e => { opts.sym = e.target.checked; play.view.update(); if (edit.view) edit.redraw(); };
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select')) return;
+  if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); activeView()?.undo(); return; }
+  const v = activeView();
+  if (v && v.key(e)) e.preventDefault();
+});
+function activeView() {
+  const tab = document.querySelector('nav.tabs [aria-selected="true"]').dataset.tab;
+  if (tab === 'play') return play.view;
+  if (tab === 'edit' && edit.recording) return edit.recView;
+  return null;
+}
+
+// 색 섞기 표
+(() => {
+  const rows = [[[1, 2], 3], [[2, 4], 6], [[1, 4], 5], [[1, 2, 4], 7]];
+  const chip = m => `<span class="chip" style="background:${fillOf(m)}" title="${COLOR_NAMES[m]}"></span>`;
+  $('mixTable').innerHTML = rows.map(([a, r]) => `<span class="chips">${a.map(chip).join('+')} =</span><span class="chips">${chip(r)} ${COLOR_NAMES[r]}</span>`).join('') +
+    `<span class="chips">${chip(3)}+${chip(4)} =</span><span class="chips">${chip(7)} 검정 (세 원색이 모두 섞임)</span>`;
+})();
+
+// ===== 탭 =====
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+function switchTab(t) {
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== t);
+  if (t === 'edit') edit.redraw();
+  if (t === 'play') play.view.update();
+}
+
+// ===== 랜덤 생성 =====
+const gen = { level: null, count: 0 };
+[['gSeeds', 'gSeedsV'], ['gMoves', 'gMovesV']].forEach(([a, b]) => { $(a).oninput = () => $(b).textContent = $(a).value; });
+$('gMake').onclick = async () => {
+  $('gMake').disabled = true; $('gResult').textContent = '만드는 중…';
+  const o = {
+    shape: $('gShape').value, seeds: +$('gSeeds').value, moves: +$('gMoves').value,
+    palette: $('gPalette').value.split(',').map(Number), allowBlack: $('gBlack').checked,
+    maxOrderRatio: +$('gOrder').value,
+  };
+  o.minSolve = o.moves;
+  const rand = rng((Date.now() ^ (Math.random() * 1e9)) >>> 0);
+  const g = await later(() => { const t0 = Date.now(); let r = null; while (!r && Date.now() - t0 < 4000) r = generate(o, rand); return r; });
+  $('gMake').disabled = false;
+  if (!g) { $('gResult').textContent = '조건에 맞는 스테이지를 찾지 못했어요. 목표 수를 줄이거나 순서 조건을 완화해 보세요.'; return; }
+  gen.count++;
+  gen.level = { name: `랜덤 ${gen.count}`, cells: g.level.cells };
+  const cells = g.level.cells.map(c => ({ q: c[0], r: c[1] }));
+  drawStatic($('genStart'), cells, g.level.cells.map(c => c[2]));
+  drawStatic($('genTarget'), cells, g.level.cells.map(c => c[3]));
+  $('genInfo').textContent = `${cells.length}칸, 최소 ${g.min}수`;
+  $('gResult').textContent = g.order ? orderText(g.order) : '순서 민감도는 8수 이상이면 계산하지 않아요.';
+  $('gPlay').disabled = false; $('gEdit').disabled = false;
+};
+$('gPlay').onclick = () => { if (!gen.level) return; play.list = 'gen'; switchTab('play'); loadPlay(gen.level); };
+$('gEdit').onclick = () => { if (!gen.level) return; edit.fromLevel(gen.level); switchTab('edit'); };
+
+// ===== 에디터 =====
+const EDIT_R = 4;
+const edit = {
+  cells: new Map(), // "q,r" -> [init, target]
+  layer: 0, paint: 1, recording: false, recView: null,
+  svg: $('editBoard'),
+  positions() { const out = []; for (let q = -EDIT_R; q <= EDIT_R; q++) for (let r = -EDIT_R; r <= EDIT_R; r++) if (Math.abs(q + r) <= EDIT_R) out.push([q, r]); return out; },
+  toLevel() {
+    const cells = [...this.cells.entries()].map(([k, v]) => { const [q, r] = k.split(',').map(Number); return [q, r, v[0], v[1]]; });
+    cells.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+    return { name: $('edName').value.trim() || '새 스테이지', cells };
+  },
+  fromLevel(lv) {
+    this.cells.clear();
+    // 편집 범위 안으로 옮기기
+    const qs = lv.cells.map(c => c[0]), rs = lv.cells.map(c => c[1]);
+    const cq = Math.round((Math.min(...qs) + Math.max(...qs)) / 2), cr = Math.round((Math.min(...rs) + Math.max(...rs)) / 2);
+    for (const [q, r, a, b] of lv.cells) this.cells.set(`${q - cq},${r - cr}`, [a, b]);
+    $('edName').value = lv.name || '새 스테이지';
+    $('edResult').textContent = '';
+  },
+  redraw() {
+    if (this.recording) return;
+    const svg = this.svg, s = 30;
+    svg.innerHTML = '';
+    const hid = ensureDefs(svg);
+    const pos = this.positions();
+    fitView(svg, pos.map(([q, r]) => px(q, r, s)), s, 0.2);
+    const lead = [];
+    for (const [q, r] of pos) {
+      const [x, y] = px(q, r, s);
+      const v = this.cells.get(`${q},${r}`);
+      const g = el('g', { 'data-q': q, 'data-r': r, style: 'cursor:pointer' }, svg);
+      if (!v) { el('polygon', { points: hexPts(x, y, s * 0.94), class: 'ghost-cell', 'stroke-width': 1.5 }, g); continue; }
+      const m = v[this.layer], other = v[1 - this.layer];
+      el('polygon', { points: hexPts(x, y, s), style: `fill:${fillOf(m)}` }, g);
+      if (m === 7) el('polygon', { points: hexPts(x, y, s), fill: `url(#${hid})`, 'pointer-events': 'none' }, g);
+      if (other !== m) el('polygon', { points: hexPts(x, y, s * 0.3), class: 'mark', 'stroke-width': 1.8, style: `fill:${fillOf(other)}` }, g);
+      if (opts.sym && m) { const t = el('text', { x, y, class: 'sym' + (m === 2 ? ' dark' : ''), 'font-size': 11, 'stroke-width': 2.4 }, g); t.textContent = symOf(m); }
+      lead.push([x, y]);
+    }
+    for (const [x, y] of lead) el('polygon', { points: hexPts(x, y, s), class: 'lead', 'stroke-width': 3.6 }, svg);
+    $('edTitle').textContent = this.layer === 0 ? '시작 상태 칠하기' : '목표 칠하기';
+    $('edCount').textContent = `${this.cells.size}칸`;
+    $('edHow').textContent = '칸을 누르거나 끌어서 선택한 색을 칠합니다. 점선 칸에 칠하면 보드에 칸이 추가되고, 작은 육각형은 다른 층의 색입니다.';
+  },
+  applyPaint(q, r) {
+    const k = `${q},${r}`;
+    if (this.paint === -1) { if (this.cells.delete(k)) this.redraw(); return; }
+    const v = this.cells.get(k) || [0, 0];
+    if (v[this.layer] === this.paint && this.cells.has(k)) return;
+    v[this.layer] = this.paint;
+    this.cells.set(k, v);
+    this.redraw();
+  },
+};
+// 팔레트
+(() => {
+  const items = [[-1, '칸 없애기'], [0, '빈칸'], [1, '빨강'], [2, '노랑'], [4, '파랑'], [3, '주황'], [6, '초록'], [5, '보라'], [7, '검정']];
+  const wrap = $('palette');
+  items.forEach(([m, name]) => {
+    const b = document.createElement('button');
+    b.className = 'swatch'; b.title = name; b.setAttribute('aria-label', name);
+    b.setAttribute('aria-pressed', m === edit.paint);
+    const svg = el('svg', { viewBox: '-22 -24 44 48' }, b);
+    if (m === -1) { el('polygon', { points: hexPts(0, 0, 20), class: 'ghost-cell', 'stroke-width': 2, style: 'stroke:var(--ink)' }, svg); el('path', { d: 'M -7 -7 L 7 7 M 7 -7 L -7 7', stroke: 'var(--ink)', 'stroke-width': 2.5 }, svg); }
+    else { el('polygon', { points: hexPts(0, 0, 20), style: `fill:${fillOf(m)}`, stroke: 'var(--lead)', 'stroke-width': 3 }, svg); }
+    b.onclick = () => { edit.paint = m; wrap.querySelectorAll('.swatch').forEach(x => x.setAttribute('aria-pressed', x === b)); $('palName').textContent = `선택: ${name}`; };
+    wrap.appendChild(b);
+  });
+  $('palName').textContent = '선택: 빨강';
+})();
+(() => {
+  let down = false, last = '';
+  const hit = e => {
+    const t = document.elementFromPoint(e.clientX, e.clientY);
+    const g = t && t.closest && t.closest('[data-q]');
+    if (!g || !edit.svg.contains(g)) return;
+    const k = g.dataset.q + ',' + g.dataset.r;
+    if (k === last) return;
+    last = k;
+    edit.applyPaint(+g.dataset.q, +g.dataset.r);
+  };
+  edit.svg.addEventListener('pointerdown', e => { if (edit.recording) return; down = true; last = ''; hit(e); });
+  edit.svg.addEventListener('pointermove', e => { if (down && !edit.recording) hit(e); });
+  window.addEventListener('pointerup', () => { down = false; });
+})();
+$('layerInit').onclick = () => { edit.layer = 0; $('layerInit').setAttribute('aria-pressed', true); $('layerTarget').setAttribute('aria-pressed', false); edit.redraw(); };
+$('layerTarget').onclick = () => { edit.layer = 1; $('layerInit').setAttribute('aria-pressed', false); $('layerTarget').setAttribute('aria-pressed', true); edit.redraw(); };
+
+function setRecording(on) {
+  edit.recording = on;
+  $('recStart').hidden = on; $('recUndo').hidden = !on; $('recCancel').hidden = !on; $('recSave').hidden = !on;
+  $('edPaintBox').style.opacity = on ? .4 : 1; $('edPaintBox').style.pointerEvents = on ? 'none' : '';
+  hideBanner($('edBanner'));
+  if (on) {
+    const lv = edit.toLevel();
+    if (lv.cells.length < 2) { edit.recording = false; setRecording(false); $('edResult').textContent = '칸을 두 개 이상 만든 뒤 시작하세요.'; return; }
+    lv.cells.forEach(c => c[3] = 0);
+    edit.recView = new BoardView(edit.svg, { checkTarget: false, onChange: v => { $('edCount').textContent = `${v.history.length}획`; $('recUndo').disabled = !v.history.length; } });
+    edit.recView.load(lv);
+    $('edTitle').textContent = '획을 그어 목표 만들기';
+    $('edHow').textContent = '플레이 화면과 똑같이 긋습니다. 원하는 모습이 되면 목표로 저장하세요.';
+  } else {
+    edit.recView = null;
+    edit.svg.replaceWith(edit.svg.cloneNode(false)); // 이벤트 정리
+    edit.svg = $('editBoard');
+    bindEditPaint();
+    edit.redraw();
+  }
+}
+function bindEditPaint() {
+  let down = false, last = '';
+  const hit = e => {
+    const t = document.elementFromPoint(e.clientX, e.clientY);
+    const g = t && t.closest && t.closest('[data-q]');
+    if (!g || !edit.svg.contains(g)) return;
+    const k = g.dataset.q + ',' + g.dataset.r;
+    if (k === last) return;
+    last = k; edit.applyPaint(+g.dataset.q, +g.dataset.r);
+  };
+  edit.svg.addEventListener('pointerdown', e => { if (edit.recording) return; down = true; last = ''; hit(e); });
+  edit.svg.addEventListener('pointermove', e => { if (down && !edit.recording) hit(e); });
+  window.addEventListener('pointerup', () => { down = false; });
+}
+$('recStart').onclick = () => setRecording(true);
+$('recUndo').onclick = () => edit.recView && edit.recView.undo();
+$('recCancel').onclick = () => setRecording(false);
+$('recSave').onclick = () => {
+  const v = edit.recView; if (!v || v.busy) return;
+  v.board.cells.forEach((c, i) => { const k = `${c.q},${c.r}`; const e = edit.cells.get(k); if (e) e[1] = v.state[i]; });
+  const n = v.history.length;
+  setRecording(false);
+  $('layerTarget').click();
+  $('edResult').textContent = `${n}획으로 만든 모습을 목표로 저장했어요. 풀이 검사로 더 짧은 풀이가 있는지 확인해 보세요.`;
+};
+$('edCheck').onclick = async () => {
+  const lv = edit.toLevel();
+  if (lv.cells.length < 2) { $('edResult').textContent = '칸이 두 개 이상 필요해요.'; return; }
+  $('edResult').textContent = '검사 중…';
+  const out = await later(() => { const b = buildBoard(lv); const r = solve(b, b.init, 600000); return { b, r }; });
+  const { b, r } = out;
+  if (r.path) {
+    if (!r.path.length) { $('edResult').textContent = '시작 상태가 이미 목표와 같아요.'; return; }
+    const os = orderSensitivity(b, b.init, r.path);
+    $('edResult').textContent = `풀 수 있어요. 최소 ${r.path.length}수, 탐색한 상태 ${r.explored.toLocaleString()}개. ${orderText(os)}`;
+  } else if (r.limited) $('edResult').textContent = '경우의 수가 너무 많아 끝까지 검사하지 못했어요. 칸 수나 시작 색을 줄여 보세요.';
+  else $('edResult').textContent = r.dead ? '시작 상태부터 목표와 맞지 않는 칸이 있어요. 목표 색에 없는 색이 시작 칸에 들어가 있는지 확인하세요.' : '풀 수 없는 스테이지예요.';
+};
+$('edPlay').onclick = () => { const lv = edit.toLevel(); if (lv.cells.length < 2) { $('edResult').textContent = '칸이 두 개 이상 필요해요.'; return; } play.list = 'edit'; switchTab('play'); loadPlay(lv); };
+$('edSave').onclick = () => {
+  const lv = edit.toLevel(); if (lv.cells.length < 2) { $('edResult').textContent = '칸이 두 개 이상 필요해요.'; return; }
+  const c = store.get('custom', []); c.push(lv); store.set('custom', c); renderLevelList();
+  $('edResult').textContent = `'${lv.name}'을(를) 플레이 화면의 내 스테이지에 저장했어요. 목록에서 마우스 오른쪽 버튼으로 삭제할 수 있어요.`;
+};
+$('edClear').onclick = () => { if (!edit.cells.size || confirm('보드를 모두 지울까요?')) { edit.cells.clear(); edit.redraw(); $('edResult').textContent = ''; } };
+$('edExport').onclick = () => { $('edCode').value = JSON.stringify(edit.toLevel()); $('edCode').select(); try { navigator.clipboard.writeText($('edCode').value); $('edResult').textContent = '코드를 만들고 클립보드에 복사했어요.'; } catch (e) { $('edResult').textContent = '코드를 만들었어요. 직접 복사하세요.'; } };
+$('edImport').onclick = () => {
+  try {
+    const lv = JSON.parse($('edCode').value);
+    if (!Array.isArray(lv.cells) || !lv.cells.every(c => Array.isArray(c) && c.length === 4 && c.every(Number.isInteger) && c[2] >= 0 && c[2] <= 7 && c[3] >= 0 && c[3] <= 7)) throw new Error();
+    edit.fromLevel(lv); edit.redraw(); $('edResult').textContent = '코드를 불러왔어요.';
+  } catch (e) { $('edResult').textContent = '코드 형식이 올바르지 않아요. {"name": ..., "cells": [[q, r, 시작색, 목표색], ...]} 형식이어야 합니다.'; }
+};
+
+// 시작
+edit.fromLevel(GRAPE); $('edName').value = '새 스테이지';
+loadPlay(LEVELS[0]);
+</script>
+</body>
+</html>
