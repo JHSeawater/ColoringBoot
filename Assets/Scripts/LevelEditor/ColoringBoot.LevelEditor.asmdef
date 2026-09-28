@@ -1,0 +1,21 @@
+{
+    "name": "ColoringBoot.LevelEditor",
+    "rootNamespace": "ColoringBoot.LevelEditor",
+    "references": [
+        "ColoringBoot.Core",
+        "ColoringBoot.Game",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_EDITOR"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -38,6 +38,8 @@ namespace ColoringBoot.Game
         [SerializeField] private float _fitMargin = 1.8f;
         [Tooltip("켜면 현재 색 대신 목표 색을 그린다 — 목표 그림 썸네일용(입력 · 마커 · 막힘 표시 없음)")]
         [SerializeField] private bool _showTarget;
+        [Tooltip("끄면 목표 마커 · 막힘 표시를 그리지 않는다 — 레벨 에디터의 획 기록용(목표가 아직 없다)")]
+        [SerializeField] private bool _showJudgement = true;
         [SerializeField] private Color _symbolLight = Color.white;
         [SerializeField] private Color _symbolDark = new Color32(0x1C, 0x22, 0x2C, 0xFF);
 
@@ -122,8 +124,8 @@ namespace ColoringBoot.Game
                 PaintColor color = _showTarget ? target : _session.ColorAt(i);
                 _cells[i].SetFill(ColorOf(color));
                 // 목표 마커: 아직 목표 색이 아니고 목표가 빈칸이 아닐 때 (프로토타입과 같음)
-                _cells[i].SetMarker(color != target && target != PaintColor.Empty, ColorOf(target));
-                _cells[i].SetDead(!_showTarget && _session.IsDeadCell(i));
+                _cells[i].SetMarker(_showJudgement && color != target && target != PaintColor.Empty, ColorOf(target));
+                _cells[i].SetDead(_showJudgement && !_showTarget && _session.IsDeadCell(i));
                 // 노랑 · 빈칸처럼 밝은 칸은 어두운 기호
                 _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", color == PaintColor.Yellow ? _symbolDark : _symbolLight);
             }

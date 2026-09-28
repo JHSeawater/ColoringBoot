@@ -13,9 +13,8 @@ namespace ColoringBoot.Game
     {
         private const string StageQuery = "stage=";
 
-        [SerializeField] private TextAsset _stageCode;
-        [Tooltip("주소 ?stage=<파일 이름>으로 열 수 있는 스테이지 (QA용 — 스테이지 선택은 Phase 4)")]
-        [SerializeField] private TextAsset[] _queryStages;
+        [Tooltip("스테이지 목록 — 첫 스테이지를 열고, 주소 ?stage=<파일 이름>이 있으면 그것을 연다 (스테이지 선택은 Phase 4)")]
+        [SerializeField] private StageCatalog _catalog;
         [SerializeField] private ColorPalette _palette;
         [SerializeField] private BoardView _boardView;
         [SerializeField] private BoardView _targetView;
@@ -59,21 +58,20 @@ namespace ColoringBoot.Game
             _minMoves = stage.MinMoves;
         }
 
-        // 주소에 ?stage=<이름>이 있으면 그 스테이지, 아니면 기본 스테이지 (WebGL만 — 에디터는 주소가 비어 있다)
+        // 주소에 ?stage=<이름>이 있으면 목록에서 그 스테이지, 아니면 목록의 첫 스테이지 (WebGL만 — 에디터는 주소가 비어 있다)
         private TextAsset ChooseStage()
         {
+            TextAsset first = _catalog.Stages[0];
             string url = Application.absoluteURL;
             int start = url.IndexOf(StageQuery, StringComparison.Ordinal);
-            if (start < 0) return _stageCode;
+            if (start < 0) return first;
             string name = url.Substring(start + StageQuery.Length);
             int end = name.IndexOfAny(new[] { '&', '#' });
             if (end >= 0) name = name.Substring(0, end);
-            foreach (TextAsset stage in _queryStages)
-            {
-                if (string.Equals(stage.name, name, StringComparison.OrdinalIgnoreCase)) return stage;
-            }
-            Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 기본 스테이지를 엽니다", this);
-            return _stageCode;
+            TextAsset stage = _catalog.Find(name);
+            if (stage != null) return stage;
+            Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 첫 스테이지를 엽니다", this);
+            return first;
         }
 
         private void OnEnable()

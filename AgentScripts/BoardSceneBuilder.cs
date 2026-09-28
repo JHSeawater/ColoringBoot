@@ -1,4 +1,6 @@
+using System.Linq;
 using ColoringBoot.Game;
+using ColoringBoot.LevelEditor;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -18,6 +20,9 @@ public static class BoardSceneBuilder
     private const string OldScenePath = "Assets/Scenes/SampleScene.unity";
     private const string ScenePath = "Assets/Scenes/Board.unity";
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
+    private const string CatalogPath = "Assets/Data/StageCatalog.asset";
+    private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
+    private static readonly string[] PrototypeStages = { "Grape", "TwoColors", "BrushChanges", "Honeycomb", "Crossing", "Stain", "MakeBlack", "Hive", "LastStroke" };
 
     // 프로토타입 라이트 테마
     private static readonly Color Lead = Hex("#1A1D23");    // 칸 테두리 · 마커 테두리
@@ -70,6 +75,89 @@ public static class BoardSceneBuilder
         Object.DestroyImmediate(button);
 
         return $"프리팹 → {CellPrefabPath}, {ButtonPrefabPath}";
+    }
+
+    // 스테이지 목록: 프로토타입 스테이지 9개(프로토타입 순서) 중 빠진 것만 채운다 — 레벨 에디터가 추가한 스테이지는 지우지 않는다
+    public static string BuildCatalog()
+    {
+        var catalog = AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath);
+        if (catalog == null)
+        {
+            catalog = ScriptableObject.CreateInstance<StageCatalog>();
+            AssetDatabase.CreateAsset(catalog, CatalogPath);
+        }
+        var so = new SerializedObject(catalog);
+        SerializedProperty stages = so.FindProperty("_stages");
+        int added = 0;
+        foreach (string name in PrototypeStages)
+        {
+            var stage = AssetDatabase.LoadAssetAtPath<TextAsset>($"Assets/Data/Stages/{name}.json")
+                ?? throw new System.InvalidOperationException($"{name}.json 없음 — AgentScripts/Refresh.cs 먼저 실행");
+            if (catalog.Stages.Contains(stage)) continue;
+            stages.arraySize++;
+            stages.GetArrayElementAtIndex(stages.arraySize - 1).objectReferenceValue = stage;
+            added++;
+        }
+        so.ApplyModifiedPropertiesWithoutUndo();
+        AssetDatabase.SaveAssets();
+        return $"목록 {catalog.Stages.Count}개(추가 {added}) → {CatalogPath}";
+    }
+
+    // 레벨 에디터 씬 (에디터 전용 — 빌드 씬 목록에 넣지 않는다). 다 만들면 보드 씬을 다시 연다
+    public static string BuildEditorScene()
+    {
+        Scene scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(EditorScenePath) != null
+            ? EditorSceneManager.OpenScene(EditorScenePath)
+            : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        foreach (GameObject root in scene.GetRootGameObjects()) Object.DestroyImmediate(root);
+
+        var cameraObject = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
+        cameraObject.tag = "MainCamera";
+        cameraObject.transform.position = new Vector3(0f, 0f, -10f);
+        var camera = cameraObject.GetComponent<Camera>();
+        camera.orthographic = true;
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = Hex("#D9DFDC");
+
+        new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+        var canvasObject = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+        var scaler = canvasObject.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080f, 1920f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+
+        var cellPrefab = AssetDatabase.LoadAssetAtPath<CellView>(CellPrefabPath);
+        var buttonPrefab = AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath);
+
+        // 위쪽 절반 = 보드 (아래쪽은 IMGUI 조작 패널)
+        var gridArea = NewUI("PaintGrid", canvasObject);
+        Stretch(gridArea, new Vector2(40f, 940f), new Vector2(-40f, -40f));
+        gridArea.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+        var grid = gridArea.AddComponent<PaintGridView>();
+        SetRefs(grid, ("_cellPrefab", cellPrefab));
+
+        // 획 기록용 게임 보드 원본 — 꺼 둔 채로, 기록할 때 복제해서 쓴다
+        var recordArea = NewUI("RecordBoardTemplate", canvasObject);
+        Stretch(recordArea, new Vector2(40f, 940f), new Vector2(-40f, -40f));
+        recordArea.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+        var recordView = recordArea.AddComponent<BoardView>();
+        SetRefs(recordView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
+        SetValues(recordView, ("_showJudgement", false));
+        recordArea.SetActive(false);
+
+        var editor = new GameObject("LevelEditor", typeof(LevelEditorController));
+        SetRefs(editor.GetComponent<LevelEditorController>(),
+            ("_grid", grid),
+            ("_recordTemplate", recordView),
+            ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
+            ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
+            ("_gameFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath)));
+
+        EditorSceneManager.SaveScene(scene, EditorScenePath);
+        int roots = scene.rootCount;
+        EditorSceneManager.OpenScene(ScenePath);
+        return $"에디터 씬 → {EditorScenePath} (루트 {roots}개, 빌드 목록 {EditorBuildSettings.scenes.Length}개 — 넣지 않음)";
     }
 
     public static string BuildScene()
@@ -163,7 +251,7 @@ public static class BoardSceneBuilder
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         var controller = puzzle.GetComponent<PuzzleController>();
         SetRefs(controller,
-            ("_stageCode", AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/Stages/Grape.json")),
+            ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
             ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
             ("_boardView", boardView),
             ("_targetView", targetView),
@@ -176,13 +264,6 @@ public static class BoardSceneBuilder
             ("_stuckUndoButton", stuckUndoButton),
             ("_clearBanner", clearBanner),
             ("_stuckBanner", stuckBanner));
-        var so = new SerializedObject(controller);
-        SerializedProperty stages = so.FindProperty("_queryStages");
-        stages.arraySize = 1;
-        stages.GetArrayElementAtIndex(0).objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/Stages/Hive.json")
-            ?? throw new System.InvalidOperationException("Hive.json 없음 — AgentScripts/Refresh.cs 먼저 실행");
-        so.ApplyModifiedPropertiesWithoutUndo();
-
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";

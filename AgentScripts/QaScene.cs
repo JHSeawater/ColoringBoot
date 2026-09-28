@@ -35,17 +35,13 @@ public static class QaScene
             Expect(text.font == font, $"폰트 {text.transform.parent.name}/{text.name}");
 
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
-            "_stageCode", "_palette", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
+            "_catalog", "_palette", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
             "_undoButton", "_restartButton", "_symbolsButton", "_stuckUndoButton", "_clearBanner", "_stuckBanner");
-        var controller = new SerializedObject(Object.FindAnyObjectByType<PuzzleController>());
-        SerializedProperty stages = controller.FindProperty("_queryStages");
-        Expect(stages.arraySize > 0, "_queryStages 비어 있지 않음");
-        for (int i = 0; i < stages.arraySize; i++)
-        {
-            var stage = (TextAsset)stages.GetArrayElementAtIndex(i).objectReferenceValue;
-            Expect(stage != null && Stage.Parse(stage.text).Cells.Count > 0, $"_queryStages[{i}] 읽힘");
-        }
-        Expect(Stage.Parse(((TextAsset)controller.FindProperty("_stageCode").objectReferenceValue).text).Cells.Count == 10, "_stageCode 포도 10칸");
+        var catalog = (StageCatalog)new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_catalog").objectReferenceValue;
+        Expect(catalog.Stages.Count >= 9, "목록 9개 이상");
+        for (int i = 0; i < catalog.Stages.Count; i++)
+            Expect(catalog.Stages[i] != null && Stage.Parse(catalog.Stages[i].text).Cells.Count > 0, $"목록[{i}] 읽힘");
+        Expect(catalog.Stages[0].name == "Grape" && Stage.Parse(catalog.Stages[0].text).Cells.Count == 10, "목록 첫 스테이지 = 포도 10칸");
 
         CheckRefs(Object.FindAnyObjectByType<SoundController>(), Expect, "_toggleButton", "_toggleLabel");
         CheckRefs(Object.FindAnyObjectByType<MixTableView>(), Expect, "_chipSprite");

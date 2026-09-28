@@ -8,6 +8,18 @@
 
 ---
 
+### 📅 [2026-09-29] Phase 3 (3) — 스테이지 목록 · 레벨 에디터
+
+* **StageCatalog** (Game SO): JSON TextAsset 순서 목록 · 파일 이름으로 찾기. `PuzzleController`는 목록 첫 스테이지 · `?stage=`를 목록에서 연다(`_stageCode` · `_queryStages` 대체). `BoardSceneBuilder.BuildCatalog` — 프로토타입 9개 중 빠진 것만 채움(다시 돌려도 에디터 저장분 유지, 두 번째 실행 "추가 0" 확인).
+* **Core `StageWriter`**: Stage → 스테이지 코드(JSON 한 줄, 필드 순서 name · cells · palette · minMoves, 따옴표 · 역슬래시 · 제어 문자 이스케이프). `StageWriterTests` 10/10 — 스테이지 파일 9개를 읽고 다시 쓰면 글자 하나까지 같음 + 이스케이프 왕복.
+* **레벨 에디터** (`ColoringBoot.LevelEditor` — `UNITY_EDITOR` 조건 어셈블리: 빌드 제외, 씬에 붙일 수 있음 / `LevelEditor.unity` — 빌드 목록 제외):
+  * `PaintGridView` — 반지름 4 육각 격자(61자리, 프로토타입 에디터와 같음), 있는 칸 = 층 색 + 다른 층 색 마커, 없는 자리 = 흐리게, 누르고 끌며 칠하기(칸 없애기 · 빈칸 · 7색). 40칸 상한(GDD §6).
+  * `LevelEditorController` — IMGUI 패널(에디터 도구라 게임 폰트 아틀라스와 무관): 시작/목표 층 · 칠할 색 · 획 긋기(게임 `BoardView`를 복제해 게임과 같은 드래그 · 미리보기, `BoardView._showJudgement` 끔) → 목표로 저장/취소 · 풀이 검사 · 랜덤 생성(모양 · 시작 색 칸 · 목표 수 · 색 · 순서 · 검정, 4초 · 시드 표시) · 이름 · 파일 이름(영문) · 팔레트 이름 · 목록에서 불러오기 · 저장(솔버로 `minMoves`, 풀 수 없으면 거부, 새 파일이면 목록 끝에 등록, 게임 폰트에 없는 글자 경고). 불러올 때 프로토타입처럼 가운데로 옮김.
+* **에디터 플레이 QA** (`AgentScripts/LevelEditorQa.cs` — 격자 칠하기 · 획 드래그는 실제 포인터 이벤트, IMGUI 버튼 동작은 리플렉션): 포도 불러오기 → 모두 지우기 → 4칸 칠하기(빨강 · 빈칸 2 · 파랑) → 획 2개 기록 → 목표 저장 → 풀이 검사 "최소 2수, 탐색 4개, 2가지 중 1가지" → `EditorDemo.json` 저장(`minMoves` 2, 목록 10번째, "디 · 험" 폰트 경고) → 폰트 재생성(248자 · 1장) · 프리팹 · 두 씬 재구성. 랜덤 생성: 작은 육각형 19칸 · 최소 5수 · 10/120. 패널 글자가 밝은 바탕에 흰색이라 어둡게 고침. EditMode 93/93 · `QaScene` 62항목.
+* **남은 일**: WebGL 빌드에서 `?stage=EditorDemo`로 에디터 스테이지를 최소 수로 클리어(사용자), `EditorDemo`를 목록에 둘지 결정.
+
+---
+
 ### 📅 [2026-09-29] Phase 3 (2) — 랜덤 생성기
 
 * **Core**: `SeededRandom`(프로토타입 `rng` = mulberry32를 uint 산술로 — JS의 `Math.imul` · `>>>`와 같은 결과), `BoardShape`(작은 · 큰 육각형 · 마름모 · 삼각형 · 불규칙 · 아무거나), `GeneratorOptions`(기본값 = 프로토타입), `Generator.Generate` — 모양 → 시작 색 칸 → 무작위 획(색이 바뀐 획만 셈) → 검정 · 칠한 비율 거르기 → 솔버(상한 12만) → 최소 수 · 순서 비율 거르기. 난수를 쓰는 순서까지 프로토타입과 같게(불규칙 모양의 집합은 삽입 순서 목록으로).

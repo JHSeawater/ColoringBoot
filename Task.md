@@ -162,13 +162,13 @@
 - [x] [Code] 순서 민감도 — 최적 풀이의 순서 바꾸기(7수 이하) — `Solver.MeasureOrder`, 포도 8/120
 - [x] [Editor] 프로토타입 스테이지 9개 이식(포도 + 8개) — `Assets/Data/Stages/*.json`(원문 그대로 + `minMoves`)
 - [x] [QA] 솔버 회귀 — 포도 최소 5수 · 120가지 중 8가지, 프로토타입 스테이지 9개의 최소 수가 프로토타입 엔진(`Prototype/Prototype.html`의 스크립트, Node로 실행 가능) 계산값과 일치. 주의: 순서 민감도는 솔버가 고른 풀이에 따라 다르다(포도의 5수 풀이 3가지 = 8 · 6 · 2/120, 기준값 표 — DevelopLog 2026-09-28) — `PrototypeStageRegressionTests` 9/9: 9개 모두 최소 수 · 순서 민감도 · **탐색 상태 수까지** 프로토타입과 일치(수 나열 순서를 프로토타입과 같게 맞춤)
-- [ ] [Code] 레벨 에디터(에디터 전용) — 팔레트 선택 · 칸 추가 · 삭제 · 시작 색 칠하기 · 획 기록으로 목표 만들기 · 저장
-- [ ] [Code] 에디터에서 솔버 실행 · 결과(최소 수 · 순서 민감도) 표시 · `minMoves` 기록
-- [ ] [Editor] 레벨 에디터 씬(`LevelEditor.unity`, 빌드 제외) 구성 · 배선
+- [x] [Code] 레벨 에디터(에디터 전용) — 팔레트 선택 · 칸 추가 · 삭제 · 시작 색 칠하기 · 획 기록으로 목표 만들기 · 저장 — `ColoringBoot.LevelEditor`(UNITY_EDITOR 전용 어셈블리): `PaintGridView`(반지름 4 격자 칠하기) · `LevelEditorController`(IMGUI 패널, 획 기록은 게임 보드 복제 · 팔레트 이름 입력) + Core `StageWriter`(`StageWriterTests` 10/10). 에디터 플레이로 4칸 스테이지 칠하기 → 2획 기록 → 목표 저장 → 저장까지 확인(`AgentScripts/LevelEditorQa.cs`)
+- [x] [Code] 에디터에서 솔버 실행 · 결과(최소 수 · 순서 민감도) 표시 · `minMoves` 기록 — 풀이 검사("최소 2수, 탐색 4개, 2가지 중 1가지") · 저장 시 `minMoves` 기록 · 풀 수 없으면 저장 거부 · 게임 폰트에 없는 글자 경고, 랜덤 생성 패널(모양 · 시작 색 칸 · 목표 수 · 색 · 순서 · 검정)도 동작
+- [x] [Editor] 레벨 에디터 씬(`LevelEditor.unity`, 빌드 제외) 구성 · 배선 — `BoardSceneBuilder.BuildEditorScene`, 빌드 씬 목록은 `Board.unity` 하나 유지
 - [x] [Code] 랜덤 생성기 — 무작위 시작 색 · 무작위 획 → 최소 수 · 순서 민감도로 거르기(GDD §8) — `Generator` · `SeededRandom`(프로토타입 mulberry32) · `BoardShape` 6종, 프로토타입 generate를 난수 사용 순서까지 옮김
 - [x] [QA] 생성기 테스트 — 같은 시드 → 같은 결과, 생성된 스테이지가 조건(최소 수 · 순서 민감도 · 검정 허용)을 만족 — `GeneratorTests` 5/5: 시드 4건(기본 · 불규칙 · 아무 모양 + 섞인 색 + 검정 금지 · 삼각형)이 프로토타입 생성기(Node)와 칸까지 같음
-- [ ] [Code] 게임이 지정한 스테이지 데이터를 불러오기(스테이지 선택 화면은 Phase 4) — `StageCatalog`(첫 스테이지 · `?stage=`), 에디터 저장 시 자동 등록
-- [ ] [Editor] 보드 씬에 불러올 스테이지 지정 배선 — `StageCatalog` 에셋(9개 등록) · 컨트롤러 참조
+- [x] [Code] 게임이 지정한 스테이지 데이터를 불러오기(스테이지 선택 화면은 Phase 4) — `StageCatalog`(첫 스테이지 · `?stage=`), 에디터 저장 시 자동 등록 — 에디터 플레이에서 첫 스테이지 = 포도 확인, 에디터 저장분이 10번째로 등록됨
+- [x] [Editor] 보드 씬에 불러올 스테이지 지정 배선 — `StageCatalog` 에셋(9개 등록) · 컨트롤러 참조 — `BoardSceneBuilder.BuildCatalog`(빠진 것만 채움 — 다시 돌려도 에디터 저장분 유지), `QaScene` 62항목 통과
 - [ ] [QA] 에디터로 만든 스테이지를 게임에서 플레이 · 솔버 최소 수로 클리어 가능 확인
 
 ---

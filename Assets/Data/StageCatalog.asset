@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7babc3c5a5371641a14e53e076957f7, type: 3}
+  m_Name: StageCatalog
+  m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.StageCatalog
+  _stages:
+  - {fileID: 4900000, guid: ac8040a1cfc475e419e3f547d17ce62d, type: 3}
+  - {fileID: 4900000, guid: e0a9a4c24d3a6cc4eba36eba9f79db43, type: 3}
+  - {fileID: 4900000, guid: 6fc7bb16a6217704ca536cd49e967e48, type: 3}
+  - {fileID: 4900000, guid: df460ab1f936a8f49aa37beec904de59, type: 3}
+  - {fileID: 4900000, guid: caf8480d57761aa4782f71321697a75e, type: 3}
+  - {fileID: 4900000, guid: b028d5f720ac75e4caf05f8967db268f, type: 3}
+  - {fileID: 4900000, guid: 9a397f5a0b399a243bc48cfb40cc29d6, type: 3}
+  - {fileID: 4900000, guid: b9c2652571e42fb4bb61df494e7ce9d2, type: 3}
+  - {fileID: 4900000, guid: c8cc81e056bb77a48a3c723805061574, type: 3}
+  - {fileID: 4900000, guid: b325448cdff1d1843a5948e455eec059, type: 3}
