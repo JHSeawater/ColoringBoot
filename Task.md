@@ -1,7 +1,7 @@
 # 프로젝트 작업 목록 (Task List)
 
 > 기획 근거는 `GDD.md`(무엇/왜), 작업 규칙 · 아키텍처 · 기술 스펙은 `CLAUDE.md`(TDD 없음 — CLAUDE.md §0), 작업 기록은 `DevelopLog.md`.
-> **현재 위치: Phase 1 (코어 로직 + 포도 플레이)** — Phase 0 완료(2026-09-24, 기준선: 압축 후 7.76 MB · 첫 로딩 약 3초). 1.1 코어 로직 완료(2026-09-28, EditMode 60/60). 다음은 1.2 최소 표현 계층.
+> **현재 위치: Phase 1 (코어 로직 + 포도 플레이)** — Phase 0 완료(2026-09-24, 기준선: 압축 후 7.76 MB · 첫 로딩 약 3초). 1.1 코어 로직 완료(2026-09-28, EditMode 60/60). 1.2 최소 표현 계층 진행 중 — 에디터 플레이 QA까지 완료, 다음은 WebGL 빌드 · 휴대폰 확인 · `/qa-scene`.
 > **이번 학기 목표 (GDD §13)**: 임시 아트로 챕터 1을 끝까지 플레이할 수 있는 WebGL 빌드 + 동아리원 플레이테스트 = **Phase 0~5**.
 > 최초 작성: 2026-09-24 (Labyrinth Task.md 체계 이식) · 개정: 2026-09-27 (기획 대비 구성 검토 반영 — DevelopLog) · 2026-09-28 (색 팔레트 · 문서 정합성 점검 — DevelopLog)
 
@@ -95,12 +95,15 @@
 
 ### 1.2 최소 표현 계층
 
-- [ ] [Editor] `ColoringBoot.Game` asmdef 생성(`ColoringBoot.Core` 참조) — CLAUDE.md §3
-- [ ] [Code] 보드 렌더링 — 육각 칸 · 색(기본 팔레트 ScriptableObject에서 읽기, GDD §2.3) · 목표 색 마커(화면 배치 공식, y축 반전 — CLAUDE.md §3) · 보드 크기에 맞춰 화면에 자동 맞춤(스테이지마다 크기가 다름, 최대 40칸 정도 — GDD §6)
-- [ ] [Code] 최소 입력 — 칸 탭 → 여섯 방향 버튼으로 붓질(드래그는 Phase 2)
-- [ ] [Code] 클리어 표시 · 막힘 표시(막힌 칸 강조, 최소) · 처음부터 버튼 — 글자는 영문 · 아이콘(한글 폰트는 Phase 2, CLAUDE.md §8)
-- [ ] [Editor] 보드 씬 구성 · 인스펙터 배선(카메라 · 보드 · 입력 · Canvas Scaler 1080×1920)
-- [ ] [QA] 에디터 플레이로 포도 클리어 — `editor_play` · 상태 실측 · 스크린샷(source=screen)
+- [x] [Editor] `ColoringBoot.Game` asmdef 생성(`ColoringBoot.Core` 참조) — CLAUDE.md §3 — 참조 Core · UnityEngine.UI, 컴파일 에러 0
+- [x] [Asset] 임시 스프라이트 4종(육각 · 육각 테두리 · 원 · 화살표) — `AgentScripts` 빌더로 흰색 PNG 생성, 색은 코드가 입힘(보드는 uGUI — 사용자 결정 2026-09-28) — `Phase1Sprites.cs`, 256px · 4×4 슈퍼샘플링, Sprite · 밉맵 없음 · 무압축 실측
+- [x] [Editor] TMP Essential Resources 임포트 — Resources 폴더는 빌드에 통째로 들어가므로 용량은 1.2 빌드 QA에서 보고 — `Assets/TextMesh Pro` 4.0 MB(LiberationSans SDF 2.2 MB)
+- [x] [Editor] 기본 팔레트 에셋(프로토타입 라이트 테마 7색) · 포도 스테이지 TextAsset(최종 형식은 Phase 3) · 칸 / 방향 버튼 프리팹 — `Assets/Data/Palettes/DefaultPalette.asset` · `Assets/Data/Stages/Grape.json` · `Assets/Prefabs/Cell` · `DirectionButton`, 참조 누락 0(`get_serialized_fields`)
+- [x] [Code] 보드 렌더링 — 육각 칸 · 색(기본 팔레트 ScriptableObject에서 읽기, GDD §2.3) · 목표 색 마커(화면 배치 공식, y축 반전 — CLAUDE.md §3) · 보드 크기에 맞춰 화면에 자동 맞춤(스테이지마다 크기가 다름, 최대 40칸 정도 — GDD §6) — `BoardView` · `CellView` · `ColorPalette`, 에디터 플레이 스크린샷이 프로토타입 포도와 같은 모양
+- [x] [Code] 최소 입력 — 칸 탭 → 여섯 방향 버튼으로 붓질(드래그는 Phase 2). 1칸짜리 줄 방향은 버튼 숨김(`Board.LineLength`, `BoardTests.LineLength_*`) — 초록 칸 선택 시 1·5·7·11시만 표시 실측
+- [x] [Code] 클리어 표시 · 막힘 표시(막힌 칸 강조, 최소) · 처음부터 버튼 — 글자는 영문 · 아이콘(한글 폰트는 Phase 2, CLAUDE.md §8) — `PuzzleController`, 클리어 후 입력 잠금 · 처음부터는 둔 수가 있을 때만
+- [x] [Editor] 보드 씬 구성 · 인스펙터 배선(카메라 · 보드 · 입력 · Canvas Scaler 1080×1920) — `SampleScene` → `Board` 이름 변경 — `Phase1Scene.cs`, Canvas Scaler Expand, 빌드 씬 목록 `Board.unity`(GUID 유지), 씬 저장 · 참조 누락 0
+- [x] [QA] 에디터 플레이로 포도 클리어 — `editor_play` · 상태 실측 · 스크린샷(source=screen) — `Phase1Qa.cs`로 실제 탭 경로(보드 클릭 → 방향 버튼)를 따라 GDD 5수 클리어 · 클리어 후 입력 잠김 · 처음부터 · 막힘(검정 2칸 링 + 안내) 확인, 콘솔 에러 0(DevelopLog 2026-09-28)
 - [ ] [QA] WebGL 빌드 · gh-pages 배포 — 용량 · 첫 로딩을 Phase 0 기준선과 비교. 빌드 뒤 `preloadedAssets` 변경은 빌드 도중 값이라 커밋하지 않음(DevelopLog 2026-09-25)
 - [ ] [QA] (사용자) 휴대폰 WebGL 빌드로 포도 클리어 · 막힘 표시 확인
 - [ ] [Doc] `/qa-scene` 스킬 작성 — 보드 씬 셋업 전수 실측(읽기 전용, CLAUDE.md §7 예정 항목)

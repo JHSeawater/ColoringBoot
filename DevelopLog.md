@@ -8,6 +8,35 @@
 
 ---
 
+### 📅 [2026-09-28] Phase 1.2 (1) — 보드 씬(uGUI) · 에디터 플레이로 포도 클리어
+
+* **사용자 결정**: 보드는 uGUI로 그린다(월드 스프라이트 대신). WebGL용 `Mobile_RPAsset`이 렌더 스케일 0.8 · MSAA 꺼짐이라 월드 공간은 흐려지고 메시 가장자리가 계단진다. 오버레이 UI는 원래 해상도로 그려지고, 버튼 위 터치가 보드로 새지 않으며, 화면 맞춤이 사각형 계산으로 끝난다. 색은 프로토타입 라이트 테마.
+* **Core**: `Board.LineLength`(1칸짜리 줄 방향 버튼 숨김용) + `BoardTests.LineLength_CountsAllCellsOnTheLine` → EditMode 61/61.
+* **Game** (`Assets/Scripts/Game`, `ColoringBoot.Game` — 참조 Core · UnityEngine.UI):
+  * `ColorPalette`(SO, 값 1~7) · `CellView`(칸 프리팹 층: 테두리 · 채움 · 목표 마커 · 막힘 링 · 선택 링) · `BoardView`(배치 공식 y 반전 · 보드 영역에 자동 맞춤(여백 = 방향 버튼 자리) · 탭 → 가장 가까운 칸(반지름 95% 이내) · 방향 버튼 6개(1칸 줄 숨김) · 창 크기 변화 시 다시 배치) · `PuzzleController`(JSON 읽기 · 세션 · 클리어/막힘 안내 · 처음부터).
+  * 클리어하면 보드 입력을 잠그고, 처음부터 버튼은 둔 수가 있을 때만 켠다. 색은 즉시 바뀜(애니메이션 없음).
+* **에셋** (빌더 스크립트 — 다시 실행해도 같은 결과):
+  * `Phase1Sprites.cs` → `Assets/Art/Sprites/` HexFill · HexRing · Circle · Arrow(256px 흰색, 4×4 슈퍼샘플링 안티앨리어싱, Sprite · 밉맵 없음 · 무압축).
+  * `Phase1Assets.cs` → TMP Essential Resources 임포트(`Assets/TextMesh Pro` 4.0 MB, 그중 `Resources/LiberationSans SDF` 2.2 MB — 빌드 증가량은 빌드 QA에서) · `Assets/Data/Palettes/DefaultPalette.asset`(`#D8402F` … `#25262D`). 포도는 `Assets/Data/Stages/Grape.json`(GDD §3 원문).
+  * `Phase1Scene.cs` → `Assets/Prefabs/Cell` · `DirectionButton`, 씬: `SampleScene` → `Board`로 이름 변경(GUID 유지 → 빌드 씬 목록 자동 갱신) · EventSystem(InputSystemUIInputModule) · Canvas(Overlay, Scale With Screen Size 1080×1920, **Expand**) · BoardArea(투명 Image + BoardView) · Clear/Stuck 안내 · Restart 버튼 · Puzzle(PuzzleController). 참조 누락 0(`get_serialized_fields`).
+* **에디터 플레이 QA** (`Phase1Qa.cs` — 보드 영역 클릭 이벤트(화면 좌표) → 칸 판정 → 방향 버튼 → 컨트롤러 → 세션, 실제 입력 경로):
+  * 첫 화면 모양 · 목표 마커가 프로토타입 스크린샷의 포도와 같다(y축 부호 정상). 초록 칸 선택 → 1 · 5 · 7 · 11시 버튼만(3 · 9시는 1칸 줄), 위치도 방향과 일치.
+  * GDD 5수 → 수 5 · 성공 · Clear 안내. 클리어 뒤 칸 탭 → 버튼 안 나옴(잠김). 처음부터 → 시작 상태 · 수 0 · 버튼 꺼짐.
+  * 보라 두 획 뒤 초록 획 → 꼭대기 두 칸 검정 · 막힘 링 · Stuck 안내.
+  * 플레이 중 콘솔 에러 0.
+* **겪은 문제 → CLAUDE.md §2 기록**:
+  * Write로 쓴 `Grape.json`이 임포트 전이라 씬 참조가 조용히 null → `AgentScripts/Refresh.cs`로 임포트 후 재실행, 빌더는 null 참조면 멈추게 고침.
+  * TMP 패키지 임포트가 메인 스레드를 1분 넘게 잡아 MCP 시간 초과(에디터는 스스로 회복, 임포트는 완료). 폐기 예정 `AssetDatabase.ImportPackage` → `AssetPackage.Package.Import`.
+  * 첫 캡처가 하늘색 사각형 → 비동기 셰이더 컴파일 대체 셰이더. 캡처가 1280×720으로 늘어남 → 세로 크기 지정.
+  * 에디터가 비활성이라 Play Mode 프레임이 2에서 멈춤(`Application.runInBackground` 꺼짐) → 플레이 세션에서만 켜서 해결.
+  * TMP 폰트 `.meta` 구버전 경고 → 메타데이터 다시 저장.
+
+* **해결된 이슈**:
+  * 1.2의 코드 · 에셋 · 씬 배선 · 에디터 플레이 QA — Task.md 10항목 `[x]`
+* **남은 일**: 커밋(승인 대기) → WebGL 빌드 · 배포 · 용량 비교 → (사용자) 휴대폰 확인 → `/qa-scene`
+
+---
+
 ### 📅 [2026-09-28] Phase 1.1 — 코어 로직(순수 C#) · 포도 회귀
 
 * **착수 전 점검**: 에디터 ready · `projectPath` 일치 · 컴파일 정상 · 콘솔 에러 0 · 씬 루트 Main Camera만 · EditMode 1/1 · `main` 깨끗(`a356520`).

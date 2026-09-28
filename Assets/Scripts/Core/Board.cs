@@ -67,6 +67,9 @@ namespace ColoringBoot.Core
         // 좌표의 칸 인덱스. 보드에 없는 좌표면 -1
         public int IndexOf(HexCoord coord) => _indexOf.TryGetValue(coord, out int cell) ? cell : -1;
 
+        // 칸이 속한 dir 축 줄의 칸 수. 1이면 그 방향 붓질은 늘 아무것도 바꾸지 않는다
+        public int LineLength(int cell, HexDirection dir) => _lines[_lineOf[cell, dir.Axis()]].Length;
+
         // 시작 상태를 새 배열로 돌려준다
         public PaintColor[] CreateStartState() => (PaintColor[])_start.Clone();
 

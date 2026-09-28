@@ -160,6 +160,24 @@ namespace ColoringBoot.Core.Tests
             Assert.IsTrue(board.IsSolved(state));
         }
 
+        // 줄의 칸 수 — 빈자리를 건너 같은 직선의 칸을 모두 센다. 반대 방향은 같은 줄
+        [Test]
+        public void LineLength_CountsAllCellsOnTheLine()
+        {
+            var board = new Board(new Stage("len", new[]
+            {
+                new StageCell(new HexCoord(0, 0), E, E),
+                new StageCell(new HexCoord(2, 0), E, E),
+                new StageCell(new HexCoord(0, 1), E, E),
+            }));
+
+            Assert.AreEqual(2, board.LineLength(0, HexDirection.Clock3));
+            Assert.AreEqual(2, board.LineLength(0, HexDirection.Clock9));
+            Assert.AreEqual(2, board.LineLength(0, HexDirection.Clock5));
+            Assert.AreEqual(1, board.LineLength(0, HexDirection.Clock1));
+            Assert.AreEqual(1, board.LineLength(2, HexDirection.Clock3));
+        }
+
         [Test]
         public void IndexOf_ReturnsMinusOneForMissingCoord()
         {

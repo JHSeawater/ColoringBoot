@@ -67,6 +67,10 @@
 4. `run_tests`(mode=editor, `filter`로 범위를 좁혀서)로 검증한다. 실패 상세가 불투명하면 filter를 더 좁혀 재실행한다.
 * 새 MonoBehaviour는 컴파일이 끝난 뒤 `attach_script`로 붙인다(`create_script` 직후에는 타입이 아직 없다).
 * 런타임 확인: `editor_play` → 상태 조회 · `capture_game_view`(source=screen) → `editor_stop`.
+  * 에디터가 비활성 창이면 Play Mode 프레임이 멈춘다(`Application.runInBackground`가 꺼져 있어서 — `set_autotick`으로도 안 풀림). 플레이 직후 `eval`로 `Application.runInBackground = true`(그 플레이 세션만, 설정 파일은 안 바뀜)를 켜고 `Time.frameCount`가 느는지 본다(2026-09-28: 프레임 2에서 멈춰 탭 결과가 화면에 안 그려짐).
+  * 캡처가 하늘색 사각형이면 비동기 셰이더 컴파일의 대체 셰이더다 — `ShaderUtil.allowAsyncCompilation = false` 후 다시 그리게 한다(2026-09-28, uGUI 첫 플레이).
+  * `capture_game_view`의 기본 크기(1280×720)는 Game 뷰 비율과 상관없이 늘려 찍는다 → 세로 Game 뷰(1080×1920)는 `width`/`height`를 세로 비율로 준다.
+  * QA 탭 스크립트: `AgentScripts/Phase1Qa.cs`(칸 탭 · 방향 버튼 · 처음부터 · 상태 — 실제 클릭 경로를 탄다).
 
 MCP 안전 규칙:
 * **비동기 명령은 트리거 응답을 완료로 보지 않는다** — 상태를 폴링한다: `recompile`→`recompile_status`, `run_tests`(async)→`test_status`, `build`→`build_status`, `switch_build_target`→`switch_build_target_status`, `package_add`/`package_remove`→`package_status`, `audit`→`audit_status`.
@@ -78,6 +82,8 @@ MCP 안전 규칙:
 * CLI `--json` 출력은 명령 결과를 `data.result`에 **이스케이프된 JSON 문자열**로 담는다. 폴링 스크립트는 원문을 grep하지 말고 파싱해서 판정한다(2026-09-24: 빌드는 6분 만에 끝났는데 완료를 못 잡아 30분 대기). `build_status` 응답은 전체 빌드 리포트라 수십만 자다 — 필요한 필드(`status` · `result` · `totalErrors` · `warnings`)만 뽑는다.
 * 에디터를 재시작한 직후 첫 MCP 호출이 60초 시간 초과로 실패할 수 있다(2026-09-24 실측 — `editor_status`는 정상, 재시도하자 즉시 응답). 같은 명령을 한 번 재시도하고, 계속 실패하면 CLI(`unity command`)로 확인한다.
 * C# 실행: 여러 줄 코드는 `eval`에 문자열로 넣지 말고 파일로 써서 `run_script`로 실행한다(빌더 스크립트는 `Assets/` 밖 `AgentScripts/`에 — 임포트·도메인 리로드 방지). `eval`은 한 줄짜리 조회용.
+* Write로 `Assets/`에 직접 쓴 에셋(JSON 등)은 Unity가 임포트하기 전까지 `LoadAssetAtPath`가 null을 준다 — 빌더에서 참조하기 전에 `run_script`(file=`AgentScripts/Refresh.cs`)로 임포트시킨다(2026-09-28: 씬 참조가 조용히 비었음).
+* 패키지 임포트(`AssetPackage.Package.Import`, TMP Essential Resources)는 메인 스레드를 1분 넘게 잡아 `run_script`와 다음 명령이 시간 초과한다. 결과 폴더가 생길 때까지 기다린 뒤 확인한다(2026-09-28 — 에디터는 스스로 회복).
 * 상세 사용법·주의사항은 `unity-pipeline` 스킬.
 
 블라인드 디버깅 가드:
@@ -103,7 +109,7 @@ MCP 안전 규칙:
 **로직과 표현 분리 (GDD §10):**
 * 보드 상태 · 붓질 처리 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`를 상속하지 않는 **순수 C#** 클래스다. `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만).
 * 이 규칙은 어셈블리 정의(asmdef)의 **`noEngineReferences: true`**로 컴파일러가 강제하게 한다. 로직 테스트는 EditMode 테스트 어셈블리에 둔다.
-* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · `ConsoleDump.cs`(콘솔 창 에러 덤프).
+* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `Phase1Scene` — 다시 실행해도 같은 결과) · 플레이 QA(`Phase1Qa`) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계).
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
 
 **색 (GDD §2.3):** 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
