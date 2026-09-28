@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace ColoringBoot.Game
 {
-    // 칸 하나의 그림 — 채움 색 · 목표 색 마커 · 막힘 링 · 선택 링 (Cell 프리팹)
+    // 칸 하나의 그림 — 채움 색 · 목표 색 마커 · 막힘 링 · 선택 링 · 붓질 미리보기 결과 (Cell 프리팹)
     public sealed class CellView : MonoBehaviour
     {
         [SerializeField] private Image _fill;
@@ -11,6 +11,7 @@ namespace ColoringBoot.Game
         [SerializeField] private Image _markerFill;
         [SerializeField] private GameObject _deadRing;
         [SerializeField] private GameObject _selectRing;
+        [SerializeField] private Image _ghost;
 
         public void SetFill(Color color) => _fill.color = color;
 
@@ -22,5 +23,13 @@ namespace ColoringBoot.Game
 
         public void SetDead(bool dead) => _deadRing.SetActive(dead);
         public void SetSelected(bool selected) => _selectRing.SetActive(selected);
+
+        // 미리보기: 이 칸이 칠해질 색을 작은 반투명 육각형으로. 알파는 프리팹 값을 유지한다
+        public void SetGhost(bool visible, Color color)
+        {
+            _ghost.gameObject.SetActive(visible);
+            color.a = _ghost.color.a;
+            _ghost.color = color;
+        }
     }
 }

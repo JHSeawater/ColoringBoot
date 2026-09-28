@@ -8,9 +8,9 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Phase 1.2 프리팹 · 보드 씬 구성 — run_script(file=AgentScripts/Phase1Scene.cs, entry=...)
+// 프리팹 · 보드 씬 구성 (Phase 1.2에서 만들고 Phase 2에서 확장) — run_script(file=AgentScripts/BoardSceneBuilder.cs, entry=...)
 // BuildPrefabs → BuildScene 순서. 둘 다 다시 실행하면 같은 결과로 덮어쓴다(씬은 Main Camera만 남기고 다시 만든다)
-public static class Phase1Scene
+public static class BoardSceneBuilder
 {
     private const string SpriteFolder = "Assets/Art/Sprites/";
     private const string CellPrefabPath = "Assets/Prefabs/Cell.prefab";
@@ -38,9 +38,13 @@ public static class Phase1Scene
         Image markerFill = AddImage("MarkerFill", marker, "HexFill", Color.white, 0.15f, 0.85f);
         GameObject dead = AddImage("DeadRing", cell, "HexRing", Warn, 0.1f, 0.9f).gameObject;
         GameObject select = AddImage("SelectRing", cell, "HexRing", Focus, 0.02f, 0.98f).gameObject;
+        // 미리보기 결과: 칠해질 색을 작은 반투명 육각형으로(프로토타입 0.72배 · 불투명도 0.92)
+        Image ghost = AddImage("Ghost", cell, "HexFill", new Color(1f, 1f, 1f, 0.92f), 0.14f, 0.86f);
+        ghost.transform.SetSiblingIndex(fill.transform.GetSiblingIndex() + 1);
         dead.SetActive(false);
         select.SetActive(false);
-        SetRefs(view, ("_fill", fill), ("_marker", marker), ("_markerFill", markerFill), ("_deadRing", dead), ("_selectRing", select));
+        ghost.gameObject.SetActive(false);
+        SetRefs(view, ("_fill", fill), ("_marker", marker), ("_markerFill", markerFill), ("_deadRing", dead), ("_selectRing", select), ("_ghost", ghost));
         PrefabUtility.SaveAsPrefabAsset(cell, CellPrefabPath);
         Object.DestroyImmediate(cell);
 
@@ -92,22 +96,16 @@ public static class Phase1Scene
         GameObject clearBanner = Banner(canvasObject, "ClearBanner", Strong, "Clear!");
         GameObject stuckBanner = Banner(canvasObject, "StuckBanner", Warn, "Stuck - press Restart");
 
-        var restart = NewUI("RestartButton", canvasObject);
-        var restartRect = (RectTransform)restart.transform;
-        restartRect.anchorMin = restartRect.anchorMax = new Vector2(0.5f, 0f);
-        restartRect.anchoredPosition = new Vector2(0f, 180f);
-        restartRect.sizeDelta = new Vector2(480f, 140f);
-        var restartImage = restart.AddComponent<Image>();
-        restartImage.color = Strong;
-        Button restartButton = restart.AddComponent<Button>();
-        restartButton.targetGraphic = restartImage;
-        Label(restart, "Restart", 56f);
+        // 아래 버튼 줄 (한 손이 닿는 곳)
+        Button undoButton = BottomButton(canvasObject, "UndoButton", "Undo", -260f);
+        Button restartButton = BottomButton(canvasObject, "RestartButton", "Restart", 260f);
 
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         SetRefs(puzzle.GetComponent<PuzzleController>(),
             ("_stageCode", AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/Stages/Grape.json")),
             ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
             ("_boardView", boardView),
+            ("_undoButton", undoButton),
             ("_restartButton", restartButton),
             ("_clearBanner", clearBanner),
             ("_stuckBanner", stuckBanner));
@@ -115,6 +113,21 @@ public static class Phase1Scene
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
+    }
+
+    private static Button BottomButton(GameObject parent, string name, string text, float x)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(x, 180f);
+        rect.sizeDelta = new Vector2(480f, 140f);
+        var image = go.AddComponent<Image>();
+        image.color = Strong;
+        Button button = go.AddComponent<Button>();
+        button.targetGraphic = image;
+        Label(go, text, 56f);
+        return button;
     }
 
     // 위쪽 안내 띠 — 처음엔 숨김, PuzzleController가 켠다

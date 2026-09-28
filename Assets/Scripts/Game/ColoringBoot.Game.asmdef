@@ -3,7 +3,8 @@
     "rootNamespace": "ColoringBoot.Game",
     "references": [
         "ColoringBoot.Core",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

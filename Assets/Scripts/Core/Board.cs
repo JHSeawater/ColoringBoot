@@ -94,6 +94,23 @@ namespace ColoringBoot.Core
             return changed;
         }
 
+        // 붓 경로 (미리보기용): 쓸고 지나가는 칸 순서를 cells에, 그 칸을 지난 뒤의 붓 색을 brushes에 채우고 칸 수를 돌려준다.
+        // state는 바꾸지 않는다. 배열은 CellCount 이상 — 호출 쪽이 한 번 만들어 재사용한다(매 프레임 할당 없음)
+        public int Trace(PaintColor[] state, int cell, HexDirection dir, int[] cells, PaintColor[] brushes)
+        {
+            int[] line = _lines[_lineOf[cell, dir.Axis()]];
+            bool forward = (int)dir < HexDirectionExtensions.AxisCount;
+            PaintColor brush = PaintColor.Empty;
+            for (int k = 0; k < line.Length; k++)
+            {
+                int i = line[forward ? k : line.Length - 1 - k];
+                if (state[i] != PaintColor.Empty) brush |= state[i];
+                cells[k] = i;
+                brushes[k] = brush;
+            }
+            return line.Length;
+        }
+
         // 막힌 칸 (GDD §2.5): 목표 색에 없는 기본색이 들어갔다. 색은 빠지지 않으므로 이 칸은 다시 목표 색이 될 수 없다
         public bool IsDeadCell(PaintColor[] state, int cell) => (state[cell] & ~_target[cell]) != PaintColor.Empty;
 

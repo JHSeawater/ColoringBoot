@@ -70,7 +70,8 @@
   * 에디터가 비활성 창이면 Play Mode 프레임이 멈춘다(`Application.runInBackground`가 꺼져 있어서 — `set_autotick`으로도 안 풀림). 플레이 직후 `eval`로 `Application.runInBackground = true`(그 플레이 세션만, 설정 파일은 안 바뀜)를 켜고 `Time.frameCount`가 느는지 본다(2026-09-28: 프레임 2에서 멈춰 탭 결과가 화면에 안 그려짐).
   * 캡처가 하늘색 사각형이면 비동기 셰이더 컴파일의 대체 셰이더다 — `ShaderUtil.allowAsyncCompilation = false` 후 다시 그리게 한다(2026-09-28, uGUI 첫 플레이).
   * `capture_game_view`의 기본 크기(1280×720)는 Game 뷰 비율과 상관없이 늘려 찍는다 → 세로 Game 뷰(1080×1920)는 `width`/`height`를 세로 비율로 준다.
-  * QA 탭 스크립트: `AgentScripts/Phase1Qa.cs`(칸 탭 · 방향 버튼 · 처음부터 · 상태 — 실제 클릭 경로를 탄다).
+  * QA 스크립트: `AgentScripts/BoardQa.cs`(칸 탭 · 드래그 · 방향 버튼 · 되돌리기 · 처음부터 · 상태 — 실제 포인터 이벤트 경로를 탄다).
+  * 키보드는 에디터 플레이로 확인할 수 없다: 에디터가 비활성 창이면 Input System이 장치 입력을 게임에 넘기지 않는다(`backgroundBehavior` = ResetAndDisableNonBackgroundDevices — 프로젝트 설정 에셋이라 QA용으로 바꾸지 않는다). `QueueStateEvent`로 흉내 낸 Ctrl+Z도 무시됨(2026-09-28) → 키보드는 WebGL 빌드 PC 확인으로.
 
 MCP 안전 규칙:
 * **비동기 명령은 트리거 응답을 완료로 보지 않는다** — 상태를 폴링한다: `recompile`→`recompile_status`, `run_tests`(async)→`test_status`, `build`→`build_status`, `switch_build_target`→`switch_build_target_status`, `package_add`/`package_remove`→`package_status`, `audit`→`audit_status`.
@@ -109,7 +110,7 @@ MCP 안전 규칙:
 **로직과 표현 분리 (GDD §10):**
 * 보드 상태 · 붓질 처리 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`를 상속하지 않는 **순수 C#** 클래스다. `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만).
 * 이 규칙은 어셈블리 정의(asmdef)의 **`noEngineReferences: true`**로 컴파일러가 강제하게 한다. 로직 테스트는 EditMode 테스트 어셈블리에 둔다.
-* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `Phase1Scene` — 다시 실행해도 같은 결과) · 플레이 QA(`Phase1Qa`) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계).
+* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `BoardSceneBuilder` — 다시 실행해도 같은 결과) · 플레이 QA(`BoardQa`) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계).
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
 
 **색 (GDD §2.3):** 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.

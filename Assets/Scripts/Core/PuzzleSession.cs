@@ -25,6 +25,9 @@ namespace ColoringBoot.Core
         public PaintColor ColorAt(int cell) => _state[cell];
         public bool IsDeadCell(int cell) => Board.IsDeadCell(_state, cell);
 
+        // 지금 상태에서 붓 경로 (미리보기용, 상태 불변 — Board.Trace)
+        public int Trace(int cell, HexDirection dir, int[] cells, PaintColor[] brushes) => Board.Trace(_state, cell, dir, cells, brushes);
+
         // 붓질. 색이 하나도 바뀌지 않는 획은 무시한다 — 수로 세지 않고 기록도 남기지 않는다 (2026-09-28 사용자 결정)
         public bool Brush(int cell, HexDirection dir)
         {
