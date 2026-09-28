@@ -8,6 +8,15 @@
 
 ---
 
+### 📅 [2026-09-29] Phase 3 (1) — 데이터 형식 결정 · BFS 솔버 · 순서 민감도 · 프로토타입 스테이지 9개
+
+* **사용자 결정(추천안)**: 스테이지 = JSON TextAsset 유지(`minMoves`는 에디터 저장 때 솔버가 채움, 순서 민감도는 저장 안 함), 레벨 에디터 = 에디터 전용 씬(플레이 모드, 게임 보드 재사용), 게임이 여는 목록 = `StageCatalog` SO → CLAUDE.md §3 · §5, Task.md Phase 3 항목 보강.
+* **Core**: `BoardMove` · `Board.Moves` — 2칸 이상 줄마다 정방향 → 반대 방향, 줄 순서는 축별 칸 등장 순서(프로토타입 `buildBoard`와 같음). `Solver.Solve` — 너비 우선, 색이 안 바뀌는 획 · 막힌 상태 제외, 상한 40만, 칸당 3비트 두 워드 상태 키(최대 42칸). `Solver.MeasureOrder` — 2~7수 풀이의 모든 순서 대입.
+* **이식**: 프로토타입 BUILTIN 8개를 원문 그대로 JSON으로(`TwoColors` · `BrushChanges` · `Honeycomb` · `Crossing` · `Stain` · `MakeBlack` · `Hive` · `LastStroke`) + 각 `minMoves`.
+* **검증**: `SolverTests` 6/6(포도 5수 · 8/120 · 탐색 67, 이미 목표 · 시작 막힘 · 풀이 없음 · 상한 · 순서 범위), `PrototypeStageRegressionTests` 9/9 — 9개 모두 최소 수 · 순서 민감도 · 탐색 상태 수가 프로토타입 엔진과 같다. DevelopLog 2026-09-28의 걱정(동률 풀이를 다르게 고르면 순서 민감도가 달라짐)은 탐색 순서를 맞춰 해소.
+
+---
+
 ### 📅 [2026-09-29] Phase 2 종료 — 조작감 · 필수 UI를 휴대폰 · PC WebGL에서 확인
 
 * **빌드 · 배포**: Succeeded · 에러 0 · 5.3분(경고 7 = Phase 1과 같은 무해한 것). 압축 후 8,992,413바이트 — Phase 1 대비 +244,584(data +257,742 한글 폰트 아틀라스 등 · wasm −13,158), Phase 0 대비 +0.87 MB. 빌드 도중 값(`preloadedAssets`)은 되돌림. gh-pages `e5eef23`, 배포 주소가 새 data 파일을 주는 것 확인.

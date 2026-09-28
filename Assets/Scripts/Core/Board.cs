@@ -3,6 +3,19 @@ using System.Collections.Generic;
 
 namespace ColoringBoot.Core
 {
+    // 한 수: 줄의 칸 하나(대표) + 방향. 같은 줄 · 같은 방향이면 어느 칸이든 결과가 같다
+    public readonly struct BoardMove
+    {
+        public BoardMove(int cell, HexDirection dir)
+        {
+            Cell = cell;
+            Direction = dir;
+        }
+
+        public int Cell { get; }
+        public HexDirection Direction { get; }
+    }
+
     // 스테이지의 칸 배치로 만든 줄 구성과 규칙 판정 (GDD §2). 칸은 스테이지 Cells 순서의 인덱스로 가리킨다.
     // 색 상태(칸별 PaintColor 배열)는 들고 있지 않고 인자로 받는다 — 플레이 세션과 솔버(Phase 3)가 같은 규칙을 쓴다
     public sealed class Board
@@ -15,6 +28,8 @@ namespace ColoringBoot.Core
         private readonly List<int[]> _lines = new List<int[]>();
         // [칸, 축] → 그 칸이 속한 줄의 _lines 인덱스
         private readonly int[,] _lineOf;
+        // 둘 수 있는 수: 2칸 이상인 줄마다 정방향 · 반대 방향. 순서는 프로토타입 buildBoard와 같다 — 솔버가 같은 풀이를 찾게
+        private readonly List<BoardMove> _moves = new List<BoardMove>();
 
         public Board(Stage stage)
         {
@@ -56,11 +71,15 @@ namespace ColoringBoot.Core
                     line.Sort((a, b) => _coords[a].Along(forward).CompareTo(_coords[b].Along(forward)));
                     foreach (int i in line) _lineOf[i, axis] = _lines.Count;
                     _lines.Add(line.ToArray());
+                    if (line.Count < 2) continue;
+                    _moves.Add(new BoardMove(line[0], forward));
+                    _moves.Add(new BoardMove(line[0], (HexDirection)(axis + HexDirectionExtensions.AxisCount)));
                 }
             }
         }
 
         public int CellCount => _coords.Length;
+        public IReadOnlyList<BoardMove> Moves => _moves;
         public HexCoord CoordOf(int cell) => _coords[cell];
         public PaintColor TargetOf(int cell) => _target[cell];
 

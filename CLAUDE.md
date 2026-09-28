@@ -142,6 +142,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 **상태 · 되돌리기 (GDD §2.5 — 되돌리기 필수):** 보드는 최대 40칸 정도의 색 값뿐이라 작다 → 되돌리기는 획 단위 상태 스냅샷, 재시작은 시작 상태 복원이 가장 단순하다. 재시작은 되돌릴 수 없다(GDD §2.5 — 기록을 지움, 프로토타입과 같음). 재시작에 씬 다시 불러오기(`SceneManager.LoadScene`)를 쓰지 않는다.
 
 **스테이지 데이터:** 프로토타입 포맷 `{"name": ..., "cells": [[q, r, 시작 색, 목표 색], ...]}` (GDD §3) + 선택 필드 `palette`(팔레트 이름, 없으면 기본 팔레트) · `minMoves`(최소 수, 솔버가 채움, 없으면 미표시). 로직은 `palette`를 이름(문자열)으로만 들고, 팔레트 에셋을 고르는 일은 표현 계층이 한다. 프로토타입에 들어 있는 스테이지 9개(포도 포함)는 이 포맷 그대로 옮겨 쓸 수 있다. 읽기는 `Stage.Parse` — Core 전용 파서다(`JsonUtility`는 UnityEngine이고 중첩 배열을 못 읽음, 2026-09-28 사용자 결정). `name` · `cells` 필수, 모르는 키 · 0~7 밖의 색 · 좌표 중복은 `FormatException`.
+* **저장 형식 (2026-09-29 사용자 결정)**: 스테이지 = `Assets/Data/Stages/<영문 이름>.json` TextAsset(이 포맷 그대로 — 프로토타입 코드와 복사 · 붙여넣기로 오감, git 차이가 읽힘). `minMoves`는 레벨 에디터가 저장할 때 솔버로 채운다. 순서 민감도는 저장하지 않고 에디터에만 표시. 게임이 여는 스테이지 목록은 `StageCatalog`(ScriptableObject, JSON TextAsset 순서 목록 — Phase 4 스테이지 선택 화면도 이것을 쓴다).
 
 **플랫폼 서비스 격리 (GDD §6 · §10):** 저장은 `PlayerPrefs`를 직접 부르지 않고 인터페이스 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 인터페이스 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 처음부터 구조에 넣는다.
 
@@ -166,7 +167,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **메모리 누수 가드**: `event` / `Action` 구독(`+=`)은 반드시 `OnDisable()` 또는 `OnDestroy()`에서 해제(`-=`).
 * **컴포넌트 캐싱**: `GetComponent<T>()` · `Find` 계열은 `Awake()` / `Start()`에서만. 태그 비교는 `CompareTag("Tag")`.
 * **캡슐화**: 인스펙터 노출 필드는 `[SerializeField] private`. 매직 넘버/스트링 하드코딩 금지(`const` 또는 필드).
-* **튜닝 값**: 애니메이션 속도 · 색 팔레트처럼 자주 바꾸는 값은 `ScriptableObject`로 분리한다. 스테이지 데이터 형식은 레벨 에디터(GDD §8) 설계 때 정한다.
+* **튜닝 값**: 애니메이션 속도 · 색 팔레트처럼 자주 바꾸는 값은 `ScriptableObject`로 분리한다. 스테이지 데이터는 JSON TextAsset + `StageCatalog`(§3 스테이지 데이터 · 2026-09-29).
 * **로깅**: `Debug.LogWarning("Msg", this)`처럼 컨텍스트를 포함한다. 순수 로직 계층은 로그 대신 반환값·예외로 알린다.
 * **Unity 6 API**: Obsolete API(`FindObjectOfType` 등)는 쓰지 않는다 → `FindFirstObjectByType` / `FindAnyObjectByType`.
 * **스타일**: 식별자는 영어, 주석은 한국어, private 필드는 `_camelCase`. 기존 코드가 생기면 그 스타일을 따른다.
