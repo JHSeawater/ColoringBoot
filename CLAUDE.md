@@ -154,7 +154,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정).
+* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). 크기는 바이트로 비교한다.
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
@@ -188,7 +188,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 |---|---|
 | `unity-pipeline` (프로젝트) | MCP/CLI로 에디터를 다룰 때 — 편집→컴파일→테스트 루프, `run_script`, 코드 리로드, 주의사항 |
 | `/phase-close` (프로젝트) | Phase를 닫을 때 — DoD 게이트 → Task.md·DevelopLog 갱신 → 커밋 제안 |
-| `/qa-scene` (예정) | 씬 셋업 전수 실측. 보드 씬이 생긴 뒤 작성한다(Task.md 항목) |
+| `/qa-scene` (프로젝트) | 보드 씬 셋업 전수 실측(읽기 전용) — 씬 배선 뒤 · 빌드 전후 · 인스펙터가 비었는지 의심될 때 |
 | `/code-review` · `/simplify` | 기능 구현 후 셀프 리뷰 — 버그 찾기 / 과한 코드 정리 |
 | `/update-config` | 훅 · 권한 등 `.claude/settings.json` 변경 |
 | `/fewer-permission-prompts` | 자주 쓰는 조회용 MCP 도구의 권한 확인 줄이기 |

@@ -1,7 +1,7 @@
 # 프로젝트 작업 목록 (Task List)
 
 > 기획 근거는 `GDD.md`(무엇/왜), 작업 규칙 · 아키텍처 · 기술 스펙은 `CLAUDE.md`(TDD 없음 — CLAUDE.md §0), 작업 기록은 `DevelopLog.md`.
-> **현재 위치: Phase 1 (코어 로직 + 포도 플레이)** — Phase 0 완료(2026-09-24, 기준선: 압축 후 7.76 MB · 첫 로딩 약 3초). 1.1 코어 로직 완료(2026-09-28, EditMode 60/60). 1.2 최소 표현 계층 진행 중 — 에디터 플레이 QA까지 완료, 다음은 WebGL 빌드 · 휴대폰 확인 · `/qa-scene`.
+> **현재 위치: Phase 2 (조작감)** — Phase 1 완료(2026-09-28: EditMode 61/61 · 포도 플레이 WebGL 빌드 압축 후 8.75 MB · 첫 로딩 약 3초, 휴대폰 · PC 확인). Phase 3(솔버 · 레벨 에디터)은 Phase 2와 순서를 바꾸거나 병행할 수 있다.
 > **이번 학기 목표 (GDD §13)**: 임시 아트로 챕터 1을 끝까지 플레이할 수 있는 WebGL 빌드 + 동아리원 플레이테스트 = **Phase 0~5**.
 > 최초 작성: 2026-09-24 (Labyrinth Task.md 체계 이식) · 개정: 2026-09-27 (기획 대비 구성 검토 반영 — DevelopLog) · 2026-09-28 (색 팔레트 · 문서 정합성 점검 — DevelopLog)
 
@@ -78,7 +78,7 @@
 
 ---
 
-## Phase 1 — 코어 로직 + 포도 플레이 (GDD §13 단계 1)
+## Phase 1 — 코어 로직 + 포도 플레이 (GDD §13 단계 1) ✅ (2026-09-28 완료)
 
 > **선행**: Phase 0 완료(asmdef 골격 · WebGL 빌드 경로)
 > **완료 조건**: ① 순수 C# 로직의 EditMode 테스트가 모두 통과한다(포도 회귀 포함). ② 포도 스테이지를 처음부터 클리어까지 플레이할 수 있는 WebGL 빌드가 휴대폰에서 동작한다.
@@ -104,9 +104,10 @@
 - [x] [Code] 클리어 표시 · 막힘 표시(막힌 칸 강조, 최소) · 처음부터 버튼 — 글자는 영문 · 아이콘(한글 폰트는 Phase 2, CLAUDE.md §8) — `PuzzleController`, 클리어 후 입력 잠금 · 처음부터는 둔 수가 있을 때만
 - [x] [Editor] 보드 씬 구성 · 인스펙터 배선(카메라 · 보드 · 입력 · Canvas Scaler 1080×1920) — `SampleScene` → `Board` 이름 변경 — `Phase1Scene.cs`, Canvas Scaler Expand, 빌드 씬 목록 `Board.unity`(GUID 유지), 씬 저장 · 참조 누락 0
 - [x] [QA] 에디터 플레이로 포도 클리어 — `editor_play` · 상태 실측 · 스크린샷(source=screen) — `Phase1Qa.cs`로 실제 탭 경로(보드 클릭 → 방향 버튼)를 따라 GDD 5수 클리어 · 클리어 후 입력 잠김 · 처음부터 · 막힘(검정 2칸 링 + 안내) 확인, 콘솔 에러 0(DevelopLog 2026-09-28)
-- [ ] [QA] WebGL 빌드 · gh-pages 배포 — 용량 · 첫 로딩을 Phase 0 기준선과 비교. 빌드 뒤 `preloadedAssets` 변경은 빌드 도중 값이라 커밋하지 않음(DevelopLog 2026-09-25)
-- [ ] [QA] (사용자) 휴대폰 WebGL 빌드로 포도 클리어 · 막힘 표시 확인
-- [ ] [Doc] `/qa-scene` 스킬 작성 — 보드 씬 셋업 전수 실측(읽기 전용, CLAUDE.md §7 예정 항목)
+- [x] [QA] WebGL 빌드 · gh-pages 배포 — 용량 · 첫 로딩을 Phase 0 기준선과 비교. 빌드 뒤 `preloadedAssets` 변경은 빌드 도중 값이라 커밋하지 않음(DevelopLog 2026-09-25) — Succeeded · 에러 0 · 4.2분, 압축 후 8.75 MB(8.34 MiB, 기준선 +0.63 MB: data +530 KB · wasm +99 KB), gh-pages `f6236c9` 제공 확인. 첫 로딩 시간은 휴대폰 확인 항목에서 측정
+- [x] [QA] (사용자) 휴대폰 WebGL 빌드로 포도 클리어 · 막힘 표시 확인 — 사용자 보고(2026-09-28): 휴대폰 · PC 모두 첫 로딩 약 3초, 세로 화면 · 선택 · 방향 버튼 · 클리어 · 막힘 표시 모두 문제 없음
+- [x] [Doc] Phase 1 종료 정합성 점검 — CLAUDE.md §4 현황에 Phase 1 빌드 용량을 더하고 기준선 합계 7.76 MB가 단위가 어긋난 값(실제 8,118,864바이트 = 8.12 MB)임을 밝힘. GDD 변경 필요 없음(DevelopLog 2026-09-28 Phase 1 종료)
+- [x] [Doc] `/qa-scene` 스킬 작성 — 보드 씬 셋업 전수 실측(읽기 전용, CLAUDE.md §7 예정 항목) — `.claude/skills/qa-scene`, 빌드 뒤 실행해 26항목 전수 통과
 
 ---
 
