@@ -110,7 +110,7 @@ MCP 안전 규칙:
 **로직과 표현 분리 (GDD §10):**
 * 보드 상태 · 붓질 처리 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`를 상속하지 않는 **순수 C#** 클래스다. `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만).
 * 이 규칙은 어셈블리 정의(asmdef)의 **`noEngineReferences: true`**로 컴파일러가 강제하게 한다. 로직 테스트는 EditMode 테스트 어셈블리에 둔다.
-* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `Phase2Font`(한글 폰트 — 화면 문구 · 스테이지 이름을 바꾸면 다시 실행) · `BoardSceneBuilder` — 다시 실행해도 같은 결과) · 플레이 QA(`BoardQa`) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계).
+* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `Phase2Font`(한글 폰트 — 화면 문구 · 스테이지 이름을 바꾸면 다시 실행) · `BoardSceneBuilder` — 다시 실행해도 같은 결과) · 플레이 QA(`BoardQa`) · 씬 셋업 점검(`QaScene` — `/qa-scene`에서 씀, 읽기 전용) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계).
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
 
 **색 (GDD §2.3):** 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
@@ -155,7 +155,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). 크기는 바이트로 비교한다.
+* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). Phase 2(+ 한글 폰트 아틀라스 · 필수 UI): 8,992,413바이트(8.99 MB, Phase 1 대비 +245 KB), 첫 로딩 약 3초(2026-09-29 사용자 측정). 크기는 바이트로 비교한다.
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
@@ -206,7 +206,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **화면 y축 부호** — Unity는 y가 위, 프로토타입(SVG)은 아래. 배치 공식을 그대로 옮기면 1시와 5시 등이 위아래로 뒤집힌다(§3 화면 배치).
 * **순수 로직에 `UnityEngine` 유입** — asmdef가 막았을 때 참조를 추가해 우회하지 않는다.
 * **비동기 MCP 명령의 완료 가정 · 설정 변경의 Undo 기대** — §2 MCP 안전 규칙.
-* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Phase2Font.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 줄은 제외).
+* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Phase2Font.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 줄은 제외). 주의: 이 TMP 버전은 `AtlasPopulationMode.Static`을 폐기 예정(obsolete)으로 표시한다 — 지금은 빌드 · 표시 정상(2026-09-29). TMP를 올릴 때 Dynamic 방식으로 옮길지(용량 · 원본 폰트 포함 여부) 다시 정한다.
 * **에디터에서만 확인하고 완료 처리** — §4 "빌드로 확인".
 * **GitHub Pages + Brotli** — 서버가 `Content-Encoding: br` 헤더를 주지 못하면 로드에 실패한다 → Decompression Fallback을 켜거나 압축 방식을 바꾼다.
 * **기믹·확장 포인트 선반영** — GDD §7 기믹은 채택되지 않은 후보다. 요청 전에 추상화·설정 옵션을 미리 만들지 않는다.
