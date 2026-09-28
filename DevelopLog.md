@@ -8,6 +8,18 @@
 
 ---
 
+### 📅 [2026-09-29] Phase 3 종료 — 솔버 · 레벨 에디터 · 에디터 스테이지를 게임에서 플레이
+
+* **빌드 · 배포**: Succeeded · 에러 0 · 3.4분(경고 7 = 이전과 같음). 압축 후 9,025,674바이트(Phase 2 대비 +33,261 — 스테이지 10개 · 솔버 · 생성기), 빌드 리포트에 `ColoringBoot.LevelEditor` 없음(UNITY_EDITOR 전용). 빌드 도중 값(`preloadedAssets`) 되돌림. gh-pages `5a8647b`.
+* **발견**: 빌드 뒤 활성 씬이 레벨 에디터였다 — 앞서 `editor_stop` 직후 보드 씬을 열었는데 늦게 끝난 플레이 종료가 플레이 시작 씬을 다시 연 것으로 보인다(빌드는 빌드 씬 목록을 쓰므로 결과물 영향 없음) → 보드 씬을 다시 열고 `QaScene` 62 통과, CLAUDE.md §8에 기록.
+* **사용자 확인(2026-09-29)**: `?stage=EditorDemo`(에디터로 만든 4칸)를 2수로 클리어 · 기본 주소 포도 — 문제 없음. 이어서 사용자 결정으로 `EditorDemo`를 목록 · 파일에서 뺌(`AgentScripts/RemoveStage.cs`) → 폰트 247자 재생성 · 프리팹 · 두 씬 재구성 · `QaScene` 61 · EditMode 93/93.
+* **DoD 게이트(`/phase-close 3`)**: 미완 0 · `[QA]` 완료 4 · 근거 표기 · 태그 누락 0 · EditMode 93/93 · 완료 조건(에디터로 시작 칠하기 → 획 기록 → 목표 저장, 솔버 최소 수 · 순서 민감도, 게임에서 플레이) 관측. 정합성: GDD 변경 없음(§8 레벨 제작 도구대로 구현, §14 확정 없음), CLAUDE.md §4 · §8 갱신.
+
+* **해결된 이슈**:
+  * Phase 3 ✅ — 다음은 Phase 4. 선행: Phase 2 · 3 완료(충족), **챕터 구조 확정(사용자 결정 필요 — GDD §5 미정 사항)**.
+
+---
+
 ### 📅 [2026-09-29] Phase 3 (3) — 스테이지 목록 · 레벨 에디터
 
 * **StageCatalog** (Game SO): JSON TextAsset 순서 목록 · 파일 이름으로 찾기. `PuzzleController`는 목록 첫 스테이지 · `?stage=`를 목록에서 연다(`_stageCode` · `_queryStages` 대체). `BoardSceneBuilder.BuildCatalog` — 프로토타입 9개 중 빠진 것만 채움(다시 돌려도 에디터 저장분 유지, 두 번째 실행 "추가 0" 확인).

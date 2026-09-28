@@ -156,7 +156,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). Phase 2(+ 한글 폰트 아틀라스 · 필수 UI): 8,992,413바이트(8.99 MB, Phase 1 대비 +245 KB), 첫 로딩 약 3초(2026-09-29 사용자 측정). 크기는 바이트로 비교한다.
+* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). Phase 2(+ 한글 폰트 아틀라스 · 필수 UI): 8,992,413바이트(8.99 MB, Phase 1 대비 +245 KB), 첫 로딩 약 3초(2026-09-29 사용자 측정). Phase 3(+ 솔버 · 생성기 · 스테이지 목록): 9,025,674바이트(+33 KB). 크기는 바이트로 비교한다.
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
@@ -212,7 +212,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **GitHub Pages + Brotli** — 서버가 `Content-Encoding: br` 헤더를 주지 못하면 로드에 실패한다 → Decompression Fallback을 켜거나 압축 방식을 바꾼다.
 * **기믹·확장 포인트 선반영** — GDD §7 기믹은 채택되지 않은 후보다. 요청 전에 추상화·설정 옵션을 미리 만들지 않는다.
 * **UI가 안 찍힌 스크린샷** — `capture_game_view` 기본값(source=camera)은 Screen Space - Overlay UI를 빠뜨린다 → Play Mode에서 `source=screen`.
-* **플레이 모드 중 씬 수정** — Play Mode에서 바꾼 씬 값은 플레이를 멈추면 되돌아간다. 씬 수정·저장은 `editor_stop` 후에 한다.
+* **플레이 모드 중 씬 수정** — Play Mode에서 바꾼 씬 값은 플레이를 멈추면 되돌아간다. 씬 수정·저장은 `editor_stop` 후에 한다. `editor_stop` 직후 다른 씬을 열면, 늦게 끝나는 플레이 종료가 플레이를 시작한 씬을 다시 열 수 있다(2026-09-29: 레벨 에디터 씬이 도로 열려 `QaScene`이 보드를 못 찾음) → 씬을 바꾼 뒤 활성 씬을 다시 확인한다.
 * **Windows 도구 환경** — ① 셸 명령에 넣은 백슬래시는 의도대로 전달되지 않을 수 있다(Labyrinth 실측, 2026-09-24에도 백슬래시가 든 grep 패턴이 오작동) → 문자 클래스(`[.]`) · Python `chr(92)` · `/` 경로로 우회한다. ② Windows Python의 표준 출력은 cp949라 한글·특수문자에서 깨진다 → `sys.stdout.reconfigure(encoding='utf-8')`. ③ Python `subprocess`로 `bash`를 부르면 WSL bash가 잡힌다 → Git Bash(`C:/Program Files/Git/usr/bin/bash.exe`)를 명시한다. ④ Write/Edit 내용에 역슬래시 + `u` + 16진 4자리를 적으면 그 유니코드 글자로 바뀌어 저장된다(2026-09-28: 테스트 JSON의 한글 이스케이프가 "포도"로 저장됨). `\\` · `\n` 같은 다른 이스케이프는 그대로다 → 소스에 유니코드 이스케이프가 필요하면 다른 문자로 적고 치환하거나(`.Replace('%', '\\')`) `(char)0xD3EC`로 쓴다.
 * **`.meta` 누락 커밋** — 에셋과 `.meta`는 항상 함께.
 * **gh-pages 배포에 소스 섞임** — orphan 브랜치 작업 트리에는 main의 파일과 `.gitignore`가 딸려 온다(2026-09-24: 소스 71개가 함께 올라가고, `/Build/` 규칙 때문에 빌드 폴더가 빠짐). 배포는 `AgentScripts/deploy-pages.sh`로만 한다.
