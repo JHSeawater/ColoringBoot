@@ -17,7 +17,6 @@ namespace ColoringBoot.Game
         // 아래 비율은 모두 칸 반지름(중심 → 꼭짓점) 기준 — 프로토타입 값
         private const float HitRadius = 0.95f;       // 탭 판정 거리
         private const float ButtonDistance = 1.32f;  // 칸 중심 → 방향 버튼 중심
-        private const float FitMargin = 1.8f;        // 화면 맞춤 여백: 가장자리 칸의 방향 버튼까지 들어가게
         private const float DragThreshold = 0.45f;   // 이만큼 끌어야 방향이 정해진다
         private const float TrailOvershoot = 0.9f;   // 미리보기 선이 줄 양 끝 밖으로 나가는 길이
         private const float BrushWidth = 0.5f;       // 붓 색이 묻은 구간 굵기
@@ -35,11 +34,19 @@ namespace ColoringBoot.Game
         [SerializeField] private float _buttonDiameter = 0.84f;
         [Tooltip("칸 반지름 상한 (캔버스 단위) — 작은 보드가 지나치게 커지지 않게")]
         [SerializeField] private float _maxRadius = 150f;
+        [Tooltip("화면 맞춤 여백 (칸 반지름 기준). 플레이 보드는 가장자리 칸의 방향 버튼까지 들어가게 1.8")]
+        [SerializeField] private float _fitMargin = 1.8f;
+        [Tooltip("켜면 현재 색 대신 목표 색을 그린다 — 목표 그림 썸네일용(입력 · 마커 · 막힘 표시 없음)")]
+        [SerializeField] private bool _showTarget;
+        [SerializeField] private Color _symbolLight = Color.white;
+        [SerializeField] private Color _symbolDark = new Color32(0x1C, 0x22, 0x2C, 0xFF);
 
         // 붓질 요청 (칸 인덱스, 방향)
         public event Action<int, HexDirection> BrushRequested;
 
         private static readonly Vector2[] _directionVectors = CreateDirectionVectors();
+        // 접근성 기호 — 색 값(비트)을 따르므로 팔레트와 상관없다 (GDD §6)
+        private static readonly string[] _symbols = { "", "R", "Y", "RY", "B", "RB", "YB", "RYB" };
 
         private RectTransform _rect;
         private PuzzleSession _session;
@@ -55,6 +62,7 @@ namespace ColoringBoot.Game
         private float _radius;
         private bool _interactable = true;
         private bool _layoutDirty;
+        private bool _showSymbols;
 
         // 드래그: 처음 누른 손가락만 따라간다
         private int _pointerId = NoPointer;
@@ -110,13 +118,21 @@ namespace ColoringBoot.Game
         {
             for (int i = 0; i < _cells.Length; i++)
             {
-                PaintColor color = _session.ColorAt(i);
                 PaintColor target = _board.TargetOf(i);
+                PaintColor color = _showTarget ? target : _session.ColorAt(i);
                 _cells[i].SetFill(ColorOf(color));
                 // 목표 마커: 아직 목표 색이 아니고 목표가 빈칸이 아닐 때 (프로토타입과 같음)
                 _cells[i].SetMarker(color != target && target != PaintColor.Empty, ColorOf(target));
-                _cells[i].SetDead(_session.IsDeadCell(i));
+                _cells[i].SetDead(!_showTarget && _session.IsDeadCell(i));
+                // 노랑 · 빈칸처럼 밝은 칸은 어두운 기호
+                _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", color == PaintColor.Yellow ? _symbolDark : _symbolLight);
             }
+        }
+
+        public void SetSymbols(bool visible)
+        {
+            _showSymbols = visible;
+            Render();
         }
 
         public void SetInteractable(bool interactable)
@@ -233,7 +249,7 @@ namespace ColoringBoot.Game
             }
 
             Rect area = _rect.rect;
-            Vector2 span = max - min + Vector2.one * (2f * FitMargin);
+            Vector2 span = max - min + Vector2.one * (2f * _fitMargin);
             _radius = Mathf.Min(area.width / span.x, area.height / span.y, _maxRadius);
             // 칸 앵커는 보드 영역 가운데 — 위치는 가운데 기준 좌표(anchoredPosition)로 둔다
             Vector2 offset = -(min + max) * 0.5f * _radius;

@@ -5,7 +5,7 @@ description: 보드 씬(Assets/Scenes/Board.unity) 셋업 전수 실측 — 읽�
 
 # /qa-scene — 보드 씬 셋업 실측 (읽기 전용)
 
-Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 `AgentScripts/Phase1Scene.cs`(다시 실행해도 같은 결과) 또는 MCP 배선 도구로 한다.
+Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 `AgentScripts/BoardSceneBuilder.cs`(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `Phase2Font.cs` 먼저) 또는 MCP 배선 도구로 한다.
 
 ## 0. 전제
 - `editor_status`: `ready`, `playMode: stopped`, `projectPath`가 이 프로젝트. Play Mode면 멈추라고 알리고 중단(플레이 중 값은 저장 안 됨).
@@ -13,16 +13,21 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - 활성 씬이 `Assets/Scenes/Board.unity`가 아니면 보고하고 중단(`list_open_scenes`).
 
 ## 1. 계층 (`get_scene_hierarchy`)
-기대값 — 루트 4개:
+기대값 — 루트 5개. UI는 모두 `/Canvas/SafeArea` 아래(이하 `…` = `/Canvas/SafeArea`):
 
 | 경로 | 컴포넌트 | 활성 |
 |---|---|---|
 | `/Main Camera` | Camera(직교 · 단색 #D9DFDC) | O |
 | `/EventSystem` | EventSystem · **InputSystemUIInputModule**(StandaloneInputModule이면 실패 — New Input System 전용) | O |
 | `/Canvas` | Canvas · CanvasScaler · GraphicRaycaster | O |
-| `/Canvas/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
-| `/Canvas/ClearBanner` · `/Canvas/StuckBanner` | Image · Label(TextMeshProUGUI) | **X**(처음엔 꺼짐) |
-| `/Canvas/RestartButton` | Image · Button · Label | O |
+| `/Canvas/SafeArea` | SafeAreaFitter | O |
+| `…/StageName` · `…/MoveCounter` | Label(TextMeshProUGUI) | O |
+| `…/TargetView` | BoardView(목표 썸네일) | O |
+| `…/MixTable` | HorizontalLayoutGroup · MixTableView | O |
+| `…/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
+| `…/ClearBanner` · `…/StuckBanner`(안에 UndoButton) | Image · Label | **X**(처음엔 꺼짐) |
+| `…/UndoButton` · `…/RestartButton` · `…/SymbolsButton` · `…/SoundButton` | Image · Button · Label | O |
+| `/Sound` | SoundController | O |
 | `/Puzzle` | PuzzleController | O |
 
 씬이 `isDirty: true`면 저장 안 된 변경이 있다고 보고한다.
@@ -30,19 +35,24 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 ## 2. 설정값 (`get_component_properties` / `get_serialized_fields`, format=value)
 - `/Canvas` Canvas: renderMode = Screen Space - Overlay
 - `/Canvas` CanvasScaler: uiScaleMode = Scale With Screen Size · referenceResolution = 1080×1920 · screenMatchMode = Expand
-- `/Canvas/BoardArea` Image: color.a = 0 · raycastTarget = true
-- `/Canvas/BoardArea` BoardView: `_cellPrefab` · `_directionButtonPrefab` null 아님, `_buttonDiameter` > 0, `_maxRadius` > 0
+- `…/BoardArea` Image: color.a = 0 · raycastTarget = true
+- `…/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
+- 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
-- `/Puzzle` PuzzleController: `_stageCode`(TextAsset) · `_palette`(ColorPalette) · `_boardView` · `_restartButton` · `_clearBanner` · `_stuckBanner`
-- 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing`
+- `/Puzzle` PuzzleController: `_stageCode` · `_queryStages`(요소 모두) · `_palette` · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_symbolsButton` · `_stuckUndoButton` · `_clearBanner` · `_stuckBanner`
+- `/Sound` SoundController: `_toggleButton` · `_toggleLabel`
+- `…/MixTable` MixTableView: `_chipSprite`
+- 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing` · `_ghost` · `_symbol`
 - 프리팹 `Assets/Prefabs/DirectionButton.prefab` Button: targetGraphic
 
 ## 4. 에셋
 - `_stageCode`가 가리키는 JSON이 `Stage.Parse`로 읽히는지: `eval`로 `ColoringBoot.Core.Stage.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>(경로).text).Cells.Count` (포도 = 10)
 - `_palette`의 `_colors` 길이 7, 알파 모두 1
 - 스프라이트 `Assets/Art/Sprites/*.png`(`get_import_settings`): textureType Sprite · spriteImportMode Single
-- `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재(없으면 TMP 글자가 안 나옴)
+- `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
+- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`Phase2Font.Build` 결과의 빠진 글자 0)
+- `_queryStages`의 JSON도 `Stage.Parse`로 읽히는지(큰 벌집 = 37칸)
 
 ## 5. 빌드 씬 목록 (`get_build_settings`)
 - 활성 씬 목록 = `Assets/Scenes/Board.unity` 하나, enabled

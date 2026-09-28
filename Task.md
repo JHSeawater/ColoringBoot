@@ -126,24 +126,24 @@
 
 ### 2.2 필수 UI (GDD §6)
 
-- [ ] [Code] 막힘 표시 다듬기 — Phase 1의 최소 강조에 되돌리기 안내 추가
-- [ ] [Code] 수 카운터(현재 / 최소) — 최소 수는 스테이지 데이터 `minMoves`(Phase 1 파싱, 솔버로 채우기는 Phase 3)
-- [ ] [Code] 목표 그림 썸네일 · 색 조합표(스테이지 팔레트) · 접근성 기호(R · Y · B)
-- [ ] [Asset] 한글 폰트 선정 · 글자 범위 결정 — 용량 보고(CLAUDE.md §8) — Pretendard(OFL, 라이선스 파일 포함) · 쓰는 글자만 고정 아틀라스(UI 문구 + 스테이지 이름, 빌더가 수집) — 사용자 결정 2026-09-28
-- [ ] [Editor] TMP 한글 폰트 에셋 생성 · UI 적용
-- [ ] [Editor] 막힘 안내 · 수 카운터 · 썸네일 · 색 조합표 · 기호 옵션 씬 배선
+- [x] [Code] 막힘 표시 다듬기 — Phase 1의 최소 강조에 되돌리기 안내 추가 — 막힘 안내 띠("목표에 없는 색이 섞였어요") 안에 되돌리기 버튼, 눌러 복구 확인
+- [x] [Code] 수 카운터(현재 / 최소) — 최소 수는 스테이지 데이터 `minMoves`(Phase 1 파싱, 솔버로 채우기는 Phase 3) — "3 / 5수" 표시 · 되돌리면 줄어듦 확인, `minMoves` 없으면 현재 수만
+- [x] [Code] 목표 그림 썸네일 · 색 조합표(스테이지 팔레트) · 접근성 기호(R · Y · B) — 썸네일 = BoardView 목표 모드, `MixTableView`, 칸 기호(기호 버튼으로 전환, 썸네일에도) — 스크린샷 확인
+- [x] [Asset] 한글 폰트 선정 · 글자 범위 결정 — 용량 보고(CLAUDE.md §8) — Pretendard(OFL, 라이선스 파일 포함) · 쓰는 글자만 고정 아틀라스(UI 문구 + 스테이지 이름, 빌더가 수집) — 사용자 결정 2026-09-28 — Pretendard 1.3.9 SemiBold TTF + `Pretendard-LICENSE.txt`, 225자(ASCII 95 포함) · 1024² 1장. 빌드 용량은 2.4 QA에서
+- [x] [Editor] TMP 한글 폰트 에셋 생성 · UI 적용 — `AgentScripts/Phase2Font.cs`(고정 아틀라스 · 원본 폰트 참조 비움 · TMP 기본 폰트 지정), 모든 문구 한글 표시 스크린샷 확인
+- [x] [Editor] 막힘 안내 · 수 카운터 · 썸네일 · 색 조합표 · 기호 옵션 씬 배선 — `BoardSceneBuilder`, 플레이로 확인
 
 ### 2.3 플랫폼 — PC 입력 · 안전영역 · 사운드
 
 - [ ] [Code] PC 보조 입력 — 방향키로 칸 선택 · 숫자키 1 · 3 · 5 · 7 · 9 · 0(방향) — 코드 작성(`PuzzleController.Update` · `BoardView.MoveSelection/BrushSelected`), 확인은 PC 브라우저 QA에서
-- [ ] [Code] 안전영역(Safe Area) 대응
-- [ ] [Code] 사운드 구조 — 켜고 끄기 · 백그라운드 전환 시 정지(소리 에셋 없이 구조만)
-- [ ] [Editor] 키보드 입력 · Safe Area 패널 · 사운드 켜고 끄기 씬 배선
+- [ ] [Code] 안전영역(Safe Area) 대응 — `SafeAreaFitter` 작성(에디터에선 안전영역 = 전체라 동작 확인 불가 → 휴대폰 QA)
+- [ ] [Code] 사운드 구조 — 켜고 끄기 · 백그라운드 전환 시 정지(소리 에셋 없이 구조만) — `SoundController` 작성, 켜고 끄기(볼륨 0/1 · 버튼 글자)는 에디터 확인. 백그라운드 정지는 WebGL에서 확인
+- [x] [Editor] 키보드 입력 · Safe Area 패널 · 사운드 켜고 끄기 씬 배선 — `Canvas/SafeArea` 아래로 UI 이동 · 소리 버튼 · `Sound` 오브젝트, 키보드는 컨트롤러가 직접 읽음(배선 없음)
 
 ### 2.4 검증
 
-- [ ] [Code] 주소 `?stage=<이름>`으로 스테이지 열기(QA용, 없으면 포도) — 사용자 결정 2026-09-28
-- [ ] [Editor] 37칸 프로토타입 스테이지 JSON(큰 벌집) 추가 · 컨트롤러에 등록 · 포도 JSON에 `minMoves` 5(GDD §3)
+- [ ] [Code] 주소 `?stage=<이름>`으로 스테이지 열기(QA용, 없으면 포도) — 사용자 결정 2026-09-28 — `PuzzleController.ChooseStage` 작성, 에디터는 주소가 비어 있어 WebGL에서 확인
+- [x] [Editor] 37칸 프로토타입 스테이지 JSON(큰 벌집) 추가 · 컨트롤러에 등록 · 포도 JSON에 `minMoves` 5(GDD §3) — `Hive.json`(프로토타입 원문 37칸 · `minMoves` 6) · `_queryStages`
 - [ ] [QA] (사용자) 휴대폰 WebGL — 드래그 · 미리보기 · 되돌리기 · 세로 화면 · 안전영역 · 한글 표시 · **칸이 가장 많은 프로토타입 스테이지**에서 손가락으로 칸 구분(GDD §6 최대 40칸 정도)
 - [ ] [QA] (사용자) PC 브라우저 — 마우스 드래그 · 키보드 · Ctrl+Z · 사운드 켜고 끄기
 - [ ] [QA] 빌드 용량 · 첫 로딩 시간 재측정 — Phase 0 기준선 대비(폰트 추가 영향)

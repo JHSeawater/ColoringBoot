@@ -17,6 +17,7 @@ public static class BoardSceneBuilder
     private const string ButtonPrefabPath = "Assets/Prefabs/DirectionButton.prefab";
     private const string OldScenePath = "Assets/Scenes/SampleScene.unity";
     private const string ScenePath = "Assets/Scenes/Board.unity";
+    private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
 
     // 프로토타입 라이트 테마
     private static readonly Color Lead = Hex("#1A1D23");    // 칸 테두리 · 마커 테두리
@@ -24,6 +25,7 @@ public static class BoardSceneBuilder
     private static readonly Color Focus = Hex("#2E6BD1");   // 선택
     private static readonly Color Strong = Hex("#1C222C");  // 버튼 · 안내 바탕
     private static readonly Color StrongInk = Hex("#F6F7F3");
+    private static readonly Color Muted = Hex("#56606C");     // 보조 글자
 
     public static string BuildPrefabs()
     {
@@ -44,7 +46,16 @@ public static class BoardSceneBuilder
         dead.SetActive(false);
         select.SetActive(false);
         ghost.gameObject.SetActive(false);
-        SetRefs(view, ("_fill", fill), ("_marker", marker), ("_markerFill", markerFill), ("_deadRing", dead), ("_selectRing", select), ("_ghost", ghost));
+        // 접근성 기호 (R · Y · B) — 칸 크기에 맞춰 글자 크기 자동
+        TMP_Text symbol = Label(cell, "", 40f);
+        symbol.gameObject.name = "Symbol";
+        symbol.rectTransform.anchorMin = Vector2.one * 0.18f;
+        symbol.rectTransform.anchorMax = Vector2.one * 0.82f;
+        symbol.enableAutoSizing = true;
+        symbol.fontSizeMin = 8f;
+        symbol.fontSizeMax = 72f;
+        symbol.gameObject.SetActive(false);
+        SetRefs(view, ("_fill", fill), ("_marker", marker), ("_markerFill", markerFill), ("_deadRing", dead), ("_selectRing", select), ("_ghost", ghost), ("_symbol", symbol));
         PrefabUtility.SaveAsPrefabAsset(cell, CellPrefabPath);
         Object.DestroyImmediate(cell);
 
@@ -83,32 +94,94 @@ public static class BoardSceneBuilder
         scaler.referenceResolution = new Vector2(1080f, 1920f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand; // 기준 영역이 어느 비율에서도 다 보이게
 
-        // 보드 영역: 위 안내 · 아래 버튼 자리를 뺀 나머지. 투명 Image가 탭을 받는다
-        var boardArea = NewUI("BoardArea", canvasObject);
-        Stretch(boardArea, new Vector2(40f, 360f), new Vector2(-40f, -240f));
+        // 모든 UI는 안전영역 패널 아래 (노치 · Dynamic Island 침범 방지)
+        var safeArea = NewUI("SafeArea", canvasObject);
+        Stretch(safeArea, Vector2.zero, Vector2.zero);
+        safeArea.AddComponent<SafeAreaFitter>();
+
+        var cellPrefab = AssetDatabase.LoadAssetAtPath<CellView>(CellPrefabPath);
+        var buttonPrefab = AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath);
+
+        // 위쪽 줄: 스테이지 이름 · 수 카운터(왼쪽), 목표 그림 썸네일(오른쪽)
+        TMP_Text stageName = TopLeftText(safeArea, "StageName", -60f, 90f, 64f, Strong);
+        TMP_Text moveCounter = TopLeftText(safeArea, "MoveCounter", -160f, 70f, 52f, Muted);
+        var target = NewUI("TargetView", safeArea);
+        var targetRect = (RectTransform)target.transform;
+        targetRect.anchorMin = targetRect.anchorMax = targetRect.pivot = new Vector2(1f, 1f);
+        targetRect.anchoredPosition = new Vector2(-40f, -30f);
+        targetRect.sizeDelta = new Vector2(300f, 300f);
+        var targetView = target.AddComponent<BoardView>();
+        SetRefs(targetView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
+        SetValues(targetView, ("_showTarget", true), ("_fitMargin", 0.6f), ("_maxRadius", 60f));
+
+        // 색 조합표 한 줄
+        var mix = NewUI("MixTable", safeArea);
+        var mixRect = (RectTransform)mix.transform;
+        mixRect.anchorMin = mixRect.anchorMax = mixRect.pivot = new Vector2(0.5f, 1f);
+        mixRect.anchoredPosition = new Vector2(0f, -350f);
+        mixRect.sizeDelta = new Vector2(1000f, 60f);
+        var layout = mix.AddComponent<HorizontalLayoutGroup>();
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlWidth = layout.childControlHeight = false;
+        layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+        layout.spacing = 4f;
+        var mixTable = mix.AddComponent<MixTableView>();
+        SetRefs(mixTable, ("_chipSprite", Sprite("HexFill")));
+
+        // 보드 영역: 위 줄 · 조합표 · 아래 안내와 버튼 자리를 뺀 나머지. 투명 Image가 탭 · 드래그를 받는다
+        var boardArea = NewUI("BoardArea", safeArea);
+        Stretch(boardArea, new Vector2(40f, 420f), new Vector2(-40f, -430f));
         var hitArea = boardArea.AddComponent<Image>();
         hitArea.color = new Color(0f, 0f, 0f, 0f);
         var boardView = boardArea.AddComponent<BoardView>();
-        SetRefs(boardView,
-            ("_cellPrefab", AssetDatabase.LoadAssetAtPath<CellView>(CellPrefabPath)),
-            ("_directionButtonPrefab", AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath)));
+        SetRefs(boardView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
 
-        GameObject clearBanner = Banner(canvasObject, "ClearBanner", Strong, "Clear!");
-        GameObject stuckBanner = Banner(canvasObject, "StuckBanner", Warn, "Stuck - press Restart");
+        // 안내 띠 (아래 버튼 위). 막힘 안내에는 되돌리기 버튼을 함께 둔다
+        GameObject clearBanner = Banner(safeArea, "ClearBanner", Strong, "완성!", 0f);
+        GameObject stuckBanner = Banner(safeArea, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
+        var stuckUndo = NewUI("UndoButton", stuckBanner);
+        var stuckUndoRect = (RectTransform)stuckUndo.transform;
+        stuckUndoRect.anchorMin = stuckUndoRect.anchorMax = stuckUndoRect.pivot = new Vector2(1f, 0.5f);
+        stuckUndoRect.anchoredPosition = new Vector2(-16f, 0f);
+        stuckUndoRect.sizeDelta = new Vector2(260f, 90f);
+        var stuckUndoImage = stuckUndo.AddComponent<Image>();
+        stuckUndoImage.color = StrongInk;
+        Button stuckUndoButton = stuckUndo.AddComponent<Button>();
+        stuckUndoButton.targetGraphic = stuckUndoImage;
+        Label(stuckUndo, "되돌리기", 44f).color = Warn;
 
         // 아래 버튼 줄 (한 손이 닿는 곳)
-        Button undoButton = BottomButton(canvasObject, "UndoButton", "Undo", -260f);
-        Button restartButton = BottomButton(canvasObject, "RestartButton", "Restart", 260f);
+        Button undoButton = BottomButton(safeArea, "UndoButton", "되돌리기", -375f);
+        Button restartButton = BottomButton(safeArea, "RestartButton", "처음부터", -125f);
+        Button symbolsButton = BottomButton(safeArea, "SymbolsButton", "기호", 125f);
+        Button soundButton = BottomButton(safeArea, "SoundButton", "소리 켬", 375f);
+
+        // 사운드 켜고 끄기 · 백그라운드 정지
+        var sound = new GameObject("Sound", typeof(SoundController));
+        SetRefs(sound.GetComponent<SoundController>(), ("_toggleButton", soundButton), ("_toggleLabel", soundButton.GetComponentInChildren<TMP_Text>()));
 
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
-        SetRefs(puzzle.GetComponent<PuzzleController>(),
+        var controller = puzzle.GetComponent<PuzzleController>();
+        SetRefs(controller,
             ("_stageCode", AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/Stages/Grape.json")),
             ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
             ("_boardView", boardView),
+            ("_targetView", targetView),
+            ("_mixTable", mixTable),
+            ("_stageName", stageName),
+            ("_moveCounter", moveCounter),
             ("_undoButton", undoButton),
             ("_restartButton", restartButton),
+            ("_symbolsButton", symbolsButton),
+            ("_stuckUndoButton", stuckUndoButton),
             ("_clearBanner", clearBanner),
             ("_stuckBanner", stuckBanner));
+        var so = new SerializedObject(controller);
+        SerializedProperty stages = so.FindProperty("_queryStages");
+        stages.arraySize = 1;
+        stages.GetArrayElementAtIndex(0).objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/Stages/Hive.json")
+            ?? throw new System.InvalidOperationException("Hive.json 없음 — AgentScripts/Refresh.cs 먼저 실행");
+        so.ApplyModifiedPropertiesWithoutUndo();
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
@@ -120,43 +193,71 @@ public static class BoardSceneBuilder
         var go = NewUI(name, parent);
         var rect = (RectTransform)go.transform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(x, 180f);
-        rect.sizeDelta = new Vector2(480f, 140f);
+        rect.anchoredPosition = new Vector2(x, 150f);
+        rect.sizeDelta = new Vector2(235f, 130f);
         var image = go.AddComponent<Image>();
         image.color = Strong;
         Button button = go.AddComponent<Button>();
         button.targetGraphic = image;
-        Label(go, text, 56f);
+        Label(go, text, 48f);
         return button;
     }
 
-    // 위쪽 안내 띠 — 처음엔 숨김, PuzzleController가 켠다
-    private static GameObject Banner(GameObject parent, string name, Color background, string text)
+    // 아래 버튼 위의 안내 띠 — 처음엔 숨김, PuzzleController가 켠다. rightSpace만큼 오른쪽을 버튼 자리로 비운다
+    private static GameObject Banner(GameObject parent, string name, Color background, string text, float rightSpace)
     {
         var banner = NewUI(name, parent);
         var rect = (RectTransform)banner.transform;
-        rect.anchorMin = new Vector2(0f, 1f);
-        rect.anchorMax = new Vector2(1f, 1f);
-        rect.anchoredPosition = new Vector2(0f, -120f);
-        rect.sizeDelta = new Vector2(-80f, 150f);
+        rect.anchorMin = new Vector2(0f, 0f);
+        rect.anchorMax = new Vector2(1f, 0f);
+        rect.anchoredPosition = new Vector2(0f, 330f);
+        rect.sizeDelta = new Vector2(-80f, 120f);
         var image = banner.AddComponent<Image>();
         image.color = background;
         image.raycastTarget = false;
-        Label(banner, text, 64f);
+        Label(banner, text, 52f).rectTransform.offsetMax = new Vector2(-rightSpace, 0f);
         banner.SetActive(false);
         return banner;
     }
 
-    private static void Label(GameObject parent, string text, float size)
+    // 왼쪽 위 글자 줄 (스테이지 이름 · 수 카운터)
+    private static TMP_Text TopLeftText(GameObject parent, string name, float y, float height, float size, Color color)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = new Vector2(60f, y);
+        rect.sizeDelta = new Vector2(600f, height);
+        TMP_Text text = Label(go, "", size);
+        text.color = color;
+        text.alignment = TextAlignmentOptions.Left;
+        return text;
+    }
+
+    private static void SetValues(Object target, params (string field, object value)[] values)
+    {
+        var so = new SerializedObject(target);
+        foreach ((string field, object value) in values)
+        {
+            SerializedProperty property = so.FindProperty(field) ?? throw new System.ArgumentException($"{target.GetType().Name}에 필드 {field} 없음");
+            if (value is bool b) property.boolValue = b;
+            else property.floatValue = (float)value;
+        }
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static TMP_Text Label(GameObject parent, string text, float size)
     {
         var label = NewUI("Label", parent);
         Stretch(label, Vector2.zero, Vector2.zero);
         var tmp = label.AddComponent<TextMeshProUGUI>();
+        tmp.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath) ?? throw new System.InvalidOperationException("한글 폰트 에셋 없음 — AgentScripts/Phase2Font.cs 먼저 실행");
         tmp.text = text;
         tmp.fontSize = size;
         tmp.color = StrongInk;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
+        return tmp;
     }
 
     private static GameObject NewUI(string name, GameObject parent)

@@ -42,7 +42,7 @@ public static class BoardQa
     // 칸 (q, r)을 탭한다
     public static string TapCell(int q, int r)
     {
-        BoardView view = UnityEngine.Object.FindAnyObjectByType<BoardView>();
+        BoardView view = Board();
         Board board = Session().Board;
         int cell = board.IndexOf(new HexCoord(q, r));
         if (cell < 0) return $"({q},{r}) 칸 없음";
@@ -56,7 +56,7 @@ public static class BoardQa
     // 보이는 방향 버튼 중 dir(0 = 1시 … 5 = 11시)을 누른다
     public static string TapDirection(int dir)
     {
-        BoardView view = UnityEngine.Object.FindAnyObjectByType<BoardView>();
+        BoardView view = Board();
         Transform button = view.transform.GetChild(ButtonIndex(dir));
         if (!button.gameObject.activeInHierarchy) return $"{(HexDirection)dir} 버튼이 숨겨져 있음";
         var data = new PointerEventData(EventSystem.current) { position = RectTransformUtility.WorldToScreenPoint(null, button.position) };
@@ -70,7 +70,7 @@ public static class BoardQa
     // 칸 (q, r)을 누른 채 dir 쪽으로 반지름 × distance만큼 끈다. release=false면 누른 채 멈춰 미리보기를 남긴다
     public static string Drag(int q, int r, int dir, float distance, bool release)
     {
-        BoardView view = UnityEngine.Object.FindAnyObjectByType<BoardView>();
+        BoardView view = Board();
         int cell = Session().Board.IndexOf(new HexCoord(q, r));
         if (cell < 0) return $"({q},{r}) 칸 없음";
         var cellRect = (RectTransform)view.transform.GetChild(cell);
@@ -97,7 +97,7 @@ public static class BoardQa
 
     public static string Undo()
     {
-        var button = GameObject.Find("Canvas/UndoButton").GetComponent<Button>();
+        var button = GameObject.Find("Canvas/SafeArea/UndoButton").GetComponent<Button>();
         if (!button.interactable) return "Undo 비활성";
         button.onClick.Invoke();
         return State();
@@ -105,7 +105,7 @@ public static class BoardQa
 
     public static string Restart()
     {
-        var button = GameObject.Find("Canvas/RestartButton").GetComponent<Button>();
+        var button = GameObject.Find("Canvas/SafeArea/RestartButton").GetComponent<Button>();
         if (!button.interactable) return "Restart 비활성";
         button.onClick.Invoke();
         return State();
@@ -115,16 +115,19 @@ public static class BoardQa
     {
         PuzzleSession s = Session();
         string colors = string.Join(" ", Enumerable.Range(0, s.Board.CellCount).Select(i => (int)s.ColorAt(i)));
-        return $"수 {s.MoveCount} · 성공 {s.IsSolved} · 막힘 {s.IsDead} · 색 [{colors}] · Clear 안내 {Active("ClearBanner")} · Stuck 안내 {Active("StuckBanner")} · Undo {GameObject.Find("Canvas/UndoButton").GetComponent<Button>().interactable} · Restart {GameObject.Find("Canvas/RestartButton").GetComponent<Button>().interactable}";
+        return $"수 {s.MoveCount} · 성공 {s.IsSolved} · 막힘 {s.IsDead} · 색 [{colors}] · Clear 안내 {Active("ClearBanner")} · Stuck 안내 {Active("StuckBanner")} · Undo {GameObject.Find("Canvas/SafeArea/UndoButton").GetComponent<Button>().interactable} · Restart {GameObject.Find("Canvas/SafeArea/RestartButton").GetComponent<Button>().interactable}";
     }
 
-    private static bool Active(string banner) => GameObject.Find("Canvas").transform.Find(banner).gameObject.activeSelf;
+    private static bool Active(string banner) => GameObject.Find("Canvas/SafeArea").transform.Find(banner).gameObject.activeSelf;
 
     private static string[] VisibleButtons(BoardView view)
     {
         int cells = Session().Board.CellCount;
         return Enumerable.Range(0, 6).Where(d => view.transform.GetChild(ButtonIndex(d)).gameObject.activeSelf).Select(d => ((HexDirection)d).ToString()).ToArray();
     }
+
+    // 플레이 보드 (목표 썸네일도 BoardView라 이름으로 찾는다)
+    private static BoardView Board() => GameObject.Find("Canvas/SafeArea/BoardArea").GetComponent<BoardView>();
 
     private static PuzzleSession Session()
     {

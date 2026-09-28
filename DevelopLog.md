@@ -8,6 +8,19 @@
 
 ---
 
+### 📅 [2026-09-28] Phase 2 (2) — 한글 폰트 · 필수 UI · 안전영역 · 사운드
+
+* **커밋**: `0754b19`(2.1).
+* **한글 폰트** (`AgentScripts/Phase2Font.cs`): Pretendard 1.3.9 SemiBold TTF(OFL, `Pretendard-LICENSE.txt` 동봉) → TMP 고정(Static) 아틀라스. 글자는 씬 구성 스크립트 · Game 코드의 문자열 리터럴(주석 · 로그 · 예외 메시지 줄 제외) + 스테이지 JSON 이름 + ASCII → 225자 · 1024² 1장. 로그 문구까지 모으자 243자 · 2장이 되어 제외 규칙을 넣었다. 원본 폰트 런타임 참조(`m_SourceFontFile`)를 비워 TTF 2.6 MB가 빌드에 딸려 가지 않게 하고, TMP 기본 폰트로 지정.
+* **필수 UI**: 위쪽 = 스테이지 이름 · 수 카운터("3 / 5수", `minMoves` 없으면 현재만) · 목표 썸네일(BoardView 목표 모드 — `_showTarget` · `_fitMargin`), 색 조합표(`MixTableView`, 팔레트 색 칩 4줄), 막힘 안내 띠에 되돌리기 버튼, 칸별 접근성 기호(R · Y · B, 기호 버튼으로 전환 · 노랑 칸은 어두운 글자). 문구 모두 한글.
+* **안전영역 · 사운드**: 모든 UI를 `Canvas/SafeArea`(`SafeAreaFitter` — `Screen.safeArea`가 바뀔 때만 앵커 조정) 아래로. `SoundController` — 소리 켬/끔(`AudioListener.volume`) · 포커스를 잃으면 `AudioListener.pause`.
+* **스테이지**: 포도 JSON에 `minMoves` 5, 프로토타입 "큰 벌집"(37칸 · `minMoves` 6)을 `Hive.json`으로 옮기고 `?stage=hive`로 여는 코드(`PuzzleController.ChooseStage`).
+* **에디터 플레이 QA**: 한글 · 배치 스크린샷, 드래그 5수 클리어("5 / 5수" · "완성!"), 막힘 안내의 되돌리기로 복구, 기호 켜기, 소리 끔 → 볼륨 0 · 켬 → 1. 콘솔 에러 0 · EditMode 63/63.
+* **겪은 문제**: ① 조합표가 1,058 단위로 화면 밖 → 칩 40 · 간격 줄여 886. ② BoardView가 둘(보드 · 썸네일)이 되자 QA 스크립트가 썸네일을 잡음 → 경로로 찾게. ③ SafeArea 이동 편집이 `(canvasObject,` 꼴만 바꿔 보드 · 썸네일 · 조합표가 밖에 남음 → 바로잡음. ④ 셸 heredoc 안의 삼중 따옴표로 편집 스크립트가 실행 안 됨(파일 무변경) → 파이썬 파일로 실행.
+* **확인 못 한 것 (빌드에서)**: 안전영역(에디터 = 화면 전체), 백그라운드 정지, `?stage=`, 키보드.
+
+---
+
 ### 📅 [2026-09-28] Phase 2 (1) — 드래그 붓질 · 미리보기 · 되돌리기 · 키보드(코드)
 
 * **사용자 결정**: Phase 2부터. 한글 폰트 Pretendard(쓰는 글자만 고정 아틀라스), 37칸 스테이지는 주소 `?stage=`로 열기, 화면 배치는 설계안대로 만든 뒤 보고 조정. Task.md 2.1 · 2.2 · 2.4에 항목 추가.
