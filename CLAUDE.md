@@ -16,6 +16,7 @@
 * **웹 프로토타입** (GDD §9, `https://claude.ai/artifact/W8SJpnCtw75KM9eNfLpb3p`) — 규칙 엔진(`buildBoard` · `applyMove` · `isDead` · `isWin`) · BFS 솔버 · 순서 민감도 · 랜덤 생성기 · 에디터의 **참조 구현**이고, 스테이지 코드 9개(포도 + 8개)가 들어 있다. Artifact 도구의 `read`로 열람한다(사용자 소유). 로컬 사본은 `Prototype/Prototype.html`(단일 HTML, 브라우저로 바로 열림)이고, 같은 폴더의 `Screenshot_1~3.png`는 플레이 화면(포도 · 얼룩 · 마지막 한 획 — 목표 그림 · 목표 색 마커 · 수 카운터 · 순서 민감도 표시)이다. 규칙이 애매하면 GDD 다음으로 이 코드와 대조한다.
 * **`Task.md`** — 현재 Phase · 작업 목록 · 완료 기준(DoD)과 태그 규칙. 작업 완료 시 체크박스 갱신.
 * **`DevelopLog.md`** — 작업·버그 수정 기록(최상단에 추가). 과거 결정의 근거를 찾을 때.
+* **검토 · 점검 보고서** — 할 일 목록으로 쓰지 않는다. 조치할 항목은 `Task.md`로 옮기고, 처리 결과와 하지 않기로 한 이유는 `DevelopLog.md`에 남긴다. 보고서 원문(공유 페이지 등)은 작성 시점의 스냅샷이다(2026-09-29 사용자 결정).
 * **TDD 없음 (의도적)** — 기술 스펙은 GDD §2·§3·§10과 이 문서 §3·§4가 담당한다. 솔버/에디터 설계·저장 구조처럼 스펙이 커지면 `TDD.md` 신설을 제안한다.
 
 ---
@@ -110,7 +111,7 @@ MCP 안전 규칙:
 **로직과 표현 분리 (GDD §10):**
 * 보드 상태 · 붓질 처리 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`를 상속하지 않는 **순수 C#** 클래스다. `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만).
 * 이 규칙은 어셈블리 정의(asmdef)의 **`noEngineReferences: true`**로 컴파일러가 강제하게 한다. 로직 테스트는 EditMode 테스트 어셈블리에 둔다.
-* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `Phase2Font`(한글 폰트 — 화면 문구 · 스테이지 이름을 바꾸면 다시 실행) · `BoardSceneBuilder` — 다시 실행해도 같은 결과) · 플레이 QA(`BoardQa` · 레벨 에디터 `LevelEditorQa`) · 씬 셋업 점검(`QaScene` — `/qa-scene`에서 씀, 읽기 전용) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계). 레벨 에디터 = `Assets/Scripts/LevelEditor/` = `ColoringBoot.LevelEditor`(`defineConstraints: UNITY_EDITOR` — 빌드에 안 들어가고 씬에는 붙음) + `Assets/Scenes/LevelEditor.unity`(빌드 목록 제외, 플레이해서 쓴다 · 조작 패널은 IMGUI).
+* **코드 구조** (2026-09-24 확정): `Assets/Scripts/Core/` = `ColoringBoot.Core`(순수 로직, `noEngineReferences: true`) · `Assets/Scripts/Game/` = `ColoringBoot.Game`(표현 계층, Phase 1에서 생성) · `Assets/Tests/EditMode/` = `ColoringBoot.Core.Tests`(에디터 전용). 네임스페이스 = 어셈블리 이름. `AgentScripts/`(Assets 밖) = `run_script` 빌더 — 설정 적용 기록(`Phase0*.cs`) · 보드 씬 · 에셋 생성(`Phase1Sprites` · `Phase1Assets` · `Phase2Font`(한글 폰트 — 화면 문구 · 스테이지 이름을 바꾸면 다시 실행) · `BoardSceneBuilder` — 다시 실행해도 같은 결과) · 플레이 QA(`BoardQa` · 레벨 에디터 `LevelEditorQa`) · 씬 셋업 점검(`QaScene` — `/qa-scene`에서 씀, 읽기 전용) · `Refresh.cs`(에셋 임포트) · `ConsoleDump.cs`(콘솔 창 에러 덤프) · `RemoveStage.cs`(스테이지를 목록 · 파일에서 빼기 — 뒤에 폰트 · 프리팹 · 씬 재구성). 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계). 레벨 에디터 = `Assets/Scripts/LevelEditor/` = `ColoringBoot.LevelEditor`(`defineConstraints: UNITY_EDITOR` — 빌드에 안 들어가고 씬에는 붙음) + `Assets/Scenes/LevelEditor.unity`(빌드 목록 제외, 플레이해서 쓴다 · 조작 패널은 IMGUI).
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
 
 **색 (GDD §2.3):** 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
@@ -156,7 +157,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-09-24)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). Phase 2(+ 한글 폰트 아틀라스 · 필수 UI): 8,992,413바이트(8.99 MB, Phase 1 대비 +245 KB), 첫 로딩 약 3초(2026-09-29 사용자 측정). Phase 3(+ 솔버 · 생성기 · 스테이지 목록): 9,025,674바이트(+33 KB). 크기는 바이트로 비교한다.
+* **현황 (2026-09-29 기준)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔. 첫 빌드(빈 씬) 기준선: 압축 후 7.76 MB(wasm 5.66 MB · data 2.27 MB — 이 둘은 10진 MB. 합계 7.76은 단위가 어긋난 값이고 실제 바이트 합은 8,118,864 = 8.12 MB), 첫 로딩 약 3초(PC · 휴대폰, 2026-09-24 사용자 측정). Phase 1(포도 플레이, uGUI + TMP): 압축 후 8,747,829바이트(8.75 MB, 기준선 대비 +0.63 MB — data +530 KB · wasm +99 KB), 첫 로딩 약 3초(2026-09-28 사용자 측정). Phase 2(+ 한글 폰트 아틀라스 · 필수 UI): 8,992,413바이트(8.99 MB, Phase 1 대비 +245 KB), 첫 로딩 약 3초(2026-09-29 사용자 측정). Phase 3(+ 솔버 · 생성기 · 스테이지 목록): 9,025,674바이트(+33 KB). 크기는 바이트로 비교한다.
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
@@ -165,6 +166,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 
 * **No GC / Allocations**: `Update` / `LateUpdate` 등 매 프레임 코드에서 `new` · LINQ · 문자열 조합 금지. `WaitForSeconds` 등은 루프 밖에서 캐싱.
 * **메모리 누수 가드**: `event` / `Action` 구독(`+=`)은 반드시 `OnDisable()` 또는 `OnDestroy()`에서 해제(`-=`).
+* **static 상태**: 이 프로젝트는 플레이 모드 진입 때 도메인 · 씬 리로드를 끈다(Enter Play Mode Options, `ProjectSettings/EditorSettings.asset`). 값이 바뀌는 static 필드 · static 이벤트 · 싱글턴은 에디터에서 플레이를 다시 시작해도 값이 남으므로 `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]`에서 초기화한다(빌드에는 영향 없음, 2026-09-29 점검).
 * **컴포넌트 캐싱**: `GetComponent<T>()` · `Find` 계열은 `Awake()` / `Start()`에서만. 태그 비교는 `CompareTag("Tag")`.
 * **캡슐화**: 인스펙터 노출 필드는 `[SerializeField] private`. 매직 넘버/스트링 하드코딩 금지(`const` 또는 필드).
 * **튜닝 값**: 애니메이션 속도 · 색 팔레트처럼 자주 바꾸는 값은 `ScriptableObject`로 분리한다. 스테이지 데이터는 JSON TextAsset + `StageCatalog`(§3 스테이지 데이터 · 2026-09-29).
