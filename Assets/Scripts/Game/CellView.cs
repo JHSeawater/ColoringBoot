@@ -14,6 +14,11 @@ namespace ColoringBoot.Game
         [SerializeField] private GameObject _selectRing;
         [SerializeField] private Image _ghost;
         [SerializeField] private TMP_Text _symbol;
+        [Tooltip("기호 자리(칸 기준 앵커) — 보통은 가운데, 목표 색 마커가 보이면 마커 위쪽으로 올린다(겹침 방지, 2026-10-01 사용자 결정)")]
+        [SerializeField] private Vector2 _symbolMin = new Vector2(0.18f, 0.18f);
+        [SerializeField] private Vector2 _symbolMax = new Vector2(0.82f, 0.82f);
+        [SerializeField] private Vector2 _symbolAboveMarkerMin = new Vector2(0.28f, 0.64f);
+        [SerializeField] private Vector2 _symbolAboveMarkerMax = new Vector2(0.72f, 0.88f);
 
         public void SetFill(Color color) => _fill.color = color;
 
@@ -21,6 +26,7 @@ namespace ColoringBoot.Game
         {
             _marker.SetActive(visible);
             _markerFill.color = color;
+            PlaceSymbol();
         }
 
         public void SetDead(bool dead) => _deadRing.SetActive(dead);
@@ -40,6 +46,15 @@ namespace ColoringBoot.Game
             _symbol.gameObject.SetActive(text.Length > 0);
             _symbol.text = text;
             _symbol.color = color;
+            PlaceSymbol();
+        }
+
+        // 마커가 보이면 기호를 마커 위로 — 글자 크기는 자동 맞춤이라 좁은 자리에서 작아진다
+        private void PlaceSymbol()
+        {
+            bool above = _marker.activeSelf;
+            _symbol.rectTransform.anchorMin = above ? _symbolAboveMarkerMin : _symbolMin;
+            _symbol.rectTransform.anchorMax = above ? _symbolAboveMarkerMax : _symbolMax;
         }
     }
 }

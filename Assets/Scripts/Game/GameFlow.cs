@@ -12,6 +12,7 @@ namespace ColoringBoot.Game
     {
         private const string StageQuery = "stage";   // ?stage=<파일 이름> — 해금과 상관없이 그 스테이지를 바로 연다(QA)
         private const string StatsQuery = "stats";   // ?stats — 플레이테스트 기록 보기
+        private const string PaletteQuery = "palette"; // ?palette=<이름> — 모든 스테이지를 그 팔레트로(QA · 휴대폰 색 확인)
         private const string ResetQuery = "reset";   // ?reset — 진행 · 기록 지우기 (휴대폰 하나로 여러 명이 테스트할 때)
         private const string NextText = "다음";
         private const string ListText = "목록";
@@ -34,6 +35,7 @@ namespace ColoringBoot.Game
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
         private int?[] _minMoves;
         private int _current = -1;
+        private string _paletteOverride;
 
         private void Awake()
         {
@@ -85,6 +87,7 @@ namespace ColoringBoot.Game
                 Debug.Log("주소에 ?reset — 진행 · 플레이 기록을 지웠습니다", this);
             }
             ApplySettings();
+            if (UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
 
             int start = -1;
             if (UrlQuery.TryGet(url, StageQuery, out string name))
@@ -110,7 +113,7 @@ namespace ColoringBoot.Game
         {
             _select.gameObject.SetActive(false);
             _boardScreen.SetActive(true);
-            if (!_puzzle.Open(_catalog.Stages[index], index + 1, _data))
+            if (!_puzzle.Open(_catalog.Stages[index], index + 1, _data, _paletteOverride))
             {
                 ShowSelect();
                 return;

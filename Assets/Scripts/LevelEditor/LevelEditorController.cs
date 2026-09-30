@@ -42,13 +42,13 @@ namespace ColoringBoot.LevelEditor
         [SerializeField] private PaintGridView _grid;
         [SerializeField] private BoardView _recordTemplate;
         [SerializeField] private StageCatalog _catalog;
-        [SerializeField] private ColorPalette _palette;
+        [SerializeField] private PaletteCatalog _palettes;
         [SerializeField] private TMP_FontAsset _gameFont;
 
         private readonly Dictionary<HexCoord, (PaintColor start, PaintColor target)> _cells = new Dictionary<HexCoord, (PaintColor, PaintColor)>();
         private string _name = "새 스테이지";
         private string _fileName = "NewStage";
-        private string _paletteName = "";
+        private int _paletteIndex;   // _palettes 안의 위치 — 0 = 기본(저장할 때 palette를 생략)
         private string _loadedFile;
         private bool _targetLayer;
         private int _paint = 2; // 빨강
@@ -97,7 +97,9 @@ namespace ColoringBoot.LevelEditor
             RenderGrid();
         }
 
-        private void RenderGrid() => _grid.Render(_cells, _targetLayer, _palette);
+        private ColorPalette Palette => _palettes.Palettes[_paletteIndex];
+
+        private void RenderGrid() => _grid.Render(_cells, _targetLayer, Palette);
 
         private void OnGUI()
         {
@@ -154,8 +156,12 @@ namespace ColoringBoot.LevelEditor
             _name = GUILayout.TextField(_name);
             GUILayout.Label("파일", GUILayout.Width(80f));
             _fileName = GUILayout.TextField(_fileName);
-            GUILayout.Label("팔레트", GUILayout.Width(110f));
-            _paletteName = GUILayout.TextField(_paletteName, GUILayout.Width(160f));
+            // 팔레트 고르기 (GDD §8) — 누를 때마다 다음 팔레트, 칠하기 격자도 그 색으로
+            if (GUILayout.Button($"팔레트: {Palette.Id}", GUILayout.Width(280f)))
+            {
+                _paletteIndex = (_paletteIndex + 1) % _palettes.Palettes.Count;
+                RenderGrid();
+            }
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
@@ -190,7 +196,7 @@ namespace ColoringBoot.LevelEditor
             _record = new PuzzleSession(new Board(stage));
             _recordView = Instantiate(_recordTemplate, _recordTemplate.transform.parent);
             _recordView.gameObject.SetActive(true);
-            _recordView.Build(_record, _palette);
+            _recordView.Build(_record, Palette);
             _recordView.BrushRequested += OnRecordBrush;
             _recordView.Render();
             _grid.gameObject.SetActive(false);
@@ -257,12 +263,13 @@ namespace ColoringBoot.LevelEditor
             try
             {
                 Stage stage = Stage.Parse(asset.text);
+                int palette = _palettes.IndexOf(stage.Palette);
+                _paletteIndex = Math.Max(palette, 0);
                 SetStage(stage);
                 _name = stage.Name;
                 _fileName = asset.name;
-                _paletteName = stage.Palette ?? "";
                 _loadedFile = asset.name;
-                _status = $"'{asset.name}'을(를) 불러왔어요.";
+                _status = palette >= 0 ? $"'{asset.name}'을(를) 불러왔어요." : $"'{asset.name}'을(를) 불러왔어요 — 팔레트 '{stage.Palette}'가 목록에 없어 기본으로 바꿨어요.";
             }
             catch (FormatException e)
             {
@@ -288,7 +295,7 @@ namespace ColoringBoot.LevelEditor
         {
             StageCell[] cells = _cells.OrderBy(c => c.Key.R).ThenBy(c => c.Key.Q)
                 .Select(c => new StageCell(c.Key, c.Value.start, c.Value.target)).ToArray();
-            return new Stage(_name, cells, string.IsNullOrWhiteSpace(_paletteName) ? null : _paletteName.Trim(), minMoves);
+            return new Stage(_name, cells, _paletteIndex == 0 ? null : Palette.Id, minMoves);
         }
 
         private static SolveResult Solve(Stage stage)

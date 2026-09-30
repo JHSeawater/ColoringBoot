@@ -12,7 +12,7 @@ namespace ColoringBoot.Game
     // 클리어 기록(Progress)과 플레이테스트 기록(PlayStats)을 SaveData에 남긴다
     public sealed class PuzzleController : MonoBehaviour
     {
-        [SerializeField] private ColorPalette _palette;
+        [SerializeField] private PaletteCatalog _palettes;
         [SerializeField] private BoardView _boardView;
         [SerializeField] private BoardView _targetView;
         [SerializeField] private MixTableView _mixTable;
@@ -31,8 +31,9 @@ namespace ColoringBoot.Game
         private int? _minMoves;
         private bool _symbols;
 
-        // 스테이지를 연다(같은 보드 화면을 다시 쓴다). 스테이지 코드를 읽지 못하면 false
-        public bool Open(TextAsset asset, int number, SaveData data)
+        // 스테이지를 연다(같은 보드 화면을 다시 쓴다). 스테이지 코드를 읽지 못하면 false.
+        // paletteOverride: 주소 ?palette= (QA — 모든 스테이지를 그 팔레트로), 없으면 스테이지의 palette
+        public bool Open(TextAsset asset, int number, SaveData data, string paletteOverride = null)
         {
             Stage stage;
             try
@@ -44,17 +45,16 @@ namespace ColoringBoot.Game
                 Debug.LogError($"스테이지 '{asset.name}' 코드를 읽지 못했습니다: {e.Message}", this);
                 return false;
             }
-            if (stage.Palette != null)
-                Debug.LogWarning($"팔레트 '{stage.Palette}' 대신 기본 팔레트를 씁니다 — 팔레트 적용은 Phase 4.4", this);
+            ColorPalette palette = ChoosePalette(paletteOverride ?? stage.Palette, asset.name);
 
             _data = data;
             _stageId = asset.name;
             _session = new PuzzleSession(new Board(stage));
             _minMoves = stage.MinMoves;
-            _boardView.Build(_session, _palette);
-            _targetView.Build(_session, _palette);
+            _boardView.Build(_session, palette);
+            _targetView.Build(_session, palette);
             _targetView.SetInteractable(false);
-            _mixTable.Build(_palette);
+            _mixTable.Build(palette);
             _boardView.SetSymbols(_symbols);
             _targetView.SetSymbols(_symbols);
             _stageName.text = $"{number}. {stage.Name}";
@@ -63,6 +63,15 @@ namespace ColoringBoot.Game
             _data.SaveStats();
             Refresh();
             return true;
+        }
+
+        // 스테이지의 팔레트 이름 → 팔레트 에셋. 이름이 없으면 기본, 모르는 이름이면 기본 + 경고
+        private ColorPalette ChoosePalette(string id, string stage)
+        {
+            int index = _palettes.IndexOf(id);
+            if (index >= 0) return _palettes.Palettes[index];
+            Debug.LogWarning($"스테이지 '{stage}'의 팔레트 '{id}'가 목록에 없어 기본 팔레트를 씁니다", this);
+            return _palettes.Default;
         }
 
         // 보드를 떠난다(목록으로). 풀던 판은 저장하지 않는다(2026-09-30 사용자 결정)

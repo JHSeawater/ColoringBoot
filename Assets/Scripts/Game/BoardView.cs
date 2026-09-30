@@ -45,6 +45,8 @@ namespace ColoringBoot.Game
         [SerializeField] private bool _showJudgement = true;
         [SerializeField] private Color _symbolLight = Color.white;
         [SerializeField] private Color _symbolDark = new Color32(0x1C, 0x22, 0x2C, 0xFF);
+        [Tooltip("칸 색의 밝기(Color.grayscale)가 이보다 크면 어두운 기호 — 기본 팔레트에서는 노랑만")]
+        [SerializeField] private float _symbolDarkAbove = 0.6f;
 
         // 붓질 요청 (칸 인덱스, 방향)
         public event Action<int, HexDirection> BrushRequested;
@@ -142,8 +144,8 @@ namespace ColoringBoot.Game
                 // 목표 마커: 아직 목표 색이 아니고 목표가 빈칸이 아닐 때 (프로토타입과 같음)
                 _cells[i].SetMarker(_showJudgement && color != target && target != PaintColor.Empty, ColorOf(target));
                 _cells[i].SetDead(_showJudgement && !_showTarget && _session.IsDeadCell(i));
-                // 노랑 · 빈칸처럼 밝은 칸은 어두운 기호
-                _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", color == PaintColor.Yellow ? _symbolDark : _symbolLight);
+                // 밝은 칸은 어두운 기호 — 팔레트마다 밝기가 다르다(파스텔은 대부분 밝음)
+                _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", ColorOf(color).grayscale > _symbolDarkAbove ? _symbolDark : _symbolLight);
             }
         }
 

@@ -151,7 +151,7 @@ public static class BoardSceneBuilder
             ("_grid", grid),
             ("_recordTemplate", recordView),
             ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
-            ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
+            ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/PaletteCatalog.asset")),
             ("_gameFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath)));
 
         EditorSceneManager.SaveScene(scene, EditorScenePath);
@@ -255,7 +255,7 @@ public static class BoardSceneBuilder
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         var controller = puzzle.GetComponent<PuzzleController>();
         SetRefs(controller,
-            ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
+            ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/PaletteCatalog.asset")),
             ("_boardView", boardView),
             ("_targetView", targetView),
             ("_mixTable", mixTable),

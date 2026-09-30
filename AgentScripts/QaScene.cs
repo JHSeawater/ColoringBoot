@@ -40,7 +40,7 @@ public static class QaScene
             Expect(text.font == font, $"폰트 {text.transform.parent.name}/{text.name}");
 
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
-            "_palette", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
+            "_palettes", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
             "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner");
         var flow = Object.FindAnyObjectByType<GameFlow>();
         CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
@@ -61,8 +61,18 @@ public static class QaScene
             "_fill", "_marker", "_markerFill", "_deadRing", "_selectRing", "_ghost", "_symbol");
         Expect(AssetDatabase.LoadAssetAtPath<Button>("Assets/Prefabs/DirectionButton.prefab").targetGraphic != null, "방향 버튼 targetGraphic");
 
-        var palette = new SerializedObject(AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")).FindProperty("_colors");
-        Expect(palette.arraySize == 7 && Enumerable.Range(0, 7).All(i => palette.GetArrayElementAtIndex(i).colorValue.a == 1f), "팔레트 7색 · 알파 1");
+        // 팔레트 목록: 첫 칸 = 기본(default) · 이름이 비지 않고 겹치지 않음 · 팔레트마다 7색 · 알파 1
+        var palettes = AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/PaletteCatalog.asset");
+        Expect(palettes != null && palettes.Palettes.Count >= 2 && palettes.Palettes.All(p => p != null), "팔레트 목록 2개 이상 · 빈 칸 없음");
+        Expect(palettes.Default.Id == "default", "첫 팔레트 = default");
+        Expect(palettes.Palettes.Select(p => p.Id).Distinct().Count() == palettes.Palettes.Count && palettes.Palettes.All(p => !string.IsNullOrWhiteSpace(p.Id)), "팔레트 이름 겹침 · 빈 이름 없음");
+        foreach (ColorPalette each in palettes.Palettes)
+        {
+            var colors = new SerializedObject(each).FindProperty("_colors");
+            Expect(colors.arraySize == 7 && Enumerable.Range(0, 7).All(i => colors.GetArrayElementAtIndex(i).colorValue.a == 1f), $"팔레트 {each.Id} 7색 · 알파 1");
+        }
+        foreach (TextAsset stage in catalog.Stages)
+            Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
         foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star" })
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath($"Assets/Art/Sprites/{name}.png");

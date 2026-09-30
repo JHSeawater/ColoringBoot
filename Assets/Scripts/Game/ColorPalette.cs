@@ -10,8 +10,12 @@ namespace ColoringBoot.Game
     {
         private const int ColorCount = 7;
 
+        [Tooltip("스테이지 JSON의 palette 값 (예: default · pastel)")]
+        [SerializeField] private string _id = "default";
         [Tooltip("색 값 1~7 순서: 빨강 · 노랑 · 주황 · 파랑 · 보라 · 초록 · 검정(기본 팔레트 이름 기준)")]
         [SerializeField] private Color[] _colors = new Color[ColorCount];
+
+        public string Id => _id;
 
         // 빈칸(0)의 색은 팔레트가 아니라 보드 테마(BoardView)가 정한다
         public Color Get(PaintColor color) => _colors[(int)color - 1];
