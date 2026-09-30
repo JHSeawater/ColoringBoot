@@ -1,6 +1,4 @@
-using System.IO;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace ColoringBoot.Core.Tests
 {
@@ -19,7 +17,7 @@ namespace ColoringBoot.Core.Tests
         [TestCase("LastStroke", 37, 7, 100, 5040, 182)]
         public void MatchesPrototypeEngine(string file, int cells, int minMoves, int orderSucceeded, int orderTotal, int explored)
         {
-            Stage stage = Stage.Parse(File.ReadAllText(Path.Combine(Application.dataPath, "Data/Stages", file + ".json")));
+            Stage stage = Stage.Parse(TestStages.ReadPrototype(file));
             var board = new Board(stage);
             PaintColor[] start = board.CreateStartState();
 

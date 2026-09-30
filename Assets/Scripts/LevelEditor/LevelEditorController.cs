@@ -20,6 +20,7 @@ namespace ColoringBoot.LevelEditor
         private const int MaxCells = 40;               // GDD §6 스테이지 최대 칸 수
         private const string StageFolder = "Assets/Data/Stages";
         private const float GenerateSeconds = 4f;      // 생성기 한 번에 쓸 시간 (프로토타입과 같음)
+        private const int SolveLimit = 600000;         // 풀이 검사 · 저장의 탐색 상한 (프로토타입 에디터의 풀이 검사와 같음)
         private const float ReferenceHeight = 1920f;   // IMGUI 배율 기준
         private const float PanelTop = 1000f;          // 패널은 화면 아래쪽 (보드 영역은 씬에서 위쪽)
         private const int FontSize = 30;
@@ -293,7 +294,7 @@ namespace ColoringBoot.LevelEditor
         private static SolveResult Solve(Stage stage)
         {
             var board = new Board(stage);
-            return Solver.Solve(board, board.CreateStartState());
+            return Solver.Solve(board, board.CreateStartState(), SolveLimit);
         }
 
         private string Describe(SolveResult result)
@@ -308,7 +309,7 @@ namespace ColoringBoot.LevelEditor
             return $"풀 수 있어요. 최소 {result.Path.Count}수, 탐색한 상태 {result.Explored:N0}개.{orderText}";
         }
 
-        // 저장: 솔버가 minMoves를 채우고, JSON을 쓰고, 목록에 없으면 끝에 등록한다
+        // 저장: 솔버가 minMoves를 채우고, JSON을 쓰고, 목록에 없으면 끝에 등록한다. 풀이를 확인하지 못하면(풀 수 없음 · 탐색 상한) 저장하지 않는다
         private void Save()
         {
             if (_cells.Count < 2)
@@ -328,13 +329,13 @@ namespace ColoringBoot.LevelEditor
                 return;
             }
             SolveResult result = Solve(BuildStage(null));
-            if (!result.Solved && !result.Limited || result.Solved && result.Path.Count == 0)
+            if (!result.Solved || result.Path.Count == 0)
             {
                 _status = "저장하지 않았어요 — " + Describe(result);
                 return;
             }
 
-            Stage stage = BuildStage(result.Solved ? result.Path.Count : (int?)null);
+            Stage stage = BuildStage(result.Path.Count);
             File.WriteAllText(path, StageWriter.ToJson(stage) + "\n", new UTF8Encoding(false));
             AssetDatabase.ImportAsset(path);
             var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
@@ -350,10 +351,9 @@ namespace ColoringBoot.LevelEditor
             _loadedFile = _fileName;
             _catalogIndex = _catalog.Stages.ToList().IndexOf(asset);
 
-            string min = result.Solved ? $"최소 {result.Path.Count}수" : "최소 수 없음(탐색 상한)";
             string font = _gameFont.HasCharacters(_name, out List<char> missing) ? "" :
                 $" 게임 폰트에 없는 글자 [{new string(missing.ToArray())}] — AgentScripts/Phase2Font.cs를 다시 실행하세요.";
-            _status = $"'{path}'에 저장했어요({min}, 목록 {_catalogIndex + 1}번째).{font}";
+            _status = $"'{path}'에 저장했어요(최소 {result.Path.Count}수, 목록 {_catalogIndex + 1}번째).{font}";
         }
     }
 }

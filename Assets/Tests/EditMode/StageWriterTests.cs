@@ -1,12 +1,10 @@
-using System.IO;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace ColoringBoot.Core.Tests
 {
     public class StageWriterTests
     {
-        // 프로토타입 스테이지 파일 9개: 읽고 다시 쓰면 파일 내용과 글자 하나까지 같다(끝 줄바꿈 제외)
+        // 프로토타입 스테이지 기준 파일 9개: 읽고 다시 쓰면 파일 내용과 글자 하나까지 같다(끝 줄바꿈 제외)
         [TestCase("Grape")]
         [TestCase("TwoColors")]
         [TestCase("BrushChanges")]
@@ -18,7 +16,7 @@ namespace ColoringBoot.Core.Tests
         [TestCase("LastStroke")]
         public void RoundTrip_StageFiles(string file)
         {
-            string text = File.ReadAllText(Path.Combine(Application.dataPath, "Data/Stages", file + ".json")).TrimEnd();
+            string text = TestStages.ReadPrototype(file).TrimEnd();
             Assert.AreEqual(text, StageWriter.ToJson(Stage.Parse(text)));
         }
 
