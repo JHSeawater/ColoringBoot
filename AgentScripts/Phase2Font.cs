@@ -16,7 +16,7 @@ public static class Phase2Font
     private const string FontPath = "Assets/Art/Fonts/Pretendard-SemiBold.ttf";
     private const string AssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
     private const string TmpSettingsPath = "Assets/TextMesh Pro/Resources/TMP Settings.asset";
-    private const int SamplingSize = 64;
+    private const int SamplingSize = 56;  // 1024² 한 장에 들어가게 (64는 254자에서 두 장이 됨 — 2026-09-30)
     private const int Padding = 6;
     private const int AtlasSize = 1024;
 

@@ -26,6 +26,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 | `…/MixTable` | HorizontalLayoutGroup · MixTableView | O |
 | `…/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
 | `…/ClearBanner` · `…/StuckBanner`(안에 UndoButton) | Image · Label | **X**(처음엔 꺼짐) |
+| `…/StatsPanel`(Text · CloseButton) | Image(불투명) · StatsView | **X**(처음엔 꺼짐, 주소 `?stats`) |
 | `…/UndoButton` · `…/RestartButton` · `…/SymbolsButton` · `…/SoundButton` | Image · Button · Label | O |
 | `/Sound` | SoundController | O |
 | `/Puzzle` | PuzzleController | O |
@@ -42,7 +43,8 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
-- `/Puzzle` PuzzleController: `_catalog`(StageCatalog — 요소 모두 읽힘, 첫 스테이지 = 포도) · `_palette` · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_symbolsButton` · `_stuckUndoButton` · `_clearBanner` · `_stuckBanner`
+- `/Puzzle` PuzzleController: `_catalog`(StageCatalog — 요소 모두 읽힘, 첫 스테이지 = 포도) · `_palette` · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_symbolsButton` · `_stuckUndoButton` · `_clearBanner` · `_stuckBanner` · `_statsView`
+- `…/StatsPanel` StatsView: `_text` · `_closeButton`
 - `/Sound` SoundController: `_toggleButton` · `_toggleLabel`
 - `…/MixTable` MixTableView: `_chipSprite`
 - 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing` · `_ghost` · `_symbol`
@@ -53,7 +55,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `_palette`의 `_colors` 길이 7, 알파 모두 1
 - 스프라이트 `Assets/Art/Sprites/*.png`(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
-- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`Phase2Font.Build` 결과의 빠진 글자 0)
+- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`Phase2Font.Build` 결과의 빠진 글자 0 · 아틀라스 1장)
 
 ## 5. 빌드 씬 목록 (`get_build_settings`)
 - 활성 씬 목록 = `Assets/Scenes/Board.unity` 하나, enabled

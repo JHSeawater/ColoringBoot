@@ -36,7 +36,9 @@ public static class QaScene
 
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
             "_catalog", "_palette", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
-            "_undoButton", "_restartButton", "_symbolsButton", "_stuckUndoButton", "_clearBanner", "_stuckBanner");
+            "_undoButton", "_restartButton", "_symbolsButton", "_stuckUndoButton", "_clearBanner", "_stuckBanner", "_statsView");
+        CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
+        Expect(!GameObject.Find("Canvas/SafeArea").transform.Find("StatsPanel").gameObject.activeSelf, "StatsPanel 처음엔 꺼짐");
         var catalog = (StageCatalog)new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_catalog").objectReferenceValue;
         Expect(catalog.Stages.Count >= 9, "목록 9개 이상");
         for (int i = 0; i < catalog.Stages.Count; i++)

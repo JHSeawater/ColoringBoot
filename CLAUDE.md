@@ -145,7 +145,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 **스테이지 데이터:** 프로토타입 포맷 `{"name": ..., "cells": [[q, r, 시작 색, 목표 색], ...]}` (GDD §3) + 선택 필드 `palette`(팔레트 이름, 없으면 기본 팔레트) · `minMoves`(최소 수, 솔버가 채움, 없으면 미표시). 로직은 `palette`를 이름(문자열)으로만 들고, 팔레트 에셋을 고르는 일은 표현 계층이 한다. 프로토타입에 들어 있는 스테이지 9개(포도 포함)는 이 포맷 그대로 옮겨 쓸 수 있다. 읽기는 `Stage.Parse` — Core 전용 파서다(`JsonUtility`는 UnityEngine이고 중첩 배열을 못 읽음, 2026-09-28 사용자 결정). `name` · `cells` 필수, 모르는 키 · 0~7 밖의 색 · 좌표 중복은 `FormatException`.
 * **저장 형식 (2026-09-29 사용자 결정)**: 스테이지 = `Assets/Data/Stages/<영문 이름>.json` TextAsset(이 포맷 그대로 — 프로토타입 코드와 복사 · 붙여넣기로 오감, git 차이가 읽힘). `minMoves`는 레벨 에디터가 저장할 때 솔버로 채운다. 순서 민감도는 저장하지 않고 에디터에만 표시. 게임이 여는 스테이지 목록은 `StageCatalog`(ScriptableObject, JSON TextAsset 순서 목록 — Phase 4 스테이지 선택 화면도 이것을 쓴다).
 
-**플랫폼 서비스 격리 (GDD §6 · §10):** 저장은 `PlayerPrefs`를 직접 부르지 않고 인터페이스 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 인터페이스 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 처음부터 구조에 넣는다.
+**플랫폼 서비스 격리 (GDD §6 · §10):** 저장은 `PlayerPrefs`를 직접 부르지 않고 인터페이스 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 인터페이스 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 처음부터 구조에 넣는다. 구현(2026-09-30): `IKeyValueStore` · `PlayerPrefsStore`(쓸 때마다 `PlayerPrefs.Save()` — WebGL은 그래야 IndexedDB에 남음), 키 `ColoringBoot.Progress`(클리어 · 최고 기록, Core `Progress`) · `ColoringBoot.PlayStats`(플레이테스트 기록, Core `PlayStats`) — 저장 형식은 머리줄(`progress 1` · `stats 1`) + 탭 구분 줄, 깨지면 빈 기록으로 시작. 스테이지는 파일 이름으로 구분. 광고는 `IAdService` · `NoAdService`. 주소 쿼리: `?stage=<파일 이름>` · `?stats`(기록 패널) · `?reset`(진행 · 기록 지우기).
 
 **회귀 기준 — 포도 스테이지 (GDD §3):** 최소 풀이 5수, 그 5수의 순서 120가지 중 8가지만 성공. 위 규칙 서술로 재현됨을 확인했다(2026-09-24 시뮬레이션 · 프로토타입 엔진 코드와 대조). 붓질·판정·솔버를 바꾸면 이 결과가 EditMode 테스트(`GrapeRegressionTests`)로 유지되어야 한다.
 
@@ -209,7 +209,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **화면 y축 부호** — Unity는 y가 위, 프로토타입(SVG)은 아래. 배치 공식을 그대로 옮기면 1시와 5시 등이 위아래로 뒤집힌다(§3 화면 배치).
 * **순수 로직에 `UnityEngine` 유입** — asmdef가 막았을 때 참조를 추가해 우회하지 않는다.
 * **비동기 MCP 명령의 완료 가정 · 설정 변경의 Undo 기대** — §2 MCP 안전 규칙.
-* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례 — 이 프로젝트는 2026-09-30에 LiberationSans를 지웠다. TMP Essential Resources를 다시 임포트하면 되살아나 빌드에 들어간다). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Phase2Font.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 줄은 제외). 주의: 이 TMP 버전은 `AtlasPopulationMode.Static`을 폐기 예정(obsolete)으로 표시한다 — 지금은 빌드 · 표시 정상(2026-09-29). TMP를 올릴 때 Dynamic 방식으로 옮길지(용량 · 원본 폰트 포함 여부) 다시 정한다.
+* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례 — 이 프로젝트는 2026-09-30에 LiberationSans를 지웠다. TMP Essential Resources를 다시 임포트하면 되살아나 빌드에 들어간다). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정 — 1024² 한 장, 샘플링 56: 64에서 254자에 두 장이 되어 2026-09-30에 낮춤. `Phase2Font.Build` 결과가 두 장이 되면 용량과 함께 보고한다). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Phase2Font.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 줄은 제외). 주의: 이 TMP 버전은 `AtlasPopulationMode.Static`을 폐기 예정(obsolete)으로 표시한다 — 지금은 빌드 · 표시 정상(2026-09-29). TMP를 올릴 때 Dynamic 방식으로 옮길지(용량 · 원본 폰트 포함 여부) 다시 정한다.
 * **에디터에서만 확인하고 완료 처리** — §4 "빌드로 확인".
 * **GitHub Pages + Brotli** — 서버가 `Content-Encoding: br` 헤더를 주지 못하면 로드에 실패한다 → Decompression Fallback을 켜거나 압축 방식을 바꾼다.
 * **기믹·확장 포인트 선반영** — GDD §7 기믹은 채택되지 않은 후보다. 요청 전에 추상화·설정 옵션을 미리 만들지 않는다.

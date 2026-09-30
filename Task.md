@@ -194,9 +194,10 @@
 
 ### 4.2 진행 · 저장
 
-- [ ] [Code] 진행 로직(Core, 순수 C#) — 스테이지별 클리어 · 최고 기록(최소로 둔 수) · "완벽"(최고 기록 = `minMoves`) · 차례 해금 판정 · 문자열로 저장 · 복원. 스테이지는 파일 이름으로 구분(표시 이름을 바꿔도 기록 유지) + EditMode 테스트
-- [ ] [Code] 저장 인터페이스 + PlayerPrefs 구현 — 앱인토스 저장소로 교체 가능하게(CLAUDE.md §3), WebGL은 쓸 때마다 `PlayerPrefs.Save()` · 광고 인터페이스 자리(구현 없음, GDD §6)
-- [ ] [Code] 플레이테스트 기록 — 스테이지별 둔 수 · 되돌리기 · 처음부터 횟수 · 걸린 시간을 저장, 주소 `?stats`로 보기(GDD §9 "추론인가 찍기인가") — 사용자 결정 2026-09-30
+- [x] [Code] 진행 로직(Core, 순수 C#) — 스테이지별 클리어 · 최고 기록(최소로 둔 수) · "완벽"(최고 기록 = `minMoves`) · 차례 해금 판정(바로 앞 스테이지 클리어 — 사용자 결정 2026-09-30) · 문자열로 저장 · 복원. 스테이지는 파일 이름으로 구분(표시 이름을 바꿔도 기록 유지) + EditMode 테스트 → `Progress` · `PlayStats`, `ProgressTests` 10 · `PlayStatsTests` 4, EditMode 107/107
+- [x] [Code] 저장 인터페이스 + PlayerPrefs 구현 — 앱인토스 저장소로 교체 가능하게(CLAUDE.md §3), WebGL은 쓸 때마다 `PlayerPrefs.Save()` · 광고 인터페이스 자리(구현 없음, GDD §6) → `IKeyValueStore` · `PlayerPrefsStore` · `IAdService` · `NoAdService`(호출은 4.3 "다음 스테이지"), `PuzzleController`가 클리어 때 기록. 에디터 플레이: 포도 5수 클리어 → `progress 1 / Grape 5` 저장, 플레이를 다시 시작해도 클리어 · 최고 5 · 완벽 · 다음 스테이지 열림으로 읽힘. WebGL 새로고침 유지는 4.3 끝 빌드에서
+- [x] [Code] 플레이테스트 기록 — 스테이지별 둔 수 · 되돌리기 · 처음부터 횟수 · 걸린 시간을 저장, 주소 `?stats`로 보기(GDD §9 "추론인가 찍기인가") — 사용자 결정 2026-09-30 → `PlayStats`(첫 클리어까지만 셈 · 시간은 앱이 앞에 있을 때만) · `StatsView` · `?reset`(진행 · 기록 지우기) · `UrlQuery`. 에디터 플레이: 붓질 7 · 되돌리기 1 · 처음부터 1 · 클리어 5수로 저장, 패널 열기 · 닫기 스크린샷. 시간 누적은 에디터가 비활성 창이라(`isFocused` false) 4.3 끝 WebGL에서 확인
+- [x] [Editor] 플레이테스트 기록 패널 배선 · 폰트 재생성 — `BoardSceneBuilder.StatsPanel`(불투명 바탕 · 닫기 버튼, 처음엔 꺼짐) · `_statsView`, 폰트 254자 · 샘플링 64 → 56으로 1024² 한 장 유지, `QaScene` 67항목 통과
 
 ### 4.3 화면
 

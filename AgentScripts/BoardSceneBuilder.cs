@@ -248,6 +248,9 @@ public static class BoardSceneBuilder
         var sound = new GameObject("Sound", typeof(SoundController));
         SetRefs(sound.GetComponent<SoundController>(), ("_toggleButton", soundButton), ("_toggleLabel", soundButton.GetComponentInChildren<TMP_Text>()));
 
+        // 플레이테스트 기록 (주소 ?stats) — 맨 위를 덮는 패널, 처음엔 숨김
+        StatsView statsView = StatsPanel(safeArea);
+
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         var controller = puzzle.GetComponent<PuzzleController>();
         SetRefs(controller,
@@ -263,10 +266,41 @@ public static class BoardSceneBuilder
             ("_symbolsButton", symbolsButton),
             ("_stuckUndoButton", stuckUndoButton),
             ("_clearBanner", clearBanner),
-            ("_stuckBanner", stuckBanner));
+            ("_stuckBanner", stuckBanner),
+            ("_statsView", statsView));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
+    }
+
+    // 플레이테스트 기록 패널: 어두운 바탕(아래 보드 입력을 막음) · 왼쪽 위부터 기록 글자 · 아래 닫기 버튼
+    private static StatsView StatsPanel(GameObject parent)
+    {
+        var panel = NewUI("StatsPanel", parent);
+        Stretch(panel, new Vector2(30f, 30f), new Vector2(-30f, -30f));
+        var background = panel.AddComponent<Image>();
+        background.color = Strong;
+
+        var textArea = NewUI("Text", panel);
+        Stretch(textArea, new Vector2(40f, 200f), new Vector2(-40f, -40f));
+        TMP_Text text = Label(textArea, "", 34f);
+        text.alignment = TextAlignmentOptions.TopLeft;
+
+        var close = NewUI("CloseButton", panel);
+        var closeRect = (RectTransform)close.transform;
+        closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
+        closeRect.anchoredPosition = new Vector2(0f, 100f);
+        closeRect.sizeDelta = new Vector2(300f, 110f);
+        var closeImage = close.AddComponent<Image>();
+        closeImage.color = StrongInk;
+        Button closeButton = close.AddComponent<Button>();
+        closeButton.targetGraphic = closeImage;
+        Label(close, "닫기", 48f).color = Strong;
+
+        var view = panel.AddComponent<StatsView>();
+        SetRefs(view, ("_text", text), ("_closeButton", closeButton));
+        panel.SetActive(false);
+        return view;
     }
 
     private static Button BottomButton(GameObject parent, string name, string text, float x)
