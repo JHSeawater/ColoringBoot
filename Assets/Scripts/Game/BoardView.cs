@@ -80,8 +80,21 @@ namespace ColoringBoot.Game
             _rect = (RectTransform)transform;
         }
 
+        // 스테이지마다 다시 부른다 — 이전 스테이지의 칸 · 선 · 버튼을 치우고 새로 만든다
         public void Build(PuzzleSession session, ColorPalette palette)
         {
+            // 떼어 낸 뒤 지운다: Destroy는 프레임 끝에 일어나므로, 그 전에 자식 순서(칸 · 선 · 버튼)가 섞이지 않게
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                child.SetParent(null, false);
+                Destroy(child.gameObject);
+            }
+            _selected = -1;
+            _pointerId = NoPointer;
+            _dragDirection = -1;
+            _interactable = true;
+
             _session = session;
             _board = session.Board;
             _palette = palette;

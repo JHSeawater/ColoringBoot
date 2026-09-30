@@ -190,23 +190,32 @@ public static class BoardSceneBuilder
         var cellPrefab = AssetDatabase.LoadAssetAtPath<CellView>(CellPrefabPath);
         var buttonPrefab = AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath);
 
-        // 위쪽 줄: 스테이지 이름 · 수 카운터(왼쪽), 목표 그림 썸네일(오른쪽)
-        TMP_Text stageName = TopLeftText(safeArea, "StageName", -60f, 90f, 64f, Strong);
-        TMP_Text moveCounter = TopLeftText(safeArea, "MoveCounter", -160f, 70f, 52f, Muted);
-        var target = NewUI("TargetView", safeArea);
+        // 화면 두 개(선택 · 보드)는 GameFlow가 켜고 끈다. 옵션 · 기록 패널은 그 위를 덮는다
+        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton);
+        var boardScreen = NewUI("BoardScreen", safeArea);
+        Stretch(boardScreen, Vector2.zero, Vector2.zero);
+
+        // 위 버튼 줄: 목록(왼쪽) · 옵션(오른쪽)
+        Button backButton = TopButton(boardScreen, "BackButton", "목록", false);
+        Button boardOptionsButton = TopButton(boardScreen, "OptionsButton", "옵션", true);
+
+        // 스테이지 이름 · 수 카운터(왼쪽), 목표 그림 썸네일(오른쪽)
+        TMP_Text stageName = TopLeftText(boardScreen, "StageName", -150f, 90f, 64f, Strong);
+        TMP_Text moveCounter = TopLeftText(boardScreen, "MoveCounter", -250f, 70f, 52f, Muted);
+        var target = NewUI("TargetView", boardScreen);
         var targetRect = (RectTransform)target.transform;
         targetRect.anchorMin = targetRect.anchorMax = targetRect.pivot = new Vector2(1f, 1f);
-        targetRect.anchoredPosition = new Vector2(-40f, -30f);
+        targetRect.anchoredPosition = new Vector2(-40f, -140f);
         targetRect.sizeDelta = new Vector2(300f, 300f);
         var targetView = target.AddComponent<BoardView>();
         SetRefs(targetView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
         SetValues(targetView, ("_showTarget", true), ("_fitMargin", 0.6f), ("_maxRadius", 60f));
 
         // 색 조합표 한 줄
-        var mix = NewUI("MixTable", safeArea);
+        var mix = NewUI("MixTable", boardScreen);
         var mixRect = (RectTransform)mix.transform;
         mixRect.anchorMin = mixRect.anchorMax = mixRect.pivot = new Vector2(0.5f, 1f);
-        mixRect.anchoredPosition = new Vector2(0f, -350f);
+        mixRect.anchoredPosition = new Vector2(0f, -460f);
         mixRect.sizeDelta = new Vector2(1000f, 60f);
         var layout = mix.AddComponent<HorizontalLayoutGroup>();
         layout.childAlignment = TextAnchor.MiddleCenter;
@@ -217,44 +226,35 @@ public static class BoardSceneBuilder
         SetRefs(mixTable, ("_chipSprite", Sprite("HexFill")));
 
         // 보드 영역: 위 줄 · 조합표 · 아래 안내와 버튼 자리를 뺀 나머지. 투명 Image가 탭 · 드래그를 받는다
-        var boardArea = NewUI("BoardArea", safeArea);
-        Stretch(boardArea, new Vector2(40f, 420f), new Vector2(-40f, -430f));
+        var boardArea = NewUI("BoardArea", boardScreen);
+        Stretch(boardArea, new Vector2(40f, 420f), new Vector2(-40f, -540f));
         var hitArea = boardArea.AddComponent<Image>();
         hitArea.color = new Color(0f, 0f, 0f, 0f);
         var boardView = boardArea.AddComponent<BoardView>();
         SetRefs(boardView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
 
-        // 안내 띠 (아래 버튼 위). 막힘 안내에는 되돌리기 버튼을 함께 둔다
-        GameObject clearBanner = Banner(safeArea, "ClearBanner", Strong, "완성!", 0f);
-        GameObject stuckBanner = Banner(safeArea, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
-        var stuckUndo = NewUI("UndoButton", stuckBanner);
-        var stuckUndoRect = (RectTransform)stuckUndo.transform;
-        stuckUndoRect.anchorMin = stuckUndoRect.anchorMax = stuckUndoRect.pivot = new Vector2(1f, 0.5f);
-        stuckUndoRect.anchoredPosition = new Vector2(-16f, 0f);
-        stuckUndoRect.sizeDelta = new Vector2(260f, 90f);
-        var stuckUndoImage = stuckUndo.AddComponent<Image>();
-        stuckUndoImage.color = StrongInk;
-        Button stuckUndoButton = stuckUndo.AddComponent<Button>();
-        stuckUndoButton.targetGraphic = stuckUndoImage;
-        Label(stuckUndo, "되돌리기", 44f).color = Warn;
+        // 안내 띠 (아래 버튼 위). 클리어 안내에는 다음 버튼, 막힘 안내에는 되돌리기 버튼을 함께 둔다
+        GameObject clearBanner = Banner(boardScreen, "ClearBanner", Strong, "", 300f);
+        TMP_Text clearLabel = clearBanner.GetComponentInChildren<TMP_Text>();
+        Button nextButton = BannerButton(clearBanner, "NextButton", "다음", Strong);
+        GameObject stuckBanner = Banner(boardScreen, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
+        Button stuckUndoButton = BannerButton(stuckBanner, "UndoButton", "되돌리기", Warn);
 
-        // 아래 버튼 줄 (한 손이 닿는 곳)
-        Button undoButton = BottomButton(safeArea, "UndoButton", "되돌리기", -375f);
-        Button restartButton = BottomButton(safeArea, "RestartButton", "처음부터", -125f);
-        Button symbolsButton = BottomButton(safeArea, "SymbolsButton", "기호", 125f);
-        Button soundButton = BottomButton(safeArea, "SoundButton", "소리 켬", 375f);
+        // 아래 버튼 줄 (한 손이 닿는 곳) — 자주 누르는 둘만
+        Button undoButton = BottomButton(boardScreen, "UndoButton", "되돌리기", -250f, 460f);
+        Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 250f, 460f);
+        boardScreen.SetActive(false);
 
-        // 사운드 켜고 끄기 · 백그라운드 정지
-        var sound = new GameObject("Sound", typeof(SoundController));
-        SetRefs(sound.GetComponent<SoundController>(), ("_toggleButton", soundButton), ("_toggleLabel", soundButton.GetComponentInChildren<TMP_Text>()));
-
+        OptionsView optionsView = OptionsPanel(safeArea);
         // 플레이테스트 기록 (주소 ?stats) — 맨 위를 덮는 패널, 처음엔 숨김
         StatsView statsView = StatsPanel(safeArea);
+
+        // 사운드 켜고 끄기(옵션 화면) · 백그라운드 정지
+        var sound = new GameObject("Sound", typeof(SoundController));
 
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         var controller = puzzle.GetComponent<PuzzleController>();
         SetRefs(controller,
-            ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
             ("_palette", AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")),
             ("_boardView", boardView),
             ("_targetView", targetView),
@@ -263,11 +263,25 @@ public static class BoardSceneBuilder
             ("_moveCounter", moveCounter),
             ("_undoButton", undoButton),
             ("_restartButton", restartButton),
-            ("_symbolsButton", symbolsButton),
             ("_stuckUndoButton", stuckUndoButton),
             ("_clearBanner", clearBanner),
-            ("_stuckBanner", stuckBanner),
-            ("_statsView", statsView));
+            ("_clearLabel", clearLabel),
+            ("_stuckBanner", stuckBanner));
+
+        var game = new GameObject("Game", typeof(GameFlow));
+        SetRefs(game.GetComponent<GameFlow>(),
+            ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
+            ("_puzzle", controller),
+            ("_sound", sound.GetComponent<SoundController>()),
+            ("_boardScreen", boardScreen),
+            ("_select", selectView),
+            ("_options", optionsView),
+            ("_statsView", statsView),
+            ("_backButton", backButton),
+            ("_boardOptionsButton", boardOptionsButton),
+            ("_selectOptionsButton", selectOptionsButton),
+            ("_nextButton", nextButton),
+            ("_nextLabel", nextButton.GetComponentInChildren<TMP_Text>()));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
@@ -303,13 +317,139 @@ public static class BoardSceneBuilder
         return view;
     }
 
-    private static Button BottomButton(GameObject parent, string name, string text, float x)
+    // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 육각 번호 버튼 격자(3열) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
+    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton)
+    {
+        var screen = NewUI("SelectScreen", parent);
+        Stretch(screen, Vector2.zero, Vector2.zero);
+        TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
+        optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
+
+        var grid = NewUI("Grid", screen);
+        var gridRect = (RectTransform)grid.transform;
+        gridRect.anchorMin = gridRect.anchorMax = gridRect.pivot = new Vector2(0.5f, 1f);
+        gridRect.anchoredPosition = new Vector2(0f, -220f);
+        gridRect.sizeDelta = new Vector2(940f, 1400f);
+        var gridLayout = grid.AddComponent<GridLayoutGroup>();
+        gridLayout.cellSize = new Vector2(260f, 300f); // 꼭짓점이 위인 육각형 비율(너비 = 높이 × √3/2)
+        gridLayout.spacing = new Vector2(40f, 20f);
+        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayout.constraintCount = 3;
+        gridLayout.childAlignment = TextAnchor.UpperCenter;
+
+        var notice = NewUI("Notice", screen);
+        var noticeRect = (RectTransform)notice.transform;
+        noticeRect.anchorMin = new Vector2(0f, 0f);
+        noticeRect.anchorMax = new Vector2(1f, 0f);
+        noticeRect.anchoredPosition = new Vector2(0f, 200f);
+        noticeRect.sizeDelta = new Vector2(-80f, 110f);
+        var noticeImage = notice.AddComponent<Image>();
+        noticeImage.color = Strong;
+        noticeImage.raycastTarget = false;
+        TMP_Text noticeText = Label(notice, "", 46f);
+        notice.SetActive(false);
+
+        // 버튼 원본: 육각 바탕 · 다음 스테이지 테두리 · 번호 · 자물쇠 · 별
+        var template = NewUI("StageButtonTemplate", screen);
+        ((RectTransform)template.transform).sizeDelta = gridLayout.cellSize;
+        var fill = template.AddComponent<Image>();
+        fill.sprite = Sprite("HexFill");
+        Button button = template.AddComponent<Button>();
+        button.targetGraphic = fill;
+        Image ring = AddImage("Ring", template, "HexRing", Focus, 0f, 1f);
+        TMP_Text number = Label(template, "", 96f);
+        Image lockIcon = AddImage("Lock", template, "Lock", new Color(Strong.r, Strong.g, Strong.b, 0.55f), 0.3f, 0.7f);
+        Image star = AddImage("Star", template, "Star", Hex("#F1B928"), 0.36f, 0.64f);
+        var starRect = star.rectTransform;
+        starRect.anchorMin = new Vector2(0.36f, 0.04f);
+        starRect.anchorMax = new Vector2(0.64f, 0.28f);
+        var buttonView = template.AddComponent<StageButtonView>();
+        SetRefs(buttonView, ("_button", button), ("_fill", fill), ("_ring", ring), ("_number", number), ("_lock", lockIcon), ("_star", star));
+        template.SetActive(false);
+
+        var view = screen.AddComponent<StageSelectView>();
+        SetRefs(view, ("_title", title), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
+        screen.SetActive(false);
+        return view;
+    }
+
+    // 옵션 패널: 어두운 바탕(아래 입력을 막음) · 제목 · 기호 · 소리 켜고 끄기 · 닫기
+    private static OptionsView OptionsPanel(GameObject parent)
+    {
+        var panel = NewUI("OptionsPanel", parent);
+        Stretch(panel, new Vector2(30f, 30f), new Vector2(-30f, -30f));
+        panel.AddComponent<Image>().color = Strong;
+        TMP_Text title = TopLeftText(panel, "Title", -40f, 90f, 64f, StrongInk);
+        title.text = "옵션";
+
+        Button symbols = PanelButton(panel, "SymbolsButton", "", 260f);
+        Button sound = PanelButton(panel, "SoundButton", "", 80f);
+        Button close = PanelButton(panel, "CloseButton", "닫기", -300f);
+
+        var view = panel.AddComponent<OptionsView>();
+        SetRefs(view,
+            ("_symbolsButton", symbols), ("_symbolsLabel", symbols.GetComponentInChildren<TMP_Text>()),
+            ("_soundButton", sound), ("_soundLabel", sound.GetComponentInChildren<TMP_Text>()),
+            ("_closeButton", close));
+        panel.SetActive(false);
+        return view;
+    }
+
+    // 패널 가운데 줄의 밝은 버튼 (y = 가운데 기준)
+    private static Button PanelButton(GameObject parent, string name, string text, float y)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, y);
+        rect.sizeDelta = new Vector2(700f, 130f);
+        var image = go.AddComponent<Image>();
+        image.color = StrongInk;
+        Button button = go.AddComponent<Button>();
+        button.targetGraphic = image;
+        Label(go, text, 52f).color = Strong;
+        return button;
+    }
+
+    // 위 버튼 줄의 작은 버튼 (right = 오른쪽 끝)
+    private static Button TopButton(GameObject parent, string name, string text, bool right)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(right ? 1f : 0f, 1f);
+        rect.anchoredPosition = new Vector2(right ? -40f : 40f, -30f);
+        rect.sizeDelta = new Vector2(200f, 90f);
+        var image = go.AddComponent<Image>();
+        image.color = Strong;
+        Button button = go.AddComponent<Button>();
+        button.targetGraphic = image;
+        Label(go, text, 44f);
+        return button;
+    }
+
+    // 안내 띠 오른쪽 끝의 밝은 버튼 (글자는 띠 색)
+    private static Button BannerButton(GameObject banner, string name, string text, Color textColor)
+    {
+        var go = NewUI(name, banner);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
+        rect.anchoredPosition = new Vector2(-16f, 0f);
+        rect.sizeDelta = new Vector2(260f, 90f);
+        var image = go.AddComponent<Image>();
+        image.color = StrongInk;
+        Button button = go.AddComponent<Button>();
+        button.targetGraphic = image;
+        Label(go, text, 44f).color = textColor;
+        return button;
+    }
+
+    private static Button BottomButton(GameObject parent, string name, string text, float x, float width)
     {
         var go = NewUI(name, parent);
         var rect = (RectTransform)go.transform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
         rect.anchoredPosition = new Vector2(x, 150f);
-        rect.sizeDelta = new Vector2(235f, 130f);
+        rect.sizeDelta = new Vector2(width, 130f);
         var image = go.AddComponent<Image>();
         image.color = Strong;
         Button button = go.AddComponent<Button>();

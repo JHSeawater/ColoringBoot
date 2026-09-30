@@ -97,7 +97,7 @@ public static class BoardQa
 
     public static string Undo()
     {
-        var button = GameObject.Find("Canvas/SafeArea/UndoButton").GetComponent<Button>();
+        var button = GameObject.Find("Canvas/SafeArea/BoardScreen/UndoButton").GetComponent<Button>();
         if (!button.interactable) return "Undo 비활성";
         button.onClick.Invoke();
         return State();
@@ -105,7 +105,7 @@ public static class BoardQa
 
     public static string Restart()
     {
-        var button = GameObject.Find("Canvas/SafeArea/RestartButton").GetComponent<Button>();
+        var button = GameObject.Find("Canvas/SafeArea/BoardScreen/RestartButton").GetComponent<Button>();
         if (!button.interactable) return "Restart 비활성";
         button.onClick.Invoke();
         return State();
@@ -115,10 +115,55 @@ public static class BoardQa
     {
         PuzzleSession s = Session();
         string colors = string.Join(" ", Enumerable.Range(0, s.Board.CellCount).Select(i => (int)s.ColorAt(i)));
-        return $"수 {s.MoveCount} · 성공 {s.IsSolved} · 막힘 {s.IsDead} · 색 [{colors}] · Clear 안내 {Active("ClearBanner")} · Stuck 안내 {Active("StuckBanner")} · Undo {GameObject.Find("Canvas/SafeArea/UndoButton").GetComponent<Button>().interactable} · Restart {GameObject.Find("Canvas/SafeArea/RestartButton").GetComponent<Button>().interactable}";
+        return $"수 {s.MoveCount} · 성공 {s.IsSolved} · 막힘 {s.IsDead} · 색 [{colors}] · Clear 안내 {Active("ClearBanner")} · Stuck 안내 {Active("StuckBanner")} · Undo {GameObject.Find("Canvas/SafeArea/BoardScreen/UndoButton").GetComponent<Button>().interactable} · Restart {GameObject.Find("Canvas/SafeArea/BoardScreen/RestartButton").GetComponent<Button>().interactable}";
     }
 
-    private static bool Active(string banner) => GameObject.Find("Canvas/SafeArea").transform.Find(banner).gameObject.activeSelf;
+    // 화면 흐름 (Phase 4.3) — 지금 켜진 화면과 그 상태. 선택 화면 버튼: 번호(잠김이면 L) · *완벽 · >다음에 풀 스테이지 · #클리어(채움)
+    public static string Flow()
+    {
+        Transform safe = GameObject.Find("Canvas/SafeArea").transform;
+        bool select = safe.Find("SelectScreen").gameObject.activeSelf;
+        bool board = safe.Find("BoardScreen").gameObject.activeSelf;
+        string text = $"선택 {select} · 보드 {board} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
+        if (select)
+        {
+            Transform grid = safe.Find("SelectScreen/Grid");
+            var buttons = Enumerable.Range(0, grid.childCount).Select(i =>
+            {
+                Transform b = grid.GetChild(i);
+                bool locked = b.Find("Lock").gameObject.activeSelf;
+                bool cleared = b.GetComponent<Image>().color.r < 0.5f;
+                return $"{(b.Find("Ring").gameObject.activeSelf ? ">" : "")}{(locked ? "L" : (i + 1).ToString())}{(cleared ? "#" : "")}{(b.Find("Star").gameObject.activeSelf ? "*" : "")}";
+            });
+            Transform notice = safe.Find("SelectScreen/Notice");
+            text += $" | {safe.Find("SelectScreen/Title").GetComponentInChildren<TMPro.TMP_Text>().text} [{string.Join(" ", buttons)}]{(notice.gameObject.activeSelf ? " 안내: " + notice.GetComponentInChildren<TMPro.TMP_Text>().text : "")}";
+        }
+        if (board)
+        {
+            Transform screen = safe.Find("BoardScreen");
+            text += $" | {screen.Find("StageName").GetComponentInChildren<TMPro.TMP_Text>().text} · {screen.Find("MoveCounter").GetComponentInChildren<TMPro.TMP_Text>().text}";
+            if (Active("ClearBanner")) text += $" · 띠: {screen.Find("ClearBanner/Label").GetComponent<TMPro.TMP_Text>().text} [{screen.Find("ClearBanner/NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
+        }
+        return text;
+    }
+
+    // 선택 화면에서 number번 스테이지 버튼을 누른다
+    public static string ChooseStage(int number)
+    {
+        GameObject.Find("Canvas/SafeArea/SelectScreen/Grid").transform.GetChild(number - 1).GetComponent<Button>().onClick.Invoke();
+        return Flow();
+    }
+
+    // Canvas/SafeArea 아래 경로의 버튼을 누른다 (예: BoardScreen/BackButton · BoardScreen/ClearBanner/NextButton · OptionsPanel/SymbolsButton)
+    public static string Press(string path)
+    {
+        GameObject target = GameObject.Find("Canvas/SafeArea/" + path);
+        if (target == null) return $"{path} 없음(꺼져 있음?)";
+        target.GetComponent<Button>().onClick.Invoke();
+        return Flow();
+    }
+
+    private static bool Active(string banner) => GameObject.Find("Canvas/SafeArea/BoardScreen").transform.Find(banner).gameObject.activeSelf;
 
     private static string[] VisibleButtons(BoardView view)
     {
@@ -127,7 +172,7 @@ public static class BoardQa
     }
 
     // 플레이 보드 (목표 썸네일도 BoardView라 이름으로 찾는다)
-    private static BoardView Board() => GameObject.Find("Canvas/SafeArea/BoardArea").GetComponent<BoardView>();
+    private static BoardView Board() => GameObject.Find("Canvas/SafeArea/BoardScreen/BoardArea").GetComponent<BoardView>();
 
     private static PuzzleSession Session()
     {

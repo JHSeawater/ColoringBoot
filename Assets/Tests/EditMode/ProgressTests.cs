@@ -56,6 +56,23 @@ namespace ColoringBoot.Core.Tests
         }
 
         [Test]
+        public void NextStage_FirstUnlockedNotCleared()
+        {
+            var progress = new Progress();
+            Assert.AreEqual(0, progress.NextStage(Order));
+
+            progress.RecordClear("TwoColors", 3);
+            Assert.AreEqual(1, progress.NextStage(Order));
+
+            progress.RecordClear("BrushChanges", 3);
+            progress.RecordClear("Grape", 5);
+            Assert.AreEqual(-1, progress.NextStage(Order), "모두 클리어");
+
+            // 뒤에 새 스테이지가 붙으면 그것이 다음
+            Assert.AreEqual(3, progress.NextStage(new[] { "TwoColors", "BrushChanges", "Grape", "Hive" }));
+        }
+
+        [Test]
         public void Serialize_RoundTrip()
         {
             var progress = new Progress();

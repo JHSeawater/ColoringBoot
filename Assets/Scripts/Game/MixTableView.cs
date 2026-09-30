@@ -24,8 +24,15 @@ namespace ColoringBoot.Game
         [SerializeField] private float _fontSize = 36f;
         [SerializeField] private Color _textColor = new Color32(0x1C, 0x22, 0x2C, 0xFF);
 
+        // 스테이지마다 다시 부른다 (팔레트가 스테이지마다 다를 수 있다)
         public void Build(ColorPalette palette)
         {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                child.SetParent(null, false);
+                Destroy(child.gameObject);
+            }
             for (int row = 0; row < _rows.Length; row++)
             {
                 if (row > 0) NewChild("Gap", _rowGap);

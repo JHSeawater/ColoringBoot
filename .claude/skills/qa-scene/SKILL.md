@@ -13,7 +13,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - 활성 씬이 `Assets/Scenes/Board.unity`가 아니면 보고하고 중단(`list_open_scenes`).
 
 ## 1. 계층 (`get_scene_hierarchy`)
-기대값 — 루트 5개. UI는 모두 `/Canvas/SafeArea` 아래(이하 `…` = `/Canvas/SafeArea`):
+기대값 — 루트 6개. UI는 모두 `/Canvas/SafeArea` 아래(이하 `…` = `/Canvas/SafeArea`). 화면 · 패널은 처음엔 모두 꺼져 있고 `GameFlow`가 켠다(Phase 4.3):
 
 | 경로 | 컴포넌트 | 활성 |
 |---|---|---|
@@ -21,15 +21,20 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 | `/EventSystem` | EventSystem · **InputSystemUIInputModule**(StandaloneInputModule이면 실패 — New Input System 전용) | O |
 | `/Canvas` | Canvas · CanvasScaler · GraphicRaycaster | O |
 | `/Canvas/SafeArea` | SafeAreaFitter | O |
-| `…/StageName` · `…/MoveCounter` | Label(TextMeshProUGUI) | O |
-| `…/TargetView` | BoardView(목표 썸네일) | O |
-| `…/MixTable` | HorizontalLayoutGroup · MixTableView | O |
-| `…/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
-| `…/ClearBanner` · `…/StuckBanner`(안에 UndoButton) | Image · Label | **X**(처음엔 꺼짐) |
-| `…/StatsPanel`(Text · CloseButton) | Image(불투명) · StatsView | **X**(처음엔 꺼짐, 주소 `?stats`) |
-| `…/UndoButton` · `…/RestartButton` · `…/SymbolsButton` · `…/SoundButton` | Image · Button · Label | O |
+| `…/SelectScreen`(Title · OptionsButton · Grid · Notice · StageButtonTemplate) | StageSelectView · Grid에 GridLayoutGroup(3열) · 템플릿에 StageButtonView | **X** |
+| `…/BoardScreen` | (묶음) | **X** |
+| `…/BoardScreen/BackButton` · `…/OptionsButton` | Image · Button · Label | O(화면 안에서) |
+| `…/BoardScreen/StageName` · `…/MoveCounter` | Label(TextMeshProUGUI) | O |
+| `…/BoardScreen/TargetView` | BoardView(목표 썸네일) | O |
+| `…/BoardScreen/MixTable` | HorizontalLayoutGroup · MixTableView | O |
+| `…/BoardScreen/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
+| `…/BoardScreen/ClearBanner`(Label · NextButton) · `…/StuckBanner`(Label · UndoButton) | Image · Label | **X**(처음엔 꺼짐) |
+| `…/BoardScreen/UndoButton` · `…/RestartButton` | Image · Button · Label | O |
+| `…/OptionsPanel`(Title · SymbolsButton · SoundButton · CloseButton) | Image(불투명) · OptionsView | **X** |
+| `…/StatsPanel`(Text · CloseButton) | Image(불투명) · StatsView | **X**(주소 `?stats`) |
 | `/Sound` | SoundController | O |
 | `/Puzzle` | PuzzleController | O |
+| `/Game` | GameFlow | O |
 
 씬이 `isDirty: true`면 저장 안 된 변경이 있다고 보고한다.
 
@@ -38,14 +43,16 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 ## 2. 설정값 (`get_component_properties` / `get_serialized_fields`, format=value)
 - `/Canvas` Canvas: renderMode = Screen Space - Overlay
 - `/Canvas` CanvasScaler: uiScaleMode = Scale With Screen Size · referenceResolution = 1080×1920 · screenMatchMode = Expand
-- `…/BoardArea` Image: color.a = 0 · raycastTarget = true
-- `…/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
+- `…/BoardScreen/BoardArea` Image: color.a = 0 · raycastTarget = true
+- `…/BoardScreen/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/BoardScreen/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
 - 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
-- `/Puzzle` PuzzleController: `_catalog`(StageCatalog — 요소 모두 읽힘, 첫 스테이지 = 포도) · `_palette` · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_symbolsButton` · `_stuckUndoButton` · `_clearBanner` · `_stuckBanner` · `_statsView`
+- `/Puzzle` PuzzleController: `_palette` · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner`
+- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘, 첫 스테이지 = 포도) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel`
+- `…/SelectScreen` StageSelectView: `_title` · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
+- `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton`
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
-- `/Sound` SoundController: `_toggleButton` · `_toggleLabel`
 - `…/MixTable` MixTableView: `_chipSprite`
 - 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing` · `_ghost` · `_symbol`
 - 프리팹 `Assets/Prefabs/DirectionButton.prefab` Button: targetGraphic
@@ -53,7 +60,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 ## 4. 에셋
 - 목록의 JSON이 모두 `Stage.Parse`로 읽히는지(포도 = 10칸 · 큰 벌집 = 37칸)
 - `_palette`의 `_colors` 길이 7, 알파 모두 1
-- 스프라이트 `Assets/Art/Sprites/*.png`(`get_import_settings`): textureType Sprite · spriteImportMode Single
+- 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
 - `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`Phase2Font.Build` 결과의 빠진 글자 0 · 아틀라스 1장)
 

@@ -28,6 +28,17 @@ namespace ColoringBoot.Core
             return index == 0 || IsCleared(order[index - 1]);
         }
 
+        // 다음에 풀 스테이지 — 열려 있고 아직 클리어하지 않은 첫 스테이지. 모두 클리어했으면 -1 (선택 화면에서 강조)
+        public int NextStage(IReadOnlyList<string> order)
+        {
+            if (order == null) throw new ArgumentNullException(nameof(order));
+            for (int i = 0; i < order.Count; i++)
+            {
+                if (!IsCleared(order[i]) && IsUnlocked(order, i)) return i;
+            }
+            return -1;
+        }
+
         // 클리어 기록. 처음 클리어했거나 더 적은 수로 풀었으면 true
         public bool RecordClear(string stage, int moves)
         {

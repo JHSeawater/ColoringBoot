@@ -24,36 +24,46 @@ public static class QaScene
         var scaler = canvas.GetComponent<CanvasScaler>();
         Expect(scaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize && scaler.referenceResolution == new Vector2(1080, 1920) && scaler.screenMatchMode == CanvasScaler.ScreenMatchMode.Expand, "CanvasScaler");
 
-        var area = GameObject.Find("Canvas/SafeArea/BoardArea");
+        // 화면 · 패널은 처음엔 모두 꺼져 있다(GameFlow가 켠다) — 꺼진 오브젝트는 transform.Find로 찾는다
+        Transform safeArea = canvas.transform.Find("SafeArea");
+        foreach (string panel in new[] { "SelectScreen", "BoardScreen", "OptionsPanel", "StatsPanel" })
+            Expect(safeArea.Find(panel) != null && !safeArea.Find(panel).gameObject.activeSelf, $"{panel} 있음 · 처음엔 꺼짐");
+
+        Transform area = safeArea.Find("BoardScreen/BoardArea");
         Image hit = area.GetComponent<Image>();
         Expect(hit.color.a == 0f && hit.raycastTarget, "BoardArea 투명 · raycast");
         CheckBoardView(area.GetComponent<BoardView>(), false, Expect);
-        CheckBoardView(GameObject.Find("Canvas/SafeArea/TargetView").GetComponent<BoardView>(), true, Expect);
+        CheckBoardView(safeArea.Find("BoardScreen/TargetView").GetComponent<BoardView>(), true, Expect);
 
         var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
         foreach (TMP_Text text in canvas.GetComponentsInChildren<TMP_Text>(true))
             Expect(text.font == font, $"폰트 {text.transform.parent.name}/{text.name}");
 
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
-            "_catalog", "_palette", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
-            "_undoButton", "_restartButton", "_symbolsButton", "_stuckUndoButton", "_clearBanner", "_stuckBanner", "_statsView");
+            "_palette", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
+            "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner");
+        var flow = Object.FindAnyObjectByType<GameFlow>();
+        CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
+            "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel");
+        CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
+        CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");
+        CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton");
         CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
-        Expect(!GameObject.Find("Canvas/SafeArea").transform.Find("StatsPanel").gameObject.activeSelf, "StatsPanel 처음엔 꺼짐");
-        var catalog = (StageCatalog)new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_catalog").objectReferenceValue;
+        Expect(Object.FindAnyObjectByType<SoundController>() != null, "SoundController 있음");
+        var catalog = (StageCatalog)new SerializedObject(flow).FindProperty("_catalog").objectReferenceValue;
         Expect(catalog.Stages.Count >= 9, "목록 9개 이상");
         for (int i = 0; i < catalog.Stages.Count; i++)
             Expect(catalog.Stages[i] != null && Stage.Parse(catalog.Stages[i].text).Cells.Count > 0, $"목록[{i}] 읽힘");
         Expect(catalog.Stages[0].name == "Grape" && Stage.Parse(catalog.Stages[0].text).Cells.Count == 10, "목록 첫 스테이지 = 포도 10칸");
 
-        CheckRefs(Object.FindAnyObjectByType<SoundController>(), Expect, "_toggleButton", "_toggleLabel");
-        CheckRefs(Object.FindAnyObjectByType<MixTableView>(), Expect, "_chipSprite");
+        CheckRefs(Object.FindAnyObjectByType<MixTableView>(FindObjectsInactive.Include), Expect, "_chipSprite");
         CheckRefs(AssetDatabase.LoadAssetAtPath<CellView>("Assets/Prefabs/Cell.prefab"), Expect,
             "_fill", "_marker", "_markerFill", "_deadRing", "_selectRing", "_ghost", "_symbol");
         Expect(AssetDatabase.LoadAssetAtPath<Button>("Assets/Prefabs/DirectionButton.prefab").targetGraphic != null, "방향 버튼 targetGraphic");
 
         var palette = new SerializedObject(AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset")).FindProperty("_colors");
         Expect(palette.arraySize == 7 && Enumerable.Range(0, 7).All(i => palette.GetArrayElementAtIndex(i).colorValue.a == 1f), "팔레트 7색 · 알파 1");
-        foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow" })
+        foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star" })
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath($"Assets/Art/Sprites/{name}.png");
             Expect(importer.textureType == TextureImporterType.Sprite && importer.spriteImportMode == SpriteImportMode.Single, $"스프라이트 {name}");
