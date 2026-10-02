@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 보드 에디터 플레이 QA (Phase 1.2~) — run_script(file=AgentScripts/BoardQa.cs, entry=...)
+// 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
 {
@@ -93,6 +94,20 @@ public static class BoardQa
         if (!release) return preview;
         ExecuteEvents.Execute(view.gameObject, data, ExecuteEvents.pointerUpHandler);
         return $"{preview} → {State()}";
+    }
+
+    // 지금 스테이지를 솔버 풀이대로 실제 끌기로 둔다 (Phase 4.6 연속 플레이 — 다음 스테이지는 Press("BoardScreen/ClearBanner/NextButton"))
+    public static string SolveByDrag()
+    {
+        Board board = Session().Board;
+        SolveResult result = Solver.Solve(board, board.CreateStartState());
+        if (!result.Solved) return "솔버가 못 풂";
+        foreach (BoardMove move in result.Path)
+        {
+            HexCoord c = board.CoordOf(move.Cell);
+            Drag(c.Q, c.R, (int)move.Direction, 1.2f, true);
+        }
+        return $"풀이 {result.Path.Count}수 → {Flow()}";
     }
 
     public static string Undo()
