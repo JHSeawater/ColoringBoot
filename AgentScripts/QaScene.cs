@@ -54,7 +54,14 @@ public static class QaScene
         Expect(catalog.Stages.Count >= 9, "목록 9개 이상");
         for (int i = 0; i < catalog.Stages.Count; i++)
             Expect(catalog.Stages[i] != null && Stage.Parse(catalog.Stages[i].text).Cells.Count > 0, $"목록[{i}] 읽힘");
-        Expect(catalog.Stages[0].name == "Grape" && Stage.Parse(catalog.Stages[0].text).Cells.Count == 10, "목록 첫 스테이지 = 포도 10칸");
+        // 목록의 모든 스테이지가 솔버로 풀리고 저장된 최소 수와 같다 (스테이지를 바꿀 때마다 걸러진다, Phase 4.5)
+        foreach (TextAsset asset in catalog.Stages)
+        {
+            Stage stage = Stage.Parse(asset.text);
+            var board = new Board(stage);
+            SolveResult solved = Solver.Solve(board, board.CreateStartState());
+            Expect(solved.Solved && stage.MinMoves == solved.Path.Count, $"스테이지 {asset.name} 풀림 · minMoves {stage.MinMoves} = 솔버 {(solved.Solved ? solved.Path.Count : -1)}");
+        }
 
         CheckRefs(Object.FindAnyObjectByType<MixTableView>(FindObjectsInactive.Include), Expect, "_chipSprite");
         CheckRefs(AssetDatabase.LoadAssetAtPath<CellView>("Assets/Prefabs/Cell.prefab"), Expect,

@@ -49,7 +49,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner`
-- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘, 첫 스테이지 = 포도) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel`
+- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Phase4Stages.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel`
 - `…/SelectScreen` StageSelectView: `_title` · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton`
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
@@ -58,7 +58,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - 프리팹 `Assets/Prefabs/DirectionButton.prefab` Button: targetGraphic
 
 ## 4. 에셋
-- 목록의 JSON이 모두 `Stage.Parse`로 읽히는지(포도 = 10칸 · 큰 벌집 = 37칸)
+- 목록의 JSON이 모두 `Stage.Parse`로 읽히고, 솔버로 풀리며 `minMoves`가 솔버 최소 수와 같은지
 - `Assets/Data/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
 - 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF

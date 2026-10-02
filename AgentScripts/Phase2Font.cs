@@ -71,7 +71,7 @@ public static class Phase2Font
         {
             foreach (string line in File.ReadAllLines(file, Encoding.UTF8))
             {
-                if (line.Contains("Debug.Log") || line.Contains("Exception(")) continue; // 콘솔 로그 · 예외 메시지는 화면에 안 나온다
+                if (line.Contains("Debug.Log") || line.Contains("Exception(") || line.Contains("[Tooltip(")) continue; // 콘솔 로그 · 예외 메시지 · 인스펙터 설명은 화면에 안 나온다
                 string body = line.Split(new[] { "//" }, System.StringSplitOptions.None)[0]; // 줄 주석 제외
                 foreach (Match m in literal.Matches(body)) Add(set, m.Groups[1].Value);
             }
