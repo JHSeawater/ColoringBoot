@@ -22,6 +22,7 @@ public static class BoardSceneBuilder
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
     private const string CatalogPath = "Assets/Data/StageCatalog.asset";
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
+    private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/ChapterArtBuilder.cs 먼저
     private static readonly string[] PrototypeStages = { "Grape", "TwoColors", "BrushChanges", "Honeycomb", "Crossing", "Stain", "MakeBlack", "Hive", "LastStroke" };
 
     // 프로토타입 라이트 테마
@@ -191,7 +192,7 @@ public static class BoardSceneBuilder
         var buttonPrefab = AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath);
 
         // 화면 두 개(선택 · 보드)는 GameFlow가 켜고 끈다. 옵션 · 기록 패널은 그 위를 덮는다
-        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton);
+        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton, out ChapterView selectPicture);
         var boardScreen = NewUI("BoardScreen", safeArea);
         Stretch(boardScreen, Vector2.zero, Vector2.zero);
 
@@ -245,6 +246,8 @@ public static class BoardSceneBuilder
         Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 250f, 460f);
         boardScreen.SetActive(false);
 
+        GameObject chapterScreen = ChapterScreen(safeArea, out ChapterView chapterPicture, out TMP_Text chapterCaption, out Button chapterNextButton);
+
         OptionsView optionsView = OptionsPanel(safeArea);
         // 플레이테스트 기록 (주소 ?stats) — 맨 위를 덮는 패널, 처음엔 숨김
         StatsView statsView = StatsPanel(safeArea);
@@ -281,7 +284,14 @@ public static class BoardSceneBuilder
             ("_boardOptionsButton", boardOptionsButton),
             ("_selectOptionsButton", selectOptionsButton),
             ("_nextButton", nextButton),
-            ("_nextLabel", nextButton.GetComponentInChildren<TMP_Text>()));
+            ("_nextLabel", nextButton.GetComponentInChildren<TMP_Text>()),
+            ("_art", AssetDatabase.LoadAssetAtPath<ChapterArt>(ChapterArtPath)),
+            ("_selectPicture", selectPicture),
+            ("_chapterScreen", chapterScreen),
+            ("_chapterPicture", chapterPicture),
+            ("_chapterCaption", chapterCaption),
+            ("_chapterNextButton", chapterNextButton),
+            ("_chapterNextLabel", chapterNextButton.GetComponentInChildren<TMP_Text>()));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
@@ -317,24 +327,48 @@ public static class BoardSceneBuilder
         return view;
     }
 
-    // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 육각 번호 버튼 격자(3열) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
-    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton)
+    // 챕터 그림 화면 (Phase 5): 진행 글자(왼쪽 위) · 큰 그림(캔버스 4:5) · 다음 버튼. 처음 클리어한 뒤 GameFlow가 켠다
+    private static GameObject ChapterScreen(GameObject parent, out ChapterView picture, out TMP_Text caption, out Button next)
+    {
+        var screen = NewUI("ChapterScreen", parent);
+        Stretch(screen, Vector2.zero, Vector2.zero);
+        caption = TopLeftText(screen, "Caption", -40f, 90f, 64f, Strong);
+        picture = Picture(screen, -150f, new Vector2(960f, 1200f));
+        next = BottomButton(screen, "NextButton", "다음", 0f, 460f);
+        screen.SetActive(false);
+        return screen;
+    }
+
+    // 챕터 그림 자리 — 위쪽 가운데, size는 캔버스 비율(4:5)로
+    private static ChapterView Picture(GameObject parent, float y, Vector2 size)
+    {
+        var go = NewUI("Picture", parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, y);
+        rect.sizeDelta = size;
+        return go.AddComponent<ChapterView>();
+    }
+
+    // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 챕터 그림(작게) · 육각 번호 버튼 격자(4열) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
+    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton, out ChapterView picture)
     {
         var screen = NewUI("SelectScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
+        picture = Picture(screen, -150f, new Vector2(480f, 600f));
 
         var grid = NewUI("Grid", screen);
         var gridRect = (RectTransform)grid.transform;
         gridRect.anchorMin = gridRect.anchorMax = gridRect.pivot = new Vector2(0.5f, 1f);
-        gridRect.anchoredPosition = new Vector2(0f, -220f);
-        gridRect.sizeDelta = new Vector2(940f, 1400f);
+        gridRect.anchoredPosition = new Vector2(0f, -790f);
+        gridRect.sizeDelta = new Vector2(940f, 760f);
         var gridLayout = grid.AddComponent<GridLayoutGroup>();
-        gridLayout.cellSize = new Vector2(260f, 300f); // 꼭짓점이 위인 육각형 비율(너비 = 높이 × √3/2)
-        gridLayout.spacing = new Vector2(40f, 20f);
+        gridLayout.cellSize = new Vector2(200f, 230f); // 꼭짓점이 위인 육각형 비율(너비 = 높이 × √3/2)
+        gridLayout.spacing = new Vector2(36f, 16f);
         gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 3;
+        gridLayout.constraintCount = 4;
         gridLayout.childAlignment = TextAnchor.UpperCenter;
 
         var notice = NewUI("Notice", screen);
@@ -357,7 +391,7 @@ public static class BoardSceneBuilder
         Button button = template.AddComponent<Button>();
         button.targetGraphic = fill;
         Image ring = AddImage("Ring", template, "HexRing", Focus, 0f, 1f);
-        TMP_Text number = Label(template, "", 96f);
+        TMP_Text number = Label(template, "", 72f);
         Image lockIcon = AddImage("Lock", template, "Lock", new Color(Strong.r, Strong.g, Strong.b, 0.55f), 0.3f, 0.7f);
         Image star = AddImage("Star", template, "Star", Hex("#F1B928"), 0.36f, 0.64f);
         var starRect = star.rectTransform;

@@ -31,6 +31,9 @@ namespace ColoringBoot.Game
         private int? _minMoves;
         private bool _symbols;
 
+        // 이번에 연 판에서 처음 클리어했는가 — 그림 칠하기 연출(GameFlow, Phase 5). 되돌렸다 다시 풀어도 유지
+        public bool FirstClear { get; private set; }
+
         // 스테이지를 연다(같은 보드 화면을 다시 쓴다). 스테이지 코드를 읽지 못하면 false.
         // paletteOverride: 주소 ?palette= (QA — 모든 스테이지를 그 팔레트로), 없으면 스테이지의 palette
         public bool Open(TextAsset asset, int number, SaveData data, string paletteOverride = null)
@@ -49,6 +52,7 @@ namespace ColoringBoot.Game
 
             _data = data;
             _stageId = asset.name;
+            FirstClear = false;
             _session = new PuzzleSession(new Board(stage));
             _minMoves = stage.MinMoves;
             _boardView.Build(_session, palette);
@@ -143,6 +147,7 @@ namespace ColoringBoot.Game
             _data.Stats.Stroked(_stageId);
             if (_session.IsSolved)
             {
+                if (!_data.Progress.IsCleared(_stageId)) FirstClear = true;
                 _data.Progress.RecordClear(_stageId, _session.MoveCount);
                 _data.Stats.Cleared(_stageId, _session.MoveCount);
                 _data.SaveProgress();

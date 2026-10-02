@@ -16,6 +16,7 @@ namespace ColoringBoot.Game
         private const string ResetQuery = "reset";   // ?reset — 진행 · 기록 지우기 (휴대폰 하나로 여러 명이 테스트할 때)
         private const string NextText = "다음";
         private const string ListText = "목록";
+        private const string CompleteText = "그림 완성!";
 
         [SerializeField] private StageCatalog _catalog;
         [SerializeField] private PuzzleController _puzzle;
@@ -29,12 +30,22 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _selectOptionsButton;
         [SerializeField] private Button _nextButton;
         [SerializeField] private TMP_Text _nextLabel;
+        [Header("챕터 그림 (Phase 5)")]
+        [SerializeField] private ChapterArt _art;
+        [SerializeField] private ChapterView _selectPicture;   // 선택 화면 위쪽(작게)
+        [SerializeField] private GameObject _chapterScreen;    // 처음 클리어한 뒤 크게 칠하는 화면
+        [SerializeField] private ChapterView _chapterPicture;
+        [SerializeField] private TMP_Text _chapterCaption;
+        [SerializeField] private Button _chapterNextButton;
+        [SerializeField] private TMP_Text _chapterNextLabel;
 
         private SaveData _data;
         private IAdService _ads;
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
         private int?[] _minMoves;
         private int _current = -1;
+        private bool _paintShown;    // 지금 판의 첫 클리어 연출을 이미 보여 줬는가
+        private bool[] _painted;
         private string _paletteOverride;
 
         private void Awake()
@@ -55,6 +66,9 @@ namespace ColoringBoot.Game
                     // 여는 순간 PuzzleController가 오류를 알린다
                 }
             }
+            _painted = new bool[_stages.Length];
+            if (_art.Steps.Count != _stages.Length)
+                Debug.LogWarning($"챕터 그림 단계 {_art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
         }
 
         private void OnEnable()
@@ -63,6 +77,7 @@ namespace ColoringBoot.Game
             _boardOptionsButton.onClick.AddListener(ShowOptions);
             _selectOptionsButton.onClick.AddListener(ShowOptions);
             _nextButton.onClick.AddListener(Next);
+            _chapterNextButton.onClick.AddListener(ContinueAfterPicture);
             _select.StageChosen += OpenStage;
             _options.Changed += ApplySettings;
         }
@@ -73,6 +88,7 @@ namespace ColoringBoot.Game
             _boardOptionsButton.onClick.RemoveListener(ShowOptions);
             _selectOptionsButton.onClick.RemoveListener(ShowOptions);
             _nextButton.onClick.RemoveListener(Next);
+            _chapterNextButton.onClick.RemoveListener(ContinueAfterPicture);
             _select.StageChosen -= OpenStage;
             _options.Changed -= ApplySettings;
         }
@@ -101,18 +117,24 @@ namespace ColoringBoot.Game
             if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_catalog, _data.Stats);
         }
 
+        // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다
         private void ShowSelect()
         {
+            int justPainted = _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
             _puzzle.Close();
             _current = -1;
             _boardScreen.SetActive(false);
+            _chapterScreen.SetActive(false);
             _select.Show(_stages, _minMoves, _data);
+            _selectPicture.Show(_art, UpdatePainted(), justPainted);
         }
 
         private void OpenStage(int index)
         {
             _select.gameObject.SetActive(false);
+            _chapterScreen.SetActive(false);
             _boardScreen.SetActive(true);
+            _paintShown = false;
             if (!_puzzle.Open(_catalog.Stages[index], index + 1, _data, _paletteOverride))
             {
                 ShowSelect();
@@ -122,8 +144,35 @@ namespace ColoringBoot.Game
             _nextLabel.text = index + 1 < _stages.Length ? NextText : ListText;
         }
 
-        // 클리어 띠의 "다음" — 스테이지 사이 광고 자리를 거쳐 다음 스테이지. 마지막이면 목록(챕터 완성 연출은 Phase 5)
+        // 클리어 띠의 "다음" — 처음 클리어했으면 그림 화면에서 그 단계를 칠한 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
+        {
+            if (_current >= 0 && _puzzle.FirstClear && !_paintShown)
+            {
+                ShowPicture(_current);
+                return;
+            }
+            ContinueAfterPicture();
+        }
+
+        // 그림 화면: 칠한 단계 연출, 모든 단계를 칠했으면 완성 연출. 버튼은 다음 스테이지(마지막이면 목록)
+        private void ShowPicture(int step)
+        {
+            _paintShown = true;
+            _puzzle.Close();
+            _boardScreen.SetActive(false);
+            _chapterScreen.SetActive(true);
+            bool[] painted = UpdatePainted();
+            int count = 0;
+            foreach (bool p in painted) if (p) count++;
+            bool complete = count == painted.Length;
+            _chapterCaption.text = complete ? CompleteText : $"색칠 {count} / {painted.Length}";
+            _chapterNextLabel.text = step + 1 < _stages.Length ? NextText : ListText;
+            _chapterPicture.Show(_art, painted, step, complete);
+        }
+
+        // 다음 스테이지 — 스테이지 사이 광고 자리를 거친다. 마지막이면 목록
+        private void ContinueAfterPicture()
         {
             if (_current < 0 || _current + 1 >= _stages.Length)
             {
@@ -132,6 +181,13 @@ namespace ColoringBoot.Game
             }
             int next = _current + 1;
             _ads.ShowBetweenStages(() => OpenStage(next));
+        }
+
+        // 단계 i = i번째 스테이지를 클리어했는가
+        private bool[] UpdatePainted()
+        {
+            for (int i = 0; i < _stages.Length; i++) _painted[i] = _data.Progress.IsCleared(_stages[i]);
+            return _painted;
         }
 
         private void ShowOptions() => _options.Show(_data);

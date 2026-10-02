@@ -139,7 +139,14 @@ public static class BoardQa
         Transform safe = GameObject.Find("Canvas/SafeArea").transform;
         bool select = safe.Find("SelectScreen").gameObject.activeSelf;
         bool board = safe.Find("BoardScreen").gameObject.activeSelf;
-        string text = $"선택 {select} · 보드 {board} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
+        bool chapter = safe.Find("ChapterScreen").gameObject.activeSelf;
+        string text = $"선택 {select} · 보드 {board} · 그림 {chapter} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
+        if (chapter)
+        {
+            Transform screen = safe.Find("ChapterScreen");
+            text += $" | {screen.Find("Caption").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(screen.Find("Picture"))} [{screen.Find("NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
+        }
+        if (select) text += $" | 작은 그림 칠한 단계 {Painted(safe.Find("SelectScreen/Picture"))}";
         if (select)
         {
             Transform grid = safe.Find("SelectScreen/Grid");
@@ -177,6 +184,11 @@ public static class BoardQa
         target.GetComponent<Button>().onClick.Invoke();
         return Flow();
     }
+
+    // 그림에서 보이는 단계 번호들 (Step01 …)
+    private static string Painted(Transform picture) =>
+        string.Join(",", Enumerable.Range(0, picture.childCount).Select(picture.GetChild)
+            .Where(c => c.name.StartsWith("Step") && c.gameObject.activeSelf).Select(c => c.name.Substring(4)));
 
     private static bool Active(string banner) => GameObject.Find("Canvas/SafeArea/BoardScreen").transform.Find(banner).gameObject.activeSelf;
 

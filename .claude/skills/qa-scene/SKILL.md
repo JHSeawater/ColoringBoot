@@ -21,7 +21,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 | `/EventSystem` | EventSystem · **InputSystemUIInputModule**(StandaloneInputModule이면 실패 — New Input System 전용) | O |
 | `/Canvas` | Canvas · CanvasScaler · GraphicRaycaster | O |
 | `/Canvas/SafeArea` | SafeAreaFitter | O |
-| `…/SelectScreen`(Title · OptionsButton · Grid · Notice · StageButtonTemplate) | StageSelectView · Grid에 GridLayoutGroup(3열) · 템플릿에 StageButtonView | **X** |
+| `…/SelectScreen`(Title · OptionsButton · Picture · Grid · Notice · StageButtonTemplate) | StageSelectView · Picture에 ChapterView(작은 챕터 그림) · Grid에 GridLayoutGroup(4열) · 템플릿에 StageButtonView | **X** |
 | `…/BoardScreen` | (묶음) | **X** |
 | `…/BoardScreen/BackButton` · `…/OptionsButton` | Image · Button · Label | O(화면 안에서) |
 | `…/BoardScreen/StageName` · `…/MoveCounter` | Label(TextMeshProUGUI) | O |
@@ -30,6 +30,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 | `…/BoardScreen/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
 | `…/BoardScreen/ClearBanner`(Label · NextButton) · `…/StuckBanner`(Label · UndoButton) | Image · Label | **X**(처음엔 꺼짐) |
 | `…/BoardScreen/UndoButton` · `…/RestartButton` | Image · Button · Label | O |
+| `…/ChapterScreen`(Caption · Picture · NextButton) | Picture에 ChapterView(큰 챕터 그림, Phase 5) | **X**(처음 클리어한 뒤) |
 | `…/OptionsPanel`(Title · SymbolsButton · SoundButton · CloseButton) | Image(불투명) · OptionsView | **X** |
 | `…/StatsPanel`(Text · CloseButton) | Image(불투명) · StatsView | **X**(주소 `?stats`) |
 | `/Sound` | SoundController | O |
@@ -49,7 +50,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner`
-- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Phase4Stages.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel`
+- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Phase4Stages.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel`
 - `…/SelectScreen` StageSelectView: `_title` · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton`
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`

@@ -123,3 +123,6 @@ InitTestScene*.unity*
 
 # Burst가 WebGL 빌드 중 프로젝트 루트에 남기는 중간 산출물
 /Data/Plugins/lib_burst_generated.*
+
+# Python 캐시 (AgentScripts 그림 도구)
+__pycache__/

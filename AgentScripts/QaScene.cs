@@ -26,7 +26,7 @@ public static class QaScene
 
         // 화면 · 패널은 처음엔 모두 꺼져 있다(GameFlow가 켠다) — 꺼진 오브젝트는 transform.Find로 찾는다
         Transform safeArea = canvas.transform.Find("SafeArea");
-        foreach (string panel in new[] { "SelectScreen", "BoardScreen", "OptionsPanel", "StatsPanel" })
+        foreach (string panel in new[] { "SelectScreen", "BoardScreen", "ChapterScreen", "OptionsPanel", "StatsPanel" })
             Expect(safeArea.Find(panel) != null && !safeArea.Find(panel).gameObject.activeSelf, $"{panel} 있음 · 처음엔 꺼짐");
 
         Transform area = safeArea.Find("BoardScreen/BoardArea");
@@ -44,7 +44,10 @@ public static class QaScene
             "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner");
         var flow = Object.FindAnyObjectByType<GameFlow>();
         CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
-            "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel");
+            "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
+            "_art", "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel");
+        foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
+            Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
         CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");
         CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton");
@@ -62,6 +65,12 @@ public static class QaScene
             SolveResult solved = Solver.Solve(board, board.CreateStartState());
             Expect(solved.Solved && stage.MinMoves == solved.Path.Count, $"스테이지 {asset.name} 풀림 · minMoves {stage.MinMoves} = 솔버 {(solved.Solved ? solved.Path.Count : -1)}");
         }
+
+        // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
+        var art = (ChapterArt)new SerializedObject(flow).FindProperty("_art").objectReferenceValue;
+        Expect(art.Steps.Count == catalog.Stages.Count, $"그림 단계 {art.Steps.Count}개 = 스테이지 {catalog.Stages.Count}개");
+        Expect(art.Line.Sprite != null && art.Steps.All(s => s.Sprite != null && s.Rect.width > 0 && s.Rect.height > 0), "그림 선화 · 단계 조각 모두 있음");
+        Expect(art.Canvas.x * 5 == art.Canvas.y * 4, $"그림 캔버스 4:5 ({art.Canvas.x}×{art.Canvas.y})");
 
         CheckRefs(Object.FindAnyObjectByType<MixTableView>(FindObjectsInactive.Include), Expect, "_chipSprite");
         CheckRefs(AssetDatabase.LoadAssetAtPath<CellView>("Assets/Prefabs/Cell.prefab"), Expect,
