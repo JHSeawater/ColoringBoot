@@ -10,10 +10,12 @@ public static class Phase7WebTemplate
     public static string Apply()
     {
         AssetDatabase.Refresh();
-        string before = $"productName {PlayerSettings.productName} · template {PlayerSettings.WebGL.template}";
+        string before = $"productName {PlayerSettings.productName} · template {PlayerSettings.WebGL.template} · hashes {PlayerSettings.WebGL.nameFilesAsHashes}";
         PlayerSettings.productName = ProductName;
         PlayerSettings.WebGL.template = Template;
+        // 빌드마다 파일 이름이 달라지게 — 같은 이름이면 브라우저가 옛 배포 파일과 새 파일을 섞어 실행해 멈춘다(2026-10-03 PC 크롬)
+        PlayerSettings.WebGL.nameFilesAsHashes = true;
         AssetDatabase.SaveAssets();
-        return $"{before} → productName {PlayerSettings.productName} · template {PlayerSettings.WebGL.template} (companyName {PlayerSettings.companyName} 그대로)";
+        return $"{before} → productName {PlayerSettings.productName} · template {PlayerSettings.WebGL.template} · hashes {PlayerSettings.WebGL.nameFilesAsHashes} (companyName {PlayerSettings.companyName} 그대로)";
     }
 }
