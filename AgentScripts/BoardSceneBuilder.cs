@@ -23,15 +23,29 @@ public static class BoardSceneBuilder
     private const string CatalogPath = "Assets/Data/StageCatalog.asset";
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
     private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/ChapterArtBuilder.cs 먼저
+    private const string ThemePath = "Assets/Data/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
+    private const string ChapterTitle = "포도밭 오후";                         // 챕터 제목(GDD §5 세계관 — 챕터 제목만 둔다)
     private static readonly string[] PrototypeStages = { "Grape", "TwoColors", "BrushChanges", "Honeycomb", "Crossing", "Stain", "MakeBlack", "Hive", "LastStroke" };
 
-    // 프로토타입 라이트 테마
-    private static readonly Color Lead = Hex("#1A1D23");    // 칸 테두리 · 마커 테두리
-    private static readonly Color Warn = Hex("#E0246A");    // 막힘
-    private static readonly Color Focus = Hex("#2E6BD1");   // 선택
-    private static readonly Color Strong = Hex("#1C222C");  // 버튼 · 안내 바탕
-    private static readonly Color StrongInk = Hex("#F6F7F3");
-    private static readonly Color Muted = Hex("#56606C");     // 보조 글자
+    // 화면 색은 디자인 기준(UiTheme)에서 — 보드 칸 선택 링만 그대로
+    private static UiTheme _theme;
+    private static UiTheme T => _theme != null ? _theme : (_theme = LoadTheme());
+    private static Color Lead => T.Ink;           // 칸 테두리 · 마커 테두리 · 외곽선
+    private static Color Warn => T.Warn;          // 막힘
+    private static readonly Color Focus = Hex("#2E6BD1");   // 보드 칸 선택
+    private static Color Strong => T.Ink;         // 글자 · 채운 버튼 · 안내 바탕
+    private static Color StrongInk => T.SurfaceInk;
+    private static Color Muted => T.Muted;        // 보조 글자
+
+    private static UiTheme LoadTheme()
+    {
+        var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(ThemePath);
+        if (theme != null) return theme;
+        theme = ScriptableObject.CreateInstance<UiTheme>();
+        AssetDatabase.CreateAsset(theme, ThemePath);
+        AssetDatabase.SaveAssets();
+        return theme;
+    }
 
     public static string BuildPrefabs()
     {
@@ -172,6 +186,7 @@ public static class BoardSceneBuilder
         foreach (GameObject root in scene.GetRootGameObjects())
         {
             if (root.name != "Main Camera") Object.DestroyImmediate(root);
+            else root.GetComponent<Camera>().backgroundColor = T.Background;
         }
 
         var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
@@ -210,7 +225,7 @@ public static class BoardSceneBuilder
         targetRect.sizeDelta = new Vector2(300f, 300f);
         var targetView = target.AddComponent<BoardView>();
         SetRefs(targetView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
-        SetValues(targetView, ("_showTarget", true), ("_fitMargin", 0.6f), ("_maxRadius", 60f));
+        SetValues(targetView, ("_showTarget", true), ("_fitMargin", 0.6f), ("_maxRadius", 60f), ("_emptyColor", T.EmptyCell));
 
         // 색 조합표 한 줄
         var mix = NewUI("MixTable", boardScreen);
@@ -225,6 +240,7 @@ public static class BoardSceneBuilder
         layout.spacing = 4f;
         var mixTable = mix.AddComponent<MixTableView>();
         SetRefs(mixTable, ("_chipSprite", Sprite("HexFill")));
+        SetValues(mixTable, ("_textColor", Muted));
 
         // 보드 영역: 위 줄 · 조합표 · 아래 안내와 버튼 자리를 뺀 나머지. 투명 Image가 탭 · 드래그를 받는다
         var boardArea = NewUI("BoardArea", boardScreen);
@@ -233,6 +249,7 @@ public static class BoardSceneBuilder
         hitArea.color = new Color(0f, 0f, 0f, 0f);
         var boardView = boardArea.AddComponent<BoardView>();
         SetRefs(boardView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
+        SetValues(boardView, ("_emptyColor", T.EmptyCell), ("_emptyTrailColor", new Color(Lead.r, Lead.g, Lead.b, 0.55f)));
 
         // 안내 띠 (아래 버튼 위). 클리어 안내에는 다음 버튼, 막힘 안내에는 되돌리기 버튼을 함께 둔다
         GameObject clearBanner = Banner(boardScreen, "ClearBanner", Strong, "", 300f);
@@ -242,8 +259,8 @@ public static class BoardSceneBuilder
         Button stuckUndoButton = BannerButton(stuckBanner, "UndoButton", "되돌리기", Warn);
 
         // 아래 버튼 줄 (한 손이 닿는 곳) — 자주 누르는 둘만
-        Button undoButton = BottomButton(boardScreen, "UndoButton", "되돌리기", -250f, 460f);
-        Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 250f, 460f);
+        Button undoButton = BottomButton(boardScreen, "UndoButton", "되돌리기", -250f, 460f, false);
+        Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 250f, 460f, false);
         boardScreen.SetActive(false);
 
         GameObject chapterScreen = ChapterScreen(safeArea, out ChapterView chapterPicture, out TMP_Text chapterCaption, out Button chapterNextButton);
@@ -302,8 +319,7 @@ public static class BoardSceneBuilder
     {
         var panel = NewUI("StatsPanel", parent);
         Stretch(panel, new Vector2(30f, 30f), new Vector2(-30f, -30f));
-        var background = panel.AddComponent<Image>();
-        background.color = Strong;
+        RoundImage(panel, "RoundFill", Strong);
 
         var textArea = NewUI("Text", panel);
         Stretch(textArea, new Vector2(40f, 200f), new Vector2(-40f, -40f));
@@ -315,10 +331,8 @@ public static class BoardSceneBuilder
         closeRect.anchorMin = closeRect.anchorMax = new Vector2(0.5f, 0f);
         closeRect.anchoredPosition = new Vector2(0f, 100f);
         closeRect.sizeDelta = new Vector2(300f, 110f);
-        var closeImage = close.AddComponent<Image>();
-        closeImage.color = StrongInk;
         Button closeButton = close.AddComponent<Button>();
-        closeButton.targetGraphic = closeImage;
+        closeButton.targetGraphic = RoundImage(close, "RoundFill", T.Surface);
         Label(close, "닫기", 48f).color = Strong;
 
         var view = panel.AddComponent<StatsView>();
@@ -334,7 +348,7 @@ public static class BoardSceneBuilder
         Stretch(screen, Vector2.zero, Vector2.zero);
         caption = TopLeftText(screen, "Caption", -40f, 90f, 64f, Strong);
         picture = Picture(screen, -150f, new Vector2(960f, 1200f));
-        next = BottomButton(screen, "NextButton", "다음", 0f, 460f);
+        next = BottomButton(screen, "NextButton", "다음", 0f, 460f, true);
         screen.SetActive(false);
         return screen;
     }
@@ -347,7 +361,10 @@ public static class BoardSceneBuilder
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = size;
-        return go.AddComponent<ChapterView>();
+        var view = go.AddComponent<ChapterView>();
+        SetRefs(view, ("_frame", Sprite("FrameRing")));
+        SetValues(view, ("_frameColor", Lead));
+        return view;
     }
 
     // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 챕터 그림(작게) · 육각 번호 버튼 격자(4열) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
@@ -357,12 +374,13 @@ public static class BoardSceneBuilder
         Stretch(screen, Vector2.zero, Vector2.zero);
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
-        picture = Picture(screen, -150f, new Vector2(480f, 600f));
+        TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted).text = ChapterTitle;
+        picture = Picture(screen, -210f, new Vector2(480f, 600f));
 
         var grid = NewUI("Grid", screen);
         var gridRect = (RectTransform)grid.transform;
         gridRect.anchorMin = gridRect.anchorMax = gridRect.pivot = new Vector2(0.5f, 1f);
-        gridRect.anchoredPosition = new Vector2(0f, -790f);
+        gridRect.anchoredPosition = new Vector2(0f, -850f);
         gridRect.sizeDelta = new Vector2(940f, 760f);
         var gridLayout = grid.AddComponent<GridLayoutGroup>();
         gridLayout.cellSize = new Vector2(200f, 230f); // 꼭짓점이 위인 육각형 비율(너비 = 높이 × √3/2)
@@ -377,9 +395,7 @@ public static class BoardSceneBuilder
         noticeRect.anchorMax = new Vector2(1f, 0f);
         noticeRect.anchoredPosition = new Vector2(0f, 200f);
         noticeRect.sizeDelta = new Vector2(-80f, 110f);
-        var noticeImage = notice.AddComponent<Image>();
-        noticeImage.color = Strong;
-        noticeImage.raycastTarget = false;
+        RoundImage(notice, "RoundFill", Strong).raycastTarget = false;
         TMP_Text noticeText = Label(notice, "", 46f);
         notice.SetActive(false);
 
@@ -390,10 +406,11 @@ public static class BoardSceneBuilder
         fill.sprite = Sprite("HexFill");
         Button button = template.AddComponent<Button>();
         button.targetGraphic = fill;
-        Image ring = AddImage("Ring", template, "HexRing", Focus, 0f, 1f);
+        AddImage("Outline", template, "HexLine", Lead, 0f, 1f);
+        Image ring = AddImage("Ring", template, "HexRing", T.Next, -0.05f, 1.05f);
         TMP_Text number = Label(template, "", 72f);
-        Image lockIcon = AddImage("Lock", template, "Lock", new Color(Strong.r, Strong.g, Strong.b, 0.55f), 0.3f, 0.7f);
-        Image star = AddImage("Star", template, "Star", Hex("#F1B928"), 0.36f, 0.64f);
+        Image lockIcon = AddImage("Lock", template, "Lock", Muted, 0.3f, 0.7f);
+        Image star = AddImage("Star", template, "Star", T.Star, 0.36f, 0.64f);
         var starRect = star.rectTransform;
         starRect.anchorMin = new Vector2(0.36f, 0.04f);
         starRect.anchorMax = new Vector2(0.64f, 0.28f);
@@ -403,6 +420,7 @@ public static class BoardSceneBuilder
 
         var view = screen.AddComponent<StageSelectView>();
         SetRefs(view, ("_title", title), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
+        SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_clearedFill", Strong), ("_openText", Strong), ("_clearedText", StrongInk));
         screen.SetActive(false);
         return view;
     }
@@ -412,7 +430,7 @@ public static class BoardSceneBuilder
     {
         var panel = NewUI("OptionsPanel", parent);
         Stretch(panel, new Vector2(30f, 30f), new Vector2(-30f, -30f));
-        panel.AddComponent<Image>().color = Strong;
+        RoundImage(panel, "RoundFill", Strong);
         TMP_Text title = TopLeftText(panel, "Title", -40f, 90f, 64f, StrongInk);
         title.text = "옵션";
 
@@ -437,10 +455,8 @@ public static class BoardSceneBuilder
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = new Vector2(700f, 130f);
-        var image = go.AddComponent<Image>();
-        image.color = StrongInk;
         Button button = go.AddComponent<Button>();
-        button.targetGraphic = image;
+        button.targetGraphic = RoundImage(go, "RoundFill", T.Surface);
         Label(go, text, 52f).color = Strong;
         return button;
     }
@@ -453,12 +469,7 @@ public static class BoardSceneBuilder
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(right ? 1f : 0f, 1f);
         rect.anchoredPosition = new Vector2(right ? -40f : 40f, -30f);
         rect.sizeDelta = new Vector2(200f, 90f);
-        var image = go.AddComponent<Image>();
-        image.color = Strong;
-        Button button = go.AddComponent<Button>();
-        button.targetGraphic = image;
-        Label(go, text, 44f);
-        return button;
+        return OutlinedButton(go, text, 44f);
     }
 
     // 안내 띠 오른쪽 끝의 밝은 버튼 (글자는 띠 색)
@@ -469,27 +480,46 @@ public static class BoardSceneBuilder
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
         rect.anchoredPosition = new Vector2(-16f, 0f);
         rect.sizeDelta = new Vector2(260f, 90f);
-        var image = go.AddComponent<Image>();
-        image.color = StrongInk;
         Button button = go.AddComponent<Button>();
-        button.targetGraphic = image;
+        button.targetGraphic = RoundImage(go, "RoundFill", T.Surface);
         Label(go, text, 44f).color = textColor;
         return button;
     }
 
-    private static Button BottomButton(GameObject parent, string name, string text, float x, float width)
+    // primary = 갈색으로 채운 주요 버튼(다음), 아니면 외곽선 버튼
+    private static Button BottomButton(GameObject parent, string name, string text, float x, float width, bool primary)
     {
         var go = NewUI(name, parent);
         var rect = (RectTransform)go.transform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
         rect.anchoredPosition = new Vector2(x, 150f);
         rect.sizeDelta = new Vector2(width, 130f);
-        var image = go.AddComponent<Image>();
-        image.color = Strong;
+        if (!primary) return OutlinedButton(go, text, 48f);
         Button button = go.AddComponent<Button>();
-        button.targetGraphic = image;
+        button.targetGraphic = RoundImage(go, "RoundFill", Strong);
         Label(go, text, 48f);
         return button;
+    }
+
+    // 종이색 바탕 + 갈색 외곽선 + 갈색 글자 (디자인 시안 A)
+    private static Button OutlinedButton(GameObject go, string text, float size)
+    {
+        Button button = go.AddComponent<Button>();
+        button.targetGraphic = RoundImage(go, "RoundFill", T.Surface);
+        Image outline = AddImage("Outline", go, "RoundRing", Lead, 0f, 1f);
+        outline.type = Image.Type.Sliced;
+        Label(go, text, size).color = Strong;
+        return button;
+    }
+
+    // 9-slice 둥근 사각형 Image (크기와 상관없이 모서리 반지름 그대로)
+    private static Image RoundImage(GameObject go, string sprite, Color color)
+    {
+        var image = go.AddComponent<Image>();
+        image.sprite = Sprite(sprite);
+        image.type = Image.Type.Sliced;
+        image.color = color;
+        return image;
     }
 
     // 아래 버튼 위의 안내 띠 — 처음엔 숨김, PuzzleController가 켠다. rightSpace만큼 오른쪽을 버튼 자리로 비운다
@@ -501,9 +531,7 @@ public static class BoardSceneBuilder
         rect.anchorMax = new Vector2(1f, 0f);
         rect.anchoredPosition = new Vector2(0f, 330f);
         rect.sizeDelta = new Vector2(-80f, 120f);
-        var image = banner.AddComponent<Image>();
-        image.color = background;
-        image.raycastTarget = false;
+        RoundImage(banner, "RoundFill", background).raycastTarget = false;
         Label(banner, text, 52f).rectTransform.offsetMax = new Vector2(-rightSpace, 0f);
         banner.SetActive(false);
         return banner;
@@ -530,6 +558,7 @@ public static class BoardSceneBuilder
         {
             SerializedProperty property = so.FindProperty(field) ?? throw new System.ArgumentException($"{target.GetType().Name}에 필드 {field} 없음");
             if (value is bool b) property.boolValue = b;
+            else if (value is Color c) property.colorValue = c;
             else property.floatValue = (float)value;
         }
         so.ApplyModifiedPropertiesWithoutUndo();

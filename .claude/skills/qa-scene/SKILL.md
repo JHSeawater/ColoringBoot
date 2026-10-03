@@ -17,7 +17,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 | 경로 | 컴포넌트 | 활성 |
 |---|---|---|
-| `/Main Camera` | Camera(직교 · 단색 #D9DFDC) | O |
+| `/Main Camera` | Camera(직교 · 단색 = `UiTheme` 바탕 #F1EBDD — Phase 7.1) | O |
 | `/EventSystem` | EventSystem · **InputSystemUIInputModule**(StandaloneInputModule이면 실패 — New Input System 전용) | O |
 | `/Canvas` | Canvas · CanvasScaler · GraphicRaycaster | O |
 | `/Canvas/SafeArea` | SafeAreaFitter | O |

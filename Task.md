@@ -268,9 +268,9 @@
 
 ### 7.1 디자인 기준
 
-- [ ] [Doc] 디자인 기준 — 그림의 진한 갈색 선 · 종이색에 맞춘 색 · 버튼 · 간격 · 글꼴. 시안 페이지로 사용자 확인
-- [ ] [Code] 디자인 기준 값을 ScriptableObject로(튜닝 값 — CLAUDE.md §5) · 화면 요소가 읽게
-- [ ] [Editor] 모든 화면에 적용(`BoardSceneBuilder`) · `QaScene` 갱신
+- [x] [Doc] 디자인 기준 — 그림의 진한 갈색 선 · 종이색에 맞춘 색 · 버튼 · 간격 · 글꼴. 시안 페이지로 사용자 확인 → 시안 페이지 `https://claude.ai/artifact/2WuvcLMwo6afFVsdWKF2r1`(A 종이와 갈색 선 · B 스티커 · C 차분한 갈색) — 사용자 결정(2026-10-03): **A**. 색은 그림에서 뽑음(선 #382008 · 바탕 #F1EBDD · 버튼 바탕 #FFFDF6 · 보조 글자 #7B6650 · 잠김 #E3DAC6 · 다음 스테이지 테두리 = 포도색 #8C58A0), 글꼴은 Pretendard 그대로. 선택 화면에 챕터 제목 줄("포도밭 오후", GDD §5) 추가
+- [x] [Code] 디자인 기준 값을 ScriptableObject로(튜닝 값 — CLAUDE.md §5) · 화면 요소가 읽게 → `UiTheme`(`Assets/Data/UiTheme.asset`) — 빌더가 읽어 씬 · 프리팹 · 컴포넌트 색(`StageSelectView` · `BoardView` 빈칸 · `MixTableView` · `ChapterView` 테두리)에 넣는다(런타임 참조 없음). `ChapterView`에 그림 테두리(9-slice, 완성 연출 때 그림과 함께 커짐). 버튼 모양 스프라이트 4종 `Phase1Sprites.BuildRound`(둥근 사각형 바탕 · 외곽선 반지름 32 선 7 · 그림 테두리 반지름 12 · 육각 외곽선). 컴파일 에러 0
+- [x] [Editor] 모든 화면에 적용(`BoardSceneBuilder`) · `QaScene` 갱신 → 위 버튼 · 아래 버튼 · 패널 버튼 · 띠 · 안내 띠 · 옵션 · 기록 패널을 둥근 모양으로, 그림 화면 "다음"만 갈색으로 채움, 카메라 바탕 · 칸 테두리 · 방향 버튼 · 스테이지 버튼(외곽선 · 포도색 다음 표시) 색. 선택 화면 그림 −150 → −210 · 격자 −790 → −850(제목 줄 자리). 폰트 204자 1장, `QaScene` 149항목 통과(점검 코드는 바꿀 것 없음 — `/qa-scene` 카메라 색 문구만 갱신). 에디터 플레이 스크린샷: 선택 화면 · 보드(끌기 미리보기) · 클리어 띠 · 그림 화면 · 옵션(`Builds/Ui71_A.png` · `Ui71_options.png`), 콘솔 에러 0. WebGL 확인은 7.7
 
 ### 7.2 챕터 1 그림 교체
 

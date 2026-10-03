@@ -14,6 +14,9 @@ namespace ColoringBoot.Game
         [SerializeField] private float _paintScale = 1.06f;
         [SerializeField] private float _completeSeconds = 0.8f;
         [SerializeField] private float _completeScale = 1.04f;
+        [SerializeField] private Sprite _frame;          // 그림 테두리(9-slice, Phase 7.1) — 없으면 안 그림
+        [SerializeField] private Color _frameColor = Color.black;
+        [SerializeField] private float _frameOutset = 7f; // 그림 밖으로 넓히는 폭 = 테두리 선 두께
 
         private readonly List<Image> _steps = new List<Image>();
         private ChapterArt _art;
@@ -52,6 +55,23 @@ namespace ColoringBoot.Game
             AddImage("Paper", null, new RectInt(0, 0, art.Canvas.x, art.Canvas.y)).color = _paper;
             for (int i = 0; i < art.Steps.Count; i++) _steps.Add(AddImage($"Step{i + 1:00}", art.Steps[i].Sprite, art.Steps[i].Rect));
             AddImage("Line", art.Line.Sprite, art.Line.Rect);
+            if (_frame != null) AddFrame();
+        }
+
+        private void AddFrame()
+        {
+            var go = new GameObject("Frame", typeof(RectTransform), typeof(Image));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(transform, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = -Vector2.one * _frameOutset;
+            rt.offsetMax = Vector2.one * _frameOutset;
+            var image = go.GetComponent<Image>();
+            image.sprite = _frame;
+            image.type = Image.Type.Sliced;
+            image.color = _frameColor;
+            image.raycastTarget = false;
         }
 
         // rect: 캔버스 픽셀(왼쪽 위 기준) → 이 뷰 안의 비율 앵커. 조각이 캔버스 밖으로 조금 넘쳐도 된다(투명 여백)

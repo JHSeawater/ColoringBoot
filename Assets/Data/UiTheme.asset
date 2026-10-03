@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45121730f9cac0843ba1e6f1c36ea247, type: 3}
+  m_Name: UiTheme
+  m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.UiTheme
+  _background: {r: 0.94509804, g: 0.92156863, b: 0.8666667, a: 1}
+  _ink: {r: 0.21960784, g: 0.1254902, b: 0.03137255, a: 1}
+  _muted: {r: 0.48235294, g: 0.4, b: 0.3137255, a: 1}
+  _surface: {r: 1, g: 0.99215686, b: 0.9647059, a: 1}
+  _surfaceInk: {r: 1, g: 0.972549, b: 0.91764706, a: 1}
+  _emptyCell: {r: 1, g: 0.99215686, b: 0.96862745, a: 1}
+  _locked: {r: 0.8901961, g: 0.85490197, b: 0.7764706, a: 1}
+  _next: {r: 0.54901963, g: 0.34509805, b: 0.627451, a: 1}
+  _warn: {r: 0.8784314, g: 0.14117648, b: 0.41568628, a: 1}
+  _star: {r: 0.94509804, g: 0.7254902, b: 0.15686275, a: 1}

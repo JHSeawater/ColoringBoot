@@ -5,6 +5,7 @@ using UnityEngine;
 // Phase 1.2 임시 스프라이트 4종 생성 (흰색 · 가장자리 안티앨리어싱, 색은 코드가 Image.color로 입힌다)
 // 실행: run_script(file=AgentScripts/Phase1Sprites.cs, entry=Phase1Sprites.Build) — 여러 번 실행해도 같은 결과(덮어씀)
 // Phase 4.3 아이콘 2종(자물쇠 · 별, 스테이지 선택 화면): entry=Phase1Sprites.BuildIcons — 작게(128px) 만든다
+// Phase 7.1 버튼 모양(디자인 시안 A): entry=Phase1Sprites.BuildRound — 둥근 사각형 바탕 · 외곽선(9-slice) · 얇은 육각 외곽선
 public static class Phase1Sprites
 {
     private const string Folder = "Assets/Art/Sprites";
@@ -13,6 +14,12 @@ public static class Phase1Sprites
     private const int Samples = 4; // 픽셀당 4×4 슈퍼샘플링
     private const float HexRadius = 0.98f;
     private const float RingWidth = 0.14f; // 반지름 대비 테두리 두께
+    private const int RoundSize = 96;        // 둥근 사각형 스프라이트 (Phase 7.1)
+    private const float RoundRadius = 32f;   // 모서리 반지름(픽셀)
+    private const float RoundLine = 7f;      // 외곽선 두께(픽셀)
+    private const int FrameSize = 48;        // 그림 테두리 스프라이트
+    private const float FrameRadius = 12f;
+    private const float HexLineWidth = 0.055f; // 스테이지 버튼 외곽선 — 반지름 대비
 
     public static string Build()
     {
@@ -53,6 +60,34 @@ public static class Phase1Sprites
         return $"아이콘 2종(자물쇠 · 별, {IconSize}px) → {Folder}";
     }
 
+    // 둥근 사각형은 9-slice라 어떤 크기의 버튼에도 모서리 반지름 · 선 두께가 그대로다(캔버스 기준 픽셀 = 스프라이트 픽셀)
+    public static string BuildRound()
+    {
+        SaveRound("RoundFill", RoundSize, RoundRadius, 0f);
+        SaveRound("RoundRing", RoundSize, RoundRadius, RoundLine);
+        // 그림 테두리: 모서리를 작게 해야 사각형 그림의 모서리가 테두리 밖으로 삐져나오지 않는다(그림 밖으로 선 두께만큼 넓혀 씌움)
+        SaveRound("FrameRing", FrameSize, FrameRadius, RoundLine);
+        Vector2[] hex = Hexagon(HexRadius);
+        Vector2[] inner = Hexagon(HexRadius * (1f - HexLineWidth));
+        Save("HexLine", p => Inside(hex, p) && !Inside(inner, p));
+        return $"버튼 모양 4종(RoundFill · RoundRing 반지름 {RoundRadius} · FrameRing 반지름 {FrameRadius} · 선 {RoundLine} · HexLine) → {Folder}";
+    }
+
+    // line = 0이면 채운 둥근 사각형, 아니면 그 두께의 외곽선만
+    private static void SaveRound(string name, int size, float radius, float line)
+    {
+        float half = size / 2f;
+        bool InRound(Vector2 p, float inset)
+        {
+            Vector2 q = new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y)) * half;   // [-1, 1] → 가운데 기준 픽셀
+            float edge = half - inset, r = radius - inset;
+            Vector2 corner = new Vector2(edge - r, edge - r);
+            if (q.x <= corner.x || q.y <= corner.y) return q.x <= edge && q.y <= edge;
+            return (q - corner).magnitude <= r;
+        }
+        Save(name, p => InRound(p, 0f) && (line <= 0f || !InRound(p, line)), size, radius + 2f);
+    }
+
     // 꼭짓점이 위를 향하는 육각형 (꼭짓점 각도 90° + 60°k)
     private static Vector2[] Hexagon(float radius)
     {
@@ -84,7 +119,8 @@ public static class Phase1Sprites
         return inside;
     }
 
-    private static void Save(string name, System.Func<Vector2, bool> shape, int size = Size)
+    // border > 0이면 9-slice 테두리(픽셀)
+    private static void Save(string name, System.Func<Vector2, bool> shape, int size = Size, float border = 0f)
     {
         var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
         var pixels = new Color32[size * size];
@@ -119,6 +155,7 @@ public static class Phase1Sprites
         importer.wrapMode = TextureWrapMode.Clamp;
         importer.filterMode = FilterMode.Bilinear;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
+        importer.spriteBorder = Vector4.one * border;
         importer.SaveAndReimport();
     }
 }
