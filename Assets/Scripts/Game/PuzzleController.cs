@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using ColoringBoot.Core;
 using TMPro;
 using UnityEngine;
@@ -30,6 +31,11 @@ namespace ColoringBoot.Game
         private PuzzleSession _session;
         private int? _minMoves;
         private bool _symbols;
+        // 붓질 연출 (Phase 7.4): 긋기 전 붓 경로와 그 칸들의 색 — 스테이지를 열 때 칸 수만큼 만든다
+        private int[] _path;
+        private PaintColor[] _pathBrushes;
+        private PaintColor[] _pathBefore;
+        private Coroutine _afterStroke;   // 물결이 끝난 뒤 클리어 반응 · 막힘 흔들림 → 안내 띠
 
         // 이번에 연 판에서 처음 클리어했는가 — 그림 칠하기 연출(GameFlow, Phase 5). 되돌렸다 다시 풀어도 유지
         public bool FirstClear { get; private set; }
@@ -53,8 +59,13 @@ namespace ColoringBoot.Game
             _data = data;
             _stageId = asset.name;
             FirstClear = false;
+            StopAfterStroke();
             _session = new PuzzleSession(new Board(stage));
             _minMoves = stage.MinMoves;
+            int cells = _session.Board.CellCount;
+            _path = new int[cells];
+            _pathBrushes = new PaintColor[cells];
+            _pathBefore = new PaintColor[cells];
             _boardView.Build(_session, palette);
             _targetView.Build(_session, palette);
             _targetView.SetInteractable(false);
@@ -81,6 +92,7 @@ namespace ColoringBoot.Game
         // 보드를 떠난다(목록으로). 풀던 판은 저장하지 않는다(2026-09-30 사용자 결정)
         public void Close()
         {
+            StopAfterStroke();
             if (_session != null) _data.SaveStats();
             _session = null;
         }
@@ -143,6 +155,9 @@ namespace ColoringBoot.Game
         private void OnBrushRequested(int cell, HexDirection dir)
         {
             if (_session == null || _session.IsSolved) return;
+            int count = _session.Trace(cell, dir, _path, _pathBrushes);
+            for (int k = 0; k < count; k++) _pathBefore[k] = _session.ColorAt(_path[k]);
+            bool wasDead = _session.IsDead;
             if (!_session.Brush(cell, dir)) return;
             _data.Stats.Stroked(_stageId);
             if (_session.IsSolved)
@@ -153,12 +168,46 @@ namespace ColoringBoot.Game
                 _data.SaveProgress();
             }
             _data.SaveStats();
-            Refresh();
+            // 클리어 · 새로 막힘은 물결이 끝난 뒤 반응과 함께 안내 띠를 띄운다(이미 막혀 있었으면 띠는 그대로)
+            bool react = _session.IsSolved || (_session.IsDead && !wasDead);
+            StopAfterStroke();
+            Refresh(react);
+            float wave = _boardView.PlayStroke(_path, _pathBefore, count);
+            if (react) _afterStroke = StartCoroutine(AfterStroke(wave, _session.IsSolved));
+        }
+
+        private IEnumerator AfterStroke(float wave, bool solved)
+        {
+            yield return Wait(wave);
+            if (solved)
+            {
+                yield return Wait(_boardView.PlayClear());
+                _clearBanner.SetActive(true);
+            }
+            else
+            {
+                _boardView.PlayShake();
+                _stuckBanner.SetActive(true);
+            }
+            _afterStroke = null;
+        }
+
+        private static IEnumerator Wait(float seconds)
+        {
+            for (float time = 0f; time < seconds; time += Time.unscaledDeltaTime) yield return null;
+        }
+
+        private void StopAfterStroke()
+        {
+            if (_afterStroke == null) return;
+            StopCoroutine(_afterStroke);
+            _afterStroke = null;
         }
 
         private void Undo()
         {
             if (_session == null || !_session.Undo()) return;
+            StopAfterStroke();
             _data.Stats.Undid(_stageId);
             _data.SaveStats();
             Refresh();
@@ -167,6 +216,7 @@ namespace ColoringBoot.Game
         private void Restart()
         {
             if (_session == null || _session.MoveCount == 0) return;
+            StopAfterStroke();
             _session.Restart();
             _data.Stats.Restarted(_stageId);
             _data.SaveStats();
@@ -184,7 +234,8 @@ namespace ColoringBoot.Game
             if (paused && _session != null) _data.SaveStats();
         }
 
-        private void Refresh()
+        // holdBanners: 클리어 · 막힘 띠를 아직 띄우지 않는다(붓질 연출 뒤 AfterStroke가 띄움)
+        private void Refresh(bool holdBanners = false)
         {
             _boardView.Render();
             _targetView.Render();
@@ -194,12 +245,12 @@ namespace ColoringBoot.Game
             _moveCounter.text = best.HasValue ? $"{counter} · 최고 {best.Value}" : counter;
             bool solved = _session.IsSolved;
             _boardView.SetInteractable(!solved); // 클리어하면 보드 입력을 잠근다(되돌리면 풀린다)
-            _clearBanner.SetActive(solved);
+            _clearBanner.SetActive(solved && !holdBanners);
             if (solved)
             {
                 _clearLabel.text = _data.Progress.IsPerfect(_stageId, _minMoves) ? $"완벽! 최소 {best.Value}수" : $"완성! 최고 {best.Value}수";
             }
-            _stuckBanner.SetActive(!solved && _session.IsDead);
+            _stuckBanner.SetActive(!solved && _session.IsDead && !holdBanners);
             _undoButton.interactable = _session.MoveCount > 0;
             _restartButton.interactable = _session.MoveCount > 0;
         }

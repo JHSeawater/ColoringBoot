@@ -24,6 +24,7 @@ public static class BoardSceneBuilder
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
     private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/ChapterArtBuilder.cs 먼저
     private const string ThemePath = "Assets/Data/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
+    private const string MotionPath = "Assets/Data/MotionSettings.asset";     // 보드 연출 값(Phase 7.4) — 없으면 기본값으로 만든다
     private const string ChapterTitle = "포도밭 오후";                         // 챕터 제목(GDD §5 세계관 — 챕터 제목만 둔다)
     private static readonly string[] PrototypeStages = { "Grape", "TwoColors", "BrushChanges", "Honeycomb", "Crossing", "Stain", "MakeBlack", "Hive", "LastStroke" };
 
@@ -37,14 +38,17 @@ public static class BoardSceneBuilder
     private static Color StrongInk => T.SurfaceInk;
     private static Color Muted => T.Muted;        // 보조 글자
 
-    private static UiTheme LoadTheme()
+    private static UiTheme LoadTheme() => LoadOrCreate<UiTheme>(ThemePath);
+
+    // 값 에셋: 있으면 그대로(사람이 고친 값 유지), 없으면 코드 기본값으로 만든다
+    private static TAsset LoadOrCreate<TAsset>(string path) where TAsset : ScriptableObject
     {
-        var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(ThemePath);
-        if (theme != null) return theme;
-        theme = ScriptableObject.CreateInstance<UiTheme>();
-        AssetDatabase.CreateAsset(theme, ThemePath);
+        var asset = AssetDatabase.LoadAssetAtPath<TAsset>(path);
+        if (asset != null) return asset;
+        asset = ScriptableObject.CreateInstance<TAsset>();
+        AssetDatabase.CreateAsset(asset, path);
         AssetDatabase.SaveAssets();
-        return theme;
+        return asset;
     }
 
     public static string BuildPrefabs()
@@ -252,6 +256,7 @@ public static class BoardSceneBuilder
         var boardView = boardArea.AddComponent<BoardView>();
         SetRefs(boardView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
         SetValues(boardView, ("_emptyColor", T.EmptyCell), ("_emptyTrailColor", new Color(Lead.r, Lead.g, Lead.b, 0.55f)));
+        SetRefs(boardView, ("_motion", LoadOrCreate<MotionSettings>(MotionPath)));   // 플레이 보드만 연출(목표 썸네일 · 레벨 에디터는 없음)
 
         // 안내 띠 (아래 버튼 위). 클리어 안내에는 다음 버튼, 막힘 안내에는 되돌리기 버튼을 함께 둔다
         GameObject clearBanner = Banner(boardScreen, "ClearBanner", Strong, "", 300f);
@@ -588,6 +593,7 @@ public static class BoardSceneBuilder
         rect.anchoredPosition = new Vector2(0f, 330f);
         rect.sizeDelta = new Vector2(-80f, 120f);
         RoundImage(banner, "RoundFill", background).raycastTarget = false;
+        Fade(banner);
         Label(banner, text, 52f).rectTransform.offsetMax = new Vector2(-rightSpace, 0f);
         banner.SetActive(false);
         return banner;

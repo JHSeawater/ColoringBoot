@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using ColoringBoot.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -47,6 +48,8 @@ namespace ColoringBoot.Game
         [SerializeField] private Color _symbolDark = new Color32(0x1C, 0x22, 0x2C, 0xFF);
         [Tooltip("칸 색의 밝기(Color.grayscale)가 이보다 크면 어두운 기호 — 기본 팔레트에서는 노랑만")]
         [SerializeField] private float _symbolDarkAbove = 0.6f;
+        [Tooltip("붓질 물결 · 클리어 · 막힘 연출 값 — 비우면 연출 없음(목표 썸네일 · 레벨 에디터)")]
+        [SerializeField] private MotionSettings _motion;
 
         // 붓질 요청 (칸 인덱스, 방향)
         public event Action<int, HexDirection> BrushRequested;
@@ -71,6 +74,13 @@ namespace ColoringBoot.Game
         private bool _layoutDirty;
         private bool _showSymbols;
 
+        // 연출 (Phase 7.4) — 색은 이미 세션에 반영돼 있고, 화면만 늦게 따라간다
+        private Coroutine _motionRoutine;
+        private Vector2 _basePosition;
+        private int[] _waveCells;
+        private PaintColor[] _waveBefore;
+        private int _waveCount;
+
         // 드래그: 처음 누른 손가락만 따라간다
         private int _pointerId = NoPointer;
         private int _dragCell;
@@ -80,7 +90,10 @@ namespace ColoringBoot.Game
         private void Awake()
         {
             _rect = (RectTransform)transform;
+            _basePosition = _rect.anchoredPosition;
         }
+
+        private void OnDisable() => StopMotion();
 
         // 스테이지마다 다시 부른다 — 이전 스테이지의 칸 · 선 · 버튼을 치우고 새로 만든다
         public void Build(PuzzleSession session, ColorPalette palette)
@@ -92,6 +105,7 @@ namespace ColoringBoot.Game
                 child.SetParent(null, false);
                 Destroy(child.gameObject);
             }
+            StopMotion();
             _selected = -1;
             _pointerId = NoPointer;
             _dragDirection = -1;
@@ -105,6 +119,8 @@ namespace ColoringBoot.Game
             _centers = new Vector2[count];
             _traceCells = new int[count];
             _traceBrushes = new PaintColor[count];
+            _waveCells = new int[count];
+            _waveBefore = new PaintColor[count];
             for (int i = 0; i < count; i++) _cells[i] = Instantiate(_cellPrefab, transform);
 
             // 미리보기 선: 줄 칸 수 + 1 구간이 최대 — 칸 위, 방향 버튼 아래에 그린다
@@ -134,8 +150,10 @@ namespace ColoringBoot.Game
             _layoutDirty = true;
         }
 
+        // 지금 세션 상태 그대로 그린다 — 진행 중인 연출은 끝난 모습으로 정리한다
         public void Render()
         {
+            StopMotion();
             for (int i = 0; i < _cells.Length; i++)
             {
                 PaintColor target = _board.TargetOf(i);
@@ -147,6 +165,105 @@ namespace ColoringBoot.Game
                 // 밝은 칸은 어두운 기호 — 팔레트마다 밝기가 다르다(파스텔은 대부분 밝음)
                 _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", ColorOf(color).grayscale > _symbolDarkAbove ? _symbolDark : _symbolLight);
             }
+        }
+
+        // 붓질 물결: Render 뒤에 부른다. cells = 붓이 지나간 칸(출발 쪽부터, PuzzleSession.Trace), before = 긋기 전 색.
+        // 칸마다 차례로 새 색이 되며 튄다. 끝나는 데 걸리는 시간(초)을 돌려준다 — 연출이 없으면 0
+        public float PlayStroke(int[] cells, PaintColor[] before, int count)
+        {
+            if (_motion == null || count <= 0) return 0f;
+            StopMotion();
+            Array.Copy(cells, _waveCells, count);
+            Array.Copy(before, _waveBefore, count);
+            _waveCount = count;
+            _motionRoutine = StartCoroutine(Wave());
+            return (count - 1) * _motion.StrokeStep + _motion.PopSeconds;
+        }
+
+        // 클리어: 모든 칸이 차례로 튄다
+        public float PlayClear()
+        {
+            if (_motion == null) return 0f;
+            StopMotion();
+            _motionRoutine = StartCoroutine(Ripple());
+            return (_cells.Length - 1) * _motion.ClearStep + _motion.ClearPopSeconds;
+        }
+
+        // 막힘: 보드가 좌우로 흔들리다 멈춘다
+        public float PlayShake()
+        {
+            if (_motion == null) return 0f;
+            StopMotion();
+            _motionRoutine = StartCoroutine(Shake());
+            return _motion.ShakeSeconds;
+        }
+
+        private IEnumerator Wave()
+        {
+            float step = _motion.StrokeStep, pop = _motion.PopSeconds;
+            float total = (_waveCount - 1) * step + pop;
+            for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
+            {
+                for (int k = 0; k < _waveCount; k++)
+                {
+                    int cell = _waveCells[k];
+                    float local = time - k * step;
+                    PaintColor now = _session.ColorAt(cell);
+                    _cells[cell].SetFill(ColorOf(local < 0f ? _waveBefore[k] : now));
+                    bool changed = now != _waveBefore[k];
+                    _cells[cell].transform.localScale = Vector3.one * (changed ? Pop(local, pop, _motion.PopScale) : 1f);
+                }
+                yield return null;
+            }
+            FinishMotion();
+        }
+
+        private IEnumerator Ripple()
+        {
+            float step = _motion.ClearStep, pop = _motion.ClearPopSeconds;
+            float total = (_cells.Length - 1) * step + pop;
+            for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
+            {
+                for (int i = 0; i < _cells.Length; i++)
+                    _cells[i].transform.localScale = Vector3.one * Pop(time - i * step, pop, _motion.ClearPopScale);
+                yield return null;
+            }
+            FinishMotion();
+        }
+
+        private IEnumerator Shake()
+        {
+            float seconds = _motion.ShakeSeconds;
+            for (float time = 0f; time < seconds; time += Time.unscaledDeltaTime)
+            {
+                float k = time / seconds;
+                float x = _motion.ShakeAmplitude * Mathf.Sin(k * _motion.ShakeCycles * 2f * Mathf.PI) * (1f - k);
+                _rect.anchoredPosition = _basePosition + new Vector2(x, 0f);
+                yield return null;
+            }
+            FinishMotion();
+        }
+
+        // local초 지난 칸의 크기: 0 → 1 → 0을 반 사인으로(시작 전 · 끝난 뒤는 1)
+        private static float Pop(float local, float seconds, float scale) =>
+            local <= 0f || local >= seconds ? 1f : 1f + (scale - 1f) * Mathf.Sin(local / seconds * Mathf.PI);
+
+        // 연출을 끝난 모습으로: 크기 · 위치 원래대로, 물결 중이던 칸은 지금 색으로
+        private void StopMotion()
+        {
+            if (_motionRoutine == null) return;
+            StopCoroutine(_motionRoutine);
+            FinishMotion();
+        }
+
+        private void FinishMotion()
+        {
+            _motionRoutine = null;
+            if (_cells == null) return;
+            for (int k = 0; k < _waveCount; k++) _cells[_waveCells[k]].SetFill(ColorOf(_session.ColorAt(_waveCells[k])));
+            _waveCount = 0;
+            foreach (CellView cell in _cells) cell.transform.localScale = Vector3.one;
+            _rect.anchoredPosition = _basePosition;
         }
 
         public void SetSymbols(bool visible)

@@ -37,6 +37,11 @@ public static class QaScene
         Expect(hit.color.a == 0f && hit.raycastTarget, "BoardArea 투명 · raycast");
         CheckBoardView(area.GetComponent<BoardView>(), false, Expect);
         CheckBoardView(safeArea.Find("BoardScreen/TargetView").GetComponent<BoardView>(), true, Expect);
+        // 연출(Phase 7.4): 플레이 보드만 MotionSettings — 목표 썸네일은 없음, 안내 띠는 나타나며 켜짐
+        Expect(new SerializedObject(area.GetComponent<BoardView>()).FindProperty("_motion").objectReferenceValue is MotionSettings, "BoardArea 연출 값(MotionSettings)");
+        Expect(new SerializedObject(safeArea.Find("BoardScreen/TargetView").GetComponent<BoardView>()).FindProperty("_motion").objectReferenceValue == null, "TargetView 연출 없음");
+        foreach (string banner in new[] { "BoardScreen/ClearBanner", "BoardScreen/StuckBanner" })
+            Expect(safeArea.Find(banner)?.GetComponent<ScreenFade>() != null, $"{banner} 전환(ScreenFade)");
 
         var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
         foreach (TMP_Text text in canvas.GetComponentsInChildren<TMP_Text>(true))
