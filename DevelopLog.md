@@ -8,6 +8,16 @@
 
 ---
 
+### 📅 [2026-10-03] Phase 7.5 미룸 · 7.6 전용 웹 템플릿 · 아이콘 · 제품 이름
+
+* **7.5 사운드 — 미룸(사용자)**: Kenney CC0(Interface Sounds · Music Jingles) 상황별 효과음 3개씩 · CC0 배경음 3개(오르골 2 · 피아노 반복 1)를 MP3로 넣은 고르기 페이지(`https://claude.ai/artifact/5KVFJXPZhQcXi71yTz1Nn4`)를 만들었으나 마음에 드는 소리가 없어 사용자가 직접 찾아오기로 했다. 재생 코드도 실제 소리로 확인해야 해 함께 미룬다. Phase 7 완료 조건에 "소리"가 있으므로 7.6 · 7.7이 먼저 끝나면 옮길지 정한다.
+* **7.6 템플릿**: Unity 6 기본 템플릿(`Editor/Data/PlaybackEngines/WebGLSupport/BuildTools/WebGLTemplates/Base/Default`)을 바탕으로 `Assets/WebGLTemplates/ColoringBoot` — 로딩 화면은 타이틀 화면과 같은 모습(UiTheme 색, SVG 육각 세 칸 · 시스템 글꼴), Unity 로고 · 아래 바 · 전체화면 버튼 제거, 오류는 로딩 화면에 "불러오지 못했어요. 새로고침해 주세요."(경고는 콘솔만). PC는 CSS만으로 창 안의 가장 큰 9:16 영역 + 양옆 여백(기존 540 × 960 고정 상자는 낮은 노트북 화면에서 잘림), 휴대폰은 기본 템플릿과 같은 뷰포트 · 화면 전체(Phase 2에서 확인된 설정 유지). 전역 변수 `status`는 `window.status`(문자열)와 부딪혀 `statusText`로.
+* **아이콘**: 빨강 · 노랑 · 파랑 육각 세 칸(벌집 삼각형) — favicon 32px(투명) · 홈 화면 180px(iOS가 모서리를 깎으므로 꽉 찬 종이색 사각형).
+* **제품 이름**: `ColoringBoot` → "컬러링붓"(탭 제목), 템플릿 `APPLICATION:Default` → `PROJECT:ColoringBoot` — `AgentScripts/Phase7WebTemplate.cs`. 회사 이름은 사용자가 나중에 정함. 로더 코드 확인: 제품 · 회사 이름은 다운로드 캐시 이름(`UnityCache`)에만 쓰여, 이름이 바뀌면 처음 한 번 다시 받을 뿐 저장(IndexedDB `/idbfs`)과는 따로다 — 새로고침 뒤 진행 유지는 7.7 실기에서 확인.
+* **빌드**: 성공 · 에러 0 · 경고 7, 압축 후 9,127,968바이트(7.2 대비 +20,976 — 7.1~7.4 코드 · 스프라이트), `preloadedAssets` 되돌림. 헤드리스 Chrome으로 로딩 화면 · PC 1280 × 720 · 1280 × 500 레터박스 확인. 헤드리스(SwiftShader)에서는 WebGL 본체가 끝까지 돌지 않아(가상 시간이면 캐시 DB 시간 초과, 실시간이면 0%에서 찍힘) 로드 뒤 화면 · 휴대폰 화면은 실기 확인으로 남긴다.
+
+---
+
 ### 📅 [2026-10-03] Phase 7.4 — 보드 연출(붓질 물결 · 클리어 반응 · 막힘 흔들림)
 
 * **결정(사용자)**: 진동은 뺀다(꼭 필요하냐는 질문에 — 앱인토스 심사 기준에 없고, 브라우저 진동은 iOS Safari에서 동작하지 않아 효과가 반쪽). 클리어 · 막힘 띠는 연출이 끝난 뒤(②A), 붓 아이콘 없이 색 물결 + 튐(③A).
