@@ -17,73 +17,73 @@ MonoBehaviour:
     _sprite: {fileID: 21300000, guid: 5e828e300099d32408bc55a7417d2577, type: 3}
     _rect:
       x: -2
-      y: 48
+      y: -2
       width: 1084
-      height: 1304
+      height: 1356
   _steps:
-  - _sprite: {fileID: 21300000, guid: f07cbf5ccb9b3374d8a2be53bdf4dfb2, type: 3}
+  - _sprite: {fileID: 21300000, guid: 8e79c26395f09614ea6f95d714156806, type: 3}
     _rect:
-      x: 772
-      y: 107
-      width: 216
-      height: 216
-  - _sprite: {fileID: 21300000, guid: 37a1a45e3ff956744ada82d55923ced4, type: 3}
+      x: 664
+      y: 657
+      width: 352
+      height: 464
+  - _sprite: {fileID: 21300000, guid: 54fa62a8165a0294e91570498a221a80, type: 3}
     _rect:
-      x: 137
-      y: 107
-      width: 604
-      height: 324
-  - _sprite: {fileID: 21300000, guid: 287b315bcbb66fc49a6ad896d3af2e34, type: 3}
+      x: 415
+      y: 426
+      width: 292
+      height: 268
+  - _sprite: {fileID: 21300000, guid: 27a18df8bcf69ec4fa66efa700cad890, type: 3}
     _rect:
-      x: 36
-      y: 653
-      width: 496
-      height: 276
-  - _sprite: {fileID: 21300000, guid: 027ff93d5e0765445ac9a246cd14485d, type: 3}
+      x: 812
+      y: 267
+      width: 240
+      height: 304
+  - _sprite: {fileID: 21300000, guid: f9ad2180851436b438502fb3d2388fe3, type: 3}
     _rect:
-      x: 215
-      y: 776
-      width: 860
-      height: 512
-  - _sprite: {fileID: 21300000, guid: d44eb3a38722a6d4b822c836b2dcedc7, type: 3}
+      x: 827
+      y: -2
+      width: 256
+      height: 232
+  - _sprite: {fileID: 21300000, guid: a4860a5e4fe646f40a3fa68f09660db9, type: 3}
+    _rect:
+      x: 108
+      y: -2
+      width: 976
+      height: 1112
+  - _sprite: {fileID: 21300000, guid: ecfe9c0ad625c754182f0e4fd5d6bee8, type: 3}
+    _rect:
+      x: 310
+      y: 882
+      width: 456
+      height: 472
+  - _sprite: {fileID: 21300000, guid: fb091ce95fdc9c4448a5d831b09c1df4, type: 3}
+    _rect:
+      x: 65
+      y: 822
+      width: 996
+      height: 532
+  - _sprite: {fileID: 21300000, guid: 2ced923d9f8ba1c458851be595f7bc10, type: 3}
     _rect:
       x: -2
-      y: 682
+      y: -2
+      width: 888
+      height: 1096
+  - _sprite: {fileID: 21300000, guid: 66193df511f10be43b5bad11d4333c9b, type: 3}
+    _rect:
+      x: -2
+      y: 600
       width: 1084
-      height: 672
-  - _sprite: {fileID: 21300000, guid: 56cf8e2daede1f3479b7d8fb55bfb2c3, type: 3}
+      height: 752
+  - _sprite: {fileID: 21300000, guid: 02bc923428c775a40ac22dcb6c861030, type: 3}
     _rect:
-      x: 413
-      y: 772
-      width: 344
-      height: 580
-  - _sprite: {fileID: 21300000, guid: 5666fee8b017f1a43b64add96f84ea0a, type: 3}
-    _rect:
-      x: 627
-      y: 675
-      width: 456
-      height: 500
-  - _sprite: {fileID: 21300000, guid: a4e578e341c7ee74c9fa473c057dd9f3, type: 3}
-    _rect:
-      x: 7
-      y: 855
-      width: 492
-      height: 280
-  - _sprite: {fileID: 21300000, guid: e4e1bbd02bb67bf42878df517e047ab8, type: 3}
-    _rect:
-      x: 418
-      y: 428
-      width: 456
-      height: 280
-  - _sprite: {fileID: 21300000, guid: 2a839efcaa5eeba47a56c74e2d79ce3c, type: 3}
-    _rect:
-      x: 75
-      y: 502
-      width: 188
-      height: 372
+      x: 34
+      y: 128
+      width: 700
+      height: 1032
   - _sprite: {fileID: 21300000, guid: 8f31f2f544d2f0b43bf0c1bf2f407d9c, type: 3}
     _rect:
       x: -2
       y: -2
       width: 1084
-      height: 784
+      height: 740

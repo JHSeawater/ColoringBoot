@@ -126,3 +126,6 @@ InitTestScene*.unity*
 
 # Python 캐시 (AgentScripts 그림 도구)
 __pycache__/
+
+# 원본 그림 폴더 안의 개인 작업 도구 (그림 파일만 커밋)
+ArtSource/*/_tools/

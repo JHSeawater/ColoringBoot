@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 027ff93d5e0765445ac9a246cd14485d
+guid: 54fa62a8165a0294e91570498a221a80
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4393628887424849287
-    second: 04_grape_0
+      213: 7642369780138115398
+    second: 02_bee_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 04_grape_0
+      name: 02_bee_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 860
-        height: 512
+        width: 292
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 97aa52a2ec1b603c0800000000000000
-      internalID: -4393628887424849287
+      spriteID: 6410053f2d62f0a60800000000000000
+      internalID: 7642369780138115398
       vertices: []
       indices: 
       edges: []

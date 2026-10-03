@@ -56,4 +56,5 @@ def export(source, target):
 
 
 if __name__ == '__main__':
-    export(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/Chapter1', sys.argv[2] if len(sys.argv) > 2 else 'Assets/Art/Chapters/Chapter1')
+    # 챕터 1 게임 그림 = 시험 그림(Phase 7.2, 2026-10-03). 임시 도안은 ArtSource/Chapter1에 그대로 있다
+    export(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/chapter1_test', sys.argv[2] if len(sys.argv) > 2 else 'Assets/Art/Chapters/Chapter1')

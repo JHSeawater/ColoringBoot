@@ -274,8 +274,8 @@
 
 ### 7.2 챕터 1 그림 교체
 
-- [ ] [Asset] 챕터 1 그림을 사용자 시험 그림(`ArtSource/chapter1_test`, 굵은 선 플랫 카툰 11단계)으로 — 이것도 시험용이라 나중에 다시 바꿀 수 있다. 임시 도안 `ArtSource/Chapter1`은 그대로 둔다(사용자 결정 2026-10-03)
-- [ ] [Editor] 가공 · 그림 에셋 다시 만들기(`ChapterArtExport.py ArtSource/chapter1_test` → `ChapterArtBuilder`) · `QaScene` · 용량 비교
+- [x] [Asset] 챕터 1 그림을 사용자 시험 그림(`ArtSource/chapter1_test`, 굵은 선 플랫 카툰 11단계)으로 — 이것도 시험용이라 나중에 다시 바꿀 수 있다. 임시 도안 `ArtSource/Chapter1`은 그대로 둔다(사용자 결정 2026-10-03) → 원본 커밋 `9a8f884`(작업 도구 `_tools/`는 `.gitignore`, 규격 밖 `preview_progress.png`는 `_tools/`로 옮김). `ChapterArtExport.py` · `ArtCheck.py` 기본 원본을 이 폴더로
+- [x] [Editor] 가공 · 그림 에셋 다시 만들기(`ChapterArtExport.py ArtSource/chapter1_test` → `ChapterArtBuilder`) · `QaScene` · 용량 비교 → 12장 1,130,634바이트(옛 레이어 10장 · `.meta` 삭제), `Chapter1Art.asset` GUID 그대로라 씬 재구성 없음, `QaScene` 148항목 통과. 에디터 플레이(CLI): 1번부터 11번까지 그림 화면 "색칠 1 / 11" … "그림 완성!" [목록] · 작은 그림 11단계 · 콘솔 에러 0(스크린샷 `Builds/Art72_pair.png`). WebGL 압축 후 9,106,992바이트(Phase 5.3 대비 +362,601 — 전부 data, wasm 같음), 에러 0 · 경고 4, `preloadedAssets` 되돌림. gh-pages 배포 · 휴대폰 확인은 7.7에서
 
 ### 7.3 타이틀 · 화면 전환
 
@@ -316,7 +316,7 @@
 - [ ] [Doc] (사용자) 채택할 기믹 · 이동 횟수 제한 결정(GDD §7 · §9, 소규모 플레이테스트 결과) → 기믹마다 규칙 · 솔버 · 레벨 에디터 · 테스트 항목
 - [ ] [Asset] 챕터 2 이후 그림(`ArtSpec.md`)
 - [ ] [Editor] 챕터 2 이후 스테이지 제작 · 등록
-- [ ] [QA] 챕터 그림 5장의 빌드 용량 · 첫 로딩 — 모두 첫 로딩에 넣을지, 챕터 2부터는 나중에 받을지 실측으로 정한다(시험 그림 기준 추정: 챕터당 +0.5 MB 안팎, 임시 도안 빌드 증가분 × 면적비 — 실측 아님)
+- [ ] [QA] 챕터 그림 5장의 빌드 용량 · 첫 로딩 — 모두 첫 로딩에 넣을지, 챕터 2부터는 나중에 받을지 실측으로 정한다(실측: 시험 그림 챕터 1장 = 빌드 data 약 +686 KB(임시 도안 +323 KB → 시험 그림 +363 KB 더, Phase 7.2) → 5장이면 +3.4 MB 안팎)
 - [ ] [QA] 처음부터 끝까지 연속 플레이(에디터 · WebGL)
 
 ---

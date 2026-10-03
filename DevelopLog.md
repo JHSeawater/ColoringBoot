@@ -8,6 +8,16 @@
 
 ---
 
+### 📅 [2026-10-03] Phase 7.2 — 챕터 1 그림을 시험 그림으로 교체
+
+* **정리**: `.gitignore`에 `ArtSource/*/_tools/`(사용자 요청). 규격 밖 파일 `preview_progress.png`는 `_tools/`로 옮겨 폴더가 규격 점검을 통과하게 했다.
+* **가공**: `ChapterArtExport.py ArtSource/chapter1_test` → 12장 1,130,634바이트(임시 도안 440,823), 이름이 다른 옛 레이어 10장과 `.meta`는 스크립트가 지움 → `ChapterArtBuilder`(MCP가 끊겨 CLI `unity command run_script`). `Chapter1Art.asset`은 같은 GUID라 씬을 다시 만들 필요 없음, `QaScene` 148항목 통과. 다시 실행해도 임시 도안으로 돌아가지 않게 `ChapterArtExport.py` · `ArtCheck.py`의 기본 원본을 `ArtSource/chapter1_test`로 바꿨다(임시 도안 폴더는 그대로).
+* **에디터 플레이(CLI)**: 빈 저장에서 1번 클리어 → 그림 화면 "색칠 1 / 11"(나비) → 2~11번 이어서 → "그림 완성!" [목록] → 선택 화면 11 / 11 · 작은 그림 11단계 · 별 11개. 콘솔 에러 0, 끝나고 저장 키 삭제. 스크린샷 `Builds/Art72_pair.png`.
+* **발견**: 스테이지를 연 `run_script` 호출 안에서 바로 끌면 칸 배치 전이라 엉뚱한 칸에 그어져 막힌다(1번이 2수 만에 막힘). 여는 호출과 끄는 호출을 나누자 정상 — CLAUDE.md §2 QA 메모에 추가. 예전 QA는 원래 호출을 나눠서 문제가 없었다.
+* **빌드**: 압축 후 9,106,992바이트(Phase 5.3 대비 +362,601 — data 2,787,183 → 3,149,784, wasm 같음), 에러 0 · 경고 4, `preloadedAssets` 되돌림. 그림 한 장이 빌드에 약 +686 KB(임시 도안 몫 +323 KB 포함)라, Phase 6 때 면적비로 낸 추정(+0.5 MB)보다 크다 → 챕터 5장이면 +3.4 MB 안팎. Phase 8 용량 항목을 실측값으로 고침. gh-pages 배포 · 휴대폰 확인은 7.7에서.
+
+---
+
 ### 📅 [2026-10-03] Phase 6 종료 — 출시 방향 결정 · 시험 그림 점검
 
 * **결정 문서** (공유 페이지 `https://claude.ai/artifact/1dxtht2m6McLSaju3fvJSq`, 비공개): 결정 6개마다 선택지 · 영향 · 추천, 고른 내용을 복사해 대화에 붙이는 방식.

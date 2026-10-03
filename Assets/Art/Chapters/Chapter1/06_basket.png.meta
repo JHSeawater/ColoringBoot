@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 287b315bcbb66fc49a6ad896d3af2e34
+guid: ecfe9c0ad625c754182f0e4fd5d6bee8
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7382583475150721314
-    second: 03_bee_0
+      213: -1121157092884265263
+    second: 06_basket_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 03_bee_0
+      name: 06_basket_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 496
-        height: 276
+        width: 456
+        height: 472
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 22117095e84347660800000000000000
-      internalID: 7382583475150721314
+      spriteID: 1d6493d6099d070f0800000000000000
+      internalID: -1121157092884265263
       vertices: []
       indices: 
       edges: []
