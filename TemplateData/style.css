@@ -1,18 +1,23 @@
-body { padding: 0; margin: 0 }
-#unity-container { position: absolute }
-#unity-container.unity-desktop { left: 50%; top: 50%; transform: translate(-50%, -50%) }
-#unity-container.unity-mobile { position: fixed; width: 100%; height: 100% }
-.unity-mobile #unity-fullscreen-container { width: 100%; height: 100% }
-#unity-fullscreen-container { position: relative; }
-#unity-canvas { position: absolute; width: 100%; height: 100%; background: #231F20 }
-#unity-loading-container { position: absolute; width: 100%; height: 100%; backdrop-filter: blur(5px); display: none; }
-#unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-#unity-logo { width: 154px; height: 130px; background: url('unity-logo-dark.png') no-repeat center }
-#unity-progress-bar-empty { width: 141px; height: 18px; margin-top: 10px; margin-left: 6.5px; background: url('progress-bar-empty-dark.png') no-repeat center }
-#unity-progress-bar-full { width: 0%; height: 18px; margin-top: 10px; background: url('progress-bar-full-dark.png') no-repeat center }
-#unity-footer { position: relative }
-.unity-mobile #unity-footer { display: none }
-#unity-logo-title-footer { float:left; width: 102px; height: 38px; background: url('unity-logo-title-footer.png') no-repeat center }
-#unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
-#unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
-#unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+/* 컬러링붓 전용 템플릿 (Phase 7.6) — 색은 Assets/Data/UiTheme.asset과 같게(종이 바탕 · 갈색 선 · 잠김 색) */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #E3DAC6; }
+body { display: flex; align-items: center; justify-content: center; }
+
+/* PC: 창 안에 들어가는 가장 큰 9:16 세로 영역 */
+#game { position: relative; width: min(100vw, 100vh * 9 / 16); height: min(100vh, 100vw * 16 / 9); }
+/* 휴대폰: 화면 전체 (게임의 Canvas Scaler가 비율 차이를 맡는다) */
+body.mobile #game { position: fixed; inset: 0; width: 100%; height: 100%; }
+
+#unity-canvas { position: absolute; inset: 0; width: 100%; height: 100%; background: #F1EBDD; outline: none; }
+
+#loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2vh;
+  background: #F1EBDD; color: #382008; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  transition: opacity 0.3s ease; }
+#loading.done { opacity: 0; pointer-events: none; }
+#loading .chips { width: 34%; max-width: 220px; }
+#loading .chips polygon { stroke: #382008; stroke-width: 4; stroke-linejoin: round; }
+#loading .title { font-size: clamp(32px, 7.5vh, 84px); font-weight: 700; letter-spacing: 0.02em; margin-bottom: 2vh; }
+#loading .bar { width: 56%; max-width: 360px; height: 18px; border: 3px solid #382008; border-radius: 99px; background: #FFFDF6; overflow: hidden; }
+#loading .fill { width: 0%; height: 100%; background: #382008; border-radius: 99px; transition: width 0.2s ease; }
+#loading .status { font-size: 15px; color: #7B6650; font-variant-numeric: tabular-nums; min-height: 1.4em; text-align: center; padding: 0 16px; }
+#loading.error .bar { display: none; }
+#loading.error .status { color: #E0246A; font-size: 17px; }

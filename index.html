@@ -1,59 +1,44 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="ko">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | ColoringBoot</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <title>컬러링붓</title>
+    <link rel="icon" type="image/png" href="TemplateData/favicon.png">
+    <link rel="apple-touch-icon" href="TemplateData/apple-touch-icon.png">
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
   <body>
-    <div id="unity-container" class="unity-desktop">
-      <div id="unity-fullscreen-container">
-        <canvas id="unity-canvas" width="540" height="960" tabindex="-1"></canvas>
-        <div id="unity-loading-container">
-          <div id="unity-loading-bar">
-            <div id="unity-logo"></div>
-            <div id="unity-progress-bar-empty">
-              <div id="unity-progress-bar-full"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-logo-title-footer"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">ColoringBoot</div>
+    <!-- 컬러링붓 전용 템플릿 (Phase 7.6) — 로딩 화면은 타이틀 화면과 같은 모습(UiTheme 색), 그림 파일 · 웹 글꼴 없이 HTML · CSS · SVG만.
+         휴대폰은 화면 전체, PC는 창 높이에 맞춘 9:16 세로 영역 + 양옆 여백(CLAUDE.md §4 레터박스) -->
+    <div id="game">
+      <canvas id="unity-canvas" width="540" height="960" tabindex="-1"></canvas>
+      <div id="loading">
+        <svg class="chips" viewBox="0 0 330 112" aria-hidden="true">
+          <polygon points="55,4 100,30 100,82 55,108 10,82 10,30" fill="#D8402F"/>
+          <polygon points="165,4 210,30 210,82 165,108 120,82 120,30" fill="#F1B928"/>
+          <polygon points="275,4 320,30 320,82 275,108 230,82 230,30" fill="#2D69CF"/>
+        </svg>
+        <div class="title">컬러링붓</div>
+        <div class="bar"><div class="fill" id="loading-fill"></div></div>
+        <div class="status" id="loading-status">불러오는 중</div>
       </div>
     </div>
     <script>
-      let canvas = document.querySelector("#unity-canvas");
-      let fullscreenContainer = document.querySelector("#unity-fullscreen-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loading = document.querySelector("#loading");
+      var fill = document.querySelector("#loading-fill");
+      var statusText = document.querySelector("#loading-status");
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
+      // 오류는 로딩 화면에 한국어로, 경고는 콘솔에만
+      function showError(message) {
+        loading.classList.remove("done");
+        loading.classList.add("error");
+        statusText.textContent = "불러오지 못했어요. 새로고침해 주세요.";
+        console.error(message);
+      }
       function unityShowBanner(msg, type) {
-        var warningBanner = document.querySelector("#unity-warning");
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
+        if (type == "error") showError(msg);
+        else console.warn(msg);
       }
 
       var buildUrl = "Build";
@@ -64,87 +49,35 @@
         frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
         codeUrl: buildUrl + "/WebGL.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
-
-        // If you have a custom web site structure, or want to place multiple Unity build instances on the same page,
-        // you can pass fullscreenElementID: "my-unity-fullscreen-container-id", in this configuration field to
-        // explicitly point to the element tree root that is displayed in fullscreen mode.
-        fullscreenElementID: "unity-fullscreen-container",
-
         companyName: "DefaultCompany",
-        productName: "ColoringBoot",
+        productName: "컬러링붓",
         productVersion: "0.1.0",
         showBanner: unityShowBanner,
-        // errorHandler: function(err, url, line) {
-        //    alert("error " + err + " occurred at line " + line);
-        //    // Return 'true' if you handled this error and don't want Unity
-        //    // to process it further, 'false' otherwise.
-        //    return true;
-        // },
       };
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      // If you would like all file writes inside Unity Application.persistentDataPath
-      // directory to automatically persist so that the contents are remembered when
-      // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
-      // This autosyncing is currently not the default behavior to avoid regressing
-      // existing user projects that might rely on the earlier manual
-      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
-      // expected to change.
-
+      // 휴대폰: 브라우저 화면 전체 (Unity 기본 템플릿과 같은 뷰포트 — Phase 2에서 안전영역 · 세로 화면 확인된 설정)
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        document.querySelector("#unity-container").className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-
-      } else {
-        // Desktop style: Render the game canvas container in a window that can be maximized to fullscreen:
-        fullscreenContainer.style.width = "540px";
-        fullscreenContainer.style.height = "960px";
+        var meta = document.createElement("meta");
+        meta.name = "viewport";
+        meta.content = "width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes";
+        document.getElementsByTagName("head")[0].appendChild(meta);
+        document.body.className = "mobile";
       }
-
 
       var script = document.createElement("script");
       script.src = loaderUrl;
-      script.onload = () => {
-        const loadingContainer = document.querySelector("#unity-loading-container");
-        const progressBarFull = document.querySelector("#unity-progress-bar-full");
-
-        createUnityInstance(canvas, config, (progress) => {
-          if (progress < 1) {
-            loadingContainer.style.display = "block";
-            progressBarFull.style.width = 100 * progress + "%";
-          } else {
-            loadingContainer.style.display = "none";
-          }
-        }).then((unityInstance) => {
-                document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
-
-              }).catch((message) => {
-                alert(message);
-              });
-            };
-
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (progress) {
+          fill.style.width = (100 * progress) + "%";
+          statusText.textContent = "불러오는 중 " + Math.round(100 * progress) + "%";
+        }).then(function (unityInstance) {
+          // 첫 화면(타이틀)이 그려진 뒤 로딩 화면을 걷어 낸다
+          loading.classList.add("done");
+          setTimeout(function () { loading.style.display = "none"; }, 400);
+        }).catch(showError);
+      };
+      script.onerror = function () { showError("loader를 받지 못함: " + loaderUrl); };
       document.body.appendChild(script);
-
     </script>
   </body>
 </html>
