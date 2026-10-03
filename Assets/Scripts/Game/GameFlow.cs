@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace ColoringBoot.Game
 {
-    // 화면 흐름 (Phase 4.3) — 스테이지 선택 → 보드 → 다음 스테이지 · 목록, 옵션 · 기록 패널. 씬은 하나이고 패널을 켜고 끈다(다시 불러오지 않음).
+    // 화면 흐름 (Phase 4.3) — 타이틀(Phase 7.3) → 스테이지 선택 → 보드 → 다음 스테이지 · 목록, 옵션 · 기록 패널. 씬은 하나이고 패널을 켜고 끈다(다시 불러오지 않음).
     // 저장소 · 기록 · 광고 자리 · 설정을 여기서 한 번 만든다(static · 싱글턴 없음 — CLAUDE.md §5)
     public sealed class GameFlow : MonoBehaviour
     {
@@ -38,6 +38,9 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _chapterCaption;
         [SerializeField] private Button _chapterNextButton;
         [SerializeField] private TMP_Text _chapterNextLabel;
+        [Header("타이틀 (Phase 7.3)")]
+        [SerializeField] private GameObject _titleScreen;      // 실행하면 처음 보는 화면(주소에 ?stage=가 있으면 건너뜀)
+        [SerializeField] private Button _startButton;
 
         private SaveData _data;
         private IAdService _ads;
@@ -78,6 +81,7 @@ namespace ColoringBoot.Game
             _selectOptionsButton.onClick.AddListener(ShowOptions);
             _nextButton.onClick.AddListener(Next);
             _chapterNextButton.onClick.AddListener(ContinueAfterPicture);
+            _startButton.onClick.AddListener(ShowSelect);
             _select.StageChosen += OpenStage;
             _options.Changed += ApplySettings;
         }
@@ -89,6 +93,7 @@ namespace ColoringBoot.Game
             _selectOptionsButton.onClick.RemoveListener(ShowOptions);
             _nextButton.onClick.RemoveListener(Next);
             _chapterNextButton.onClick.RemoveListener(ContinueAfterPicture);
+            _startButton.onClick.RemoveListener(ShowSelect);
             _select.StageChosen -= OpenStage;
             _options.Changed -= ApplySettings;
         }
@@ -112,7 +117,7 @@ namespace ColoringBoot.Game
                 if (start < 0) Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 선택 화면을 엽니다", this);
             }
             if (start >= 0) OpenStage(start);
-            else ShowSelect();
+            else _titleScreen.SetActive(true);
 
             if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_catalog, _data.Stats);
         }
@@ -123,6 +128,7 @@ namespace ColoringBoot.Game
             int justPainted = _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
             _puzzle.Close();
             _current = -1;
+            _titleScreen.SetActive(false);
             _boardScreen.SetActive(false);
             _chapterScreen.SetActive(false);
             _select.Show(_stages, _minMoves, _data);
@@ -131,6 +137,7 @@ namespace ColoringBoot.Game
 
         private void OpenStage(int index)
         {
+            _titleScreen.SetActive(false);
             _select.gameObject.SetActive(false);
             _chapterScreen.SetActive(false);
             _boardScreen.SetActive(true);

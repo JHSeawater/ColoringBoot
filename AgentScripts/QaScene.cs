@@ -26,8 +26,11 @@ public static class QaScene
 
         // 화면 · 패널은 처음엔 모두 꺼져 있다(GameFlow가 켠다) — 꺼진 오브젝트는 transform.Find로 찾는다
         Transform safeArea = canvas.transform.Find("SafeArea");
-        foreach (string panel in new[] { "SelectScreen", "BoardScreen", "ChapterScreen", "OptionsPanel", "StatsPanel" })
+        foreach (string panel in new[] { "TitleScreen", "SelectScreen", "BoardScreen", "ChapterScreen", "OptionsPanel", "StatsPanel" })
+        {
             Expect(safeArea.Find(panel) != null && !safeArea.Find(panel).gameObject.activeSelf, $"{panel} 있음 · 처음엔 꺼짐");
+            Expect(safeArea.Find(panel)?.GetComponent<ScreenFade>() != null, $"{panel} 전환(ScreenFade)");
+        }
 
         Transform area = safeArea.Find("BoardScreen/BoardArea");
         Image hit = area.GetComponent<Image>();
@@ -45,7 +48,8 @@ public static class QaScene
         var flow = Object.FindAnyObjectByType<GameFlow>();
         CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
-            "_art", "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel");
+            "_art", "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
+            "_titleScreen", "_startButton");
         foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_grid", "_buttonTemplate", "_noticePanel", "_notice");

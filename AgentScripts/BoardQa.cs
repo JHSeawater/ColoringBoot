@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 보드 에디터 플레이 QA (Phase 1.2~) — run_script(file=AgentScripts/BoardQa.cs, entry=...)
+// 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
@@ -140,7 +141,7 @@ public static class BoardQa
         bool select = safe.Find("SelectScreen").gameObject.activeSelf;
         bool board = safe.Find("BoardScreen").gameObject.activeSelf;
         bool chapter = safe.Find("ChapterScreen").gameObject.activeSelf;
-        string text = $"선택 {select} · 보드 {board} · 그림 {chapter} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
+        string text = $"타이틀 {safe.Find("TitleScreen").gameObject.activeSelf} · 선택 {select} · 보드 {board} · 그림 {chapter} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
         if (chapter)
         {
             Transform screen = safe.Find("ChapterScreen");

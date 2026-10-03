@@ -206,10 +206,12 @@ public static class BoardSceneBuilder
         var cellPrefab = AssetDatabase.LoadAssetAtPath<CellView>(CellPrefabPath);
         var buttonPrefab = AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath);
 
-        // 화면 두 개(선택 · 보드)는 GameFlow가 켜고 끈다. 옵션 · 기록 패널은 그 위를 덮는다
+        // 화면(타이틀 · 선택 · 보드 · 그림)은 GameFlow가 켜고 끈다. 옵션 · 기록 패널은 그 위를 덮는다. 모두 켜질 때 짧게 나타난다(ScreenFade)
+        GameObject titleScreen = TitleScreen(safeArea, out Button startButton);
         StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton, out ChapterView selectPicture);
         var boardScreen = NewUI("BoardScreen", safeArea);
         Stretch(boardScreen, Vector2.zero, Vector2.zero);
+        Fade(boardScreen);
 
         // 위 버튼 줄: 목록(왼쪽) · 옵션(오른쪽)
         Button backButton = TopButton(boardScreen, "BackButton", "목록", false);
@@ -308,10 +310,60 @@ public static class BoardSceneBuilder
             ("_chapterPicture", chapterPicture),
             ("_chapterCaption", chapterCaption),
             ("_chapterNextButton", chapterNextButton),
-            ("_chapterNextLabel", chapterNextButton.GetComponentInChildren<TMP_Text>()));
+            ("_chapterNextLabel", chapterNextButton.GetComponentInChildren<TMP_Text>()),
+            ("_titleScreen", titleScreen),
+            ("_startButton", startButton));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
+    }
+
+    // 타이틀 화면 (Phase 7.3): 기본색 세 칸(빨강 · 노랑 · 파랑) · 제목 · 한 줄 소개 · 시작 버튼. 로고 그림이 생기면 제목 글자 자리를 바꾼다
+    private static GameObject TitleScreen(GameObject parent, out Button start)
+    {
+        var screen = NewUI("TitleScreen", parent);
+        Stretch(screen, Vector2.zero, Vector2.zero);
+        Fade(screen);
+        var palette = AssetDatabase.LoadAssetAtPath<ColorPalette>("Assets/Data/Palettes/DefaultPalette.asset");
+        var chips = new[] { ColoringBoot.Core.PaintColor.Red, ColoringBoot.Core.PaintColor.Yellow, ColoringBoot.Core.PaintColor.Blue };
+        for (int i = 0; i < chips.Length; i++)
+        {
+            var chip = NewUI($"Chip{i + 1}", screen);
+            var rect = (RectTransform)chip.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2((i - 1) * 150f, -600f);
+            rect.sizeDelta = new Vector2(150f, 150f);   // 육각 스프라이트는 정사각형 안에 비율이 들어 있다
+            var fill = chip.AddComponent<Image>();
+            fill.sprite = Sprite("HexFill");
+            fill.color = palette.Get(chips[i]);
+            fill.raycastTarget = false;
+            AddImage("Outline", chip, "HexLine", Lead, 0f, 1f);
+        }
+        CenterText(screen, "Title", -820f, 200f, 160f, Strong).text = "컬러링붓";
+        CenterText(screen, "Subtitle", -960f, 70f, 48f, Muted).text = "붓으로 칠하는 육각 퍼즐";
+        start = BottomButton(screen, "StartButton", "시작", 0f, 460f, true);
+        screen.SetActive(false);
+        return screen;
+    }
+
+    // 가운데 정렬 글자 줄 (y = 위에서부터, 가운데 기준)
+    private static TMP_Text CenterText(GameObject parent, string name, float y, float height, float size, Color color)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, y);
+        rect.sizeDelta = new Vector2(1000f, height);
+        TMP_Text text = Label(go, "", size);
+        text.color = color;
+        return text;
+    }
+
+    // 화면 · 패널이 켜질 때 짧게 나타나게 (Phase 7.3)
+    private static void Fade(GameObject screen)
+    {
+        screen.AddComponent<CanvasGroup>();
+        screen.AddComponent<ScreenFade>();
     }
 
     // 플레이테스트 기록 패널: 어두운 바탕(아래 보드 입력을 막음) · 왼쪽 위부터 기록 글자 · 아래 닫기 버튼
@@ -319,6 +371,7 @@ public static class BoardSceneBuilder
     {
         var panel = NewUI("StatsPanel", parent);
         Stretch(panel, new Vector2(30f, 30f), new Vector2(-30f, -30f));
+        Fade(panel);
         RoundImage(panel, "RoundFill", Strong);
 
         var textArea = NewUI("Text", panel);
@@ -346,6 +399,7 @@ public static class BoardSceneBuilder
     {
         var screen = NewUI("ChapterScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
+        Fade(screen);
         caption = TopLeftText(screen, "Caption", -40f, 90f, 64f, Strong);
         picture = Picture(screen, -150f, new Vector2(960f, 1200f));
         next = BottomButton(screen, "NextButton", "다음", 0f, 460f, true);
@@ -372,6 +426,7 @@ public static class BoardSceneBuilder
     {
         var screen = NewUI("SelectScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
+        Fade(screen);
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
         TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted).text = ChapterTitle;
@@ -430,6 +485,7 @@ public static class BoardSceneBuilder
     {
         var panel = NewUI("OptionsPanel", parent);
         Stretch(panel, new Vector2(30f, 30f), new Vector2(-30f, -30f));
+        Fade(panel);
         RoundImage(panel, "RoundFill", Strong);
         TMP_Text title = TopLeftText(panel, "Title", -40f, 90f, 64f, StrongInk);
         title.text = "옵션";
