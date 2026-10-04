@@ -114,7 +114,7 @@ namespace ColoringBoot.Game
             if (UrlQuery.TryGet(url, StageQuery, out string name))
             {
                 start = Array.FindIndex(_stages, s => string.Equals(s, name, StringComparison.OrdinalIgnoreCase));
-                if (start < 0) Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 선택 화면을 엽니다", this);
+                if (start < 0) Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 타이틀을 엽니다", this);
             }
             if (start >= 0) OpenStage(start);
             else _titleScreen.SetActive(true);

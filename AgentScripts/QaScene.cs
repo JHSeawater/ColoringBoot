@@ -98,7 +98,7 @@ public static class QaScene
         }
         foreach (TextAsset stage in catalog.Stages)
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
-        foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star" })
+        foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine" })
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath($"Assets/Art/Sprites/{name}.png");
             Expect(importer.textureType == TextureImporterType.Sprite && importer.spriteImportMode == SpriteImportMode.Single, $"스프라이트 {name}");

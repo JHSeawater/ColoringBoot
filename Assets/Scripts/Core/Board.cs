@@ -49,7 +49,7 @@ namespace ColoringBoot.Core
                 _indexOf.Add(cell.Coord, i);
             }
 
-            // 줄 = 같은 직선 위의 모든 칸. 줄 중간의 빈자리는 건너간다 (CLAUDE.md §3 — GDD §2.6 미확정, 프로토타입 규칙)
+            // 줄 = 같은 직선 위의 모든 칸. 줄 중간의 빈자리는 건너간다 (GDD §2.2 — 2026-10-04 확정, 프로토타입 규칙)
             _lineOf = new int[count, HexDirectionExtensions.AxisCount];
             for (int axis = 0; axis < HexDirectionExtensions.AxisCount; axis++)
             {

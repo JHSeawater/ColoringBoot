@@ -13,7 +13,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - 활성 씬이 `Assets/Scenes/Board.unity`가 아니면 보고하고 중단(`list_open_scenes`).
 
 ## 1. 계층 (`get_scene_hierarchy`)
-기대값 — 루트 6개. UI는 모두 `/Canvas/SafeArea` 아래(이하 `…` = `/Canvas/SafeArea`). 화면 · 패널은 처음엔 모두 꺼져 있고 `GameFlow`가 켠다(Phase 4.3):
+기대값 — 루트 6개. UI는 모두 `/Canvas/SafeArea` 아래(이하 `…` = `/Canvas/SafeArea`). 화면 · 패널은 처음엔 모두 꺼져 있고 `GameFlow`가 켠다(Phase 4.3). 화면 6개(타이틀 · 선택 · 보드 · 그림 · 옵션 · 기록)와 클리어 · 막힘 띠에는 켜질 때 나타나는 `ScreenFade`가 붙어 있다(Phase 7.3 · 7.4):
 
 | 경로 | 컴포넌트 | 활성 |
 |---|---|---|
@@ -21,6 +21,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 | `/EventSystem` | EventSystem · **InputSystemUIInputModule**(StandaloneInputModule이면 실패 — New Input System 전용) | O |
 | `/Canvas` | Canvas · CanvasScaler · GraphicRaycaster | O |
 | `/Canvas/SafeArea` | SafeAreaFitter | O |
+| `…/TitleScreen`(Chip1~3 · Title · Subtitle · StartButton) | ScreenFade — 실행하면 처음 켜짐(주소 `?stage=`면 건너뜀, Phase 7.3) | **X** |
 | `…/SelectScreen`(Title · OptionsButton · Picture · Grid · Notice · StageButtonTemplate) | StageSelectView · Picture에 ChapterView(작은 챕터 그림) · Grid에 GridLayoutGroup(4열) · 템플릿에 StageButtonView | **X** |
 | `…/BoardScreen` | (묶음) | **X** |
 | `…/BoardScreen/BackButton` · `…/OptionsButton` | Image · Button · Label | O(화면 안에서) |
@@ -46,11 +47,12 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `/Canvas` CanvasScaler: uiScaleMode = Scale With Screen Size · referenceResolution = 1080×1920 · screenMatchMode = Expand
 - `…/BoardScreen/BoardArea` Image: color.a = 0 · raycastTarget = true
 - `…/BoardScreen/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/BoardScreen/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
+- 연출 값(Phase 7.4): BoardArea BoardView `_motion` = `Assets/Data/MotionSettings.asset` · TargetView `_motion` = null(목표 썸네일은 연출 없음)
 - 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner`
-- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Phase4Stages.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel`
+- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Phase4Stages.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton`
 - `…/SelectScreen` StageSelectView: `_title` · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton`
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
@@ -61,7 +63,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 ## 4. 에셋
 - 목록의 JSON이 모두 `Stage.Parse`로 읽히고, 솔버로 풀리며 `minMoves`가 솔버 최소 수와 같은지
 - `Assets/Data/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
-- 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star)(`get_import_settings`): textureType Sprite · spriteImportMode Single
+- 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
 - `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`Phase2Font.Build` 결과의 빠진 글자 0 · 아틀라스 1장)
 
