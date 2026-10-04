@@ -10,8 +10,8 @@ using UnityEngine.TextCore.LowLevel;
 
 // 한글 폰트 에셋 생성 — Pretendard SemiBold, 쓰는 글자만 담은 고정(Static) 아틀라스 (Phase 2, 사용자 결정 2026-09-28)
 // 글자 출처: 씬 구성 스크립트 · Game 코드의 문자열 리터럴(주석 제외) + 스테이지 JSON의 name + ASCII.
-// 문구나 스테이지 이름을 바꾸면 다시 실행한다 — run_script(file=AgentScripts/Phase2Font.cs, entry=Phase2Font.Build)
-public static class Phase2Font
+// 문구나 스테이지 이름을 바꾸면 다시 실행한다 — run_script(file=AgentScripts/Build/FontBuilder.cs, entry=FontBuilder.Build)
+public static class FontBuilder
 {
     private const string FontPath = "Assets/Art/Fonts/Pretendard-SemiBold.ttf";
     private const string AssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
@@ -20,7 +20,8 @@ public static class Phase2Font
     private const int Padding = 6;
     private const int AtlasSize = 1024;
 
-    private static readonly string[] _sourceFiles = { "AgentScripts/BoardSceneBuilder.cs" };
+    private static readonly string[] _sourceFiles = { "AgentScripts/Build/BoardSceneBuilder.cs" };
+    // 아래 두 폴더는 바로 아래 파일만 읽는다 — 하위 폴더로 나누기 전에 여기부터 고친다(안 그러면 글자가 빠져 게임에 □, Task.md Phase 8)
     private const string GameCodeFolder = "Assets/Scripts/Game";
     private const string StageFolder = "Assets/Data/Stages";
 

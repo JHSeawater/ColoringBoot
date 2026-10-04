@@ -3,9 +3,9 @@ using ColoringBoot.Game;
 using UnityEditor;
 using UnityEngine;
 
-// 챕터 1 스테이지 순서 (Phase 4.5, 사용자 결정 2026-10-02) — run_script(file=AgentScripts/Phase4Stages.cs, entry=Phase4Stages.SetOrder)
+// 챕터 1 스테이지 순서 (Phase 4.5, 사용자 결정 2026-10-02) — run_script(file=AgentScripts/Build/StageOrder.cs, entry=StageOrder.SetOrder)
 // StageCatalog를 이 순서로 맞춘다(다시 실행해도 같은 결과). 목록에 있는데 여기 없는 스테이지가 있으면 바꾸지 않고 알린다
-public static class Phase4Stages
+public static class StageOrder
 {
     private const string CatalogPath = "Assets/Data/StageCatalog.asset";
     private const string StageFolder = "Assets/Data/Stages";

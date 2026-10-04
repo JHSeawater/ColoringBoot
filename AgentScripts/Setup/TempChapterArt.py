@@ -1,4 +1,4 @@
-# 임시 챕터 1 도안 (Phase 5.2) — ArtSpec.md 규격의 파일을 만든다(진짜 그림이 오면 교체): python AgentScripts/TempChapterArt.py
+# 임시 챕터 1 도안 (Phase 5.2) — ArtSpec.md 규격의 파일을 만든다(진짜 그림이 오면 교체): python AgentScripts/Setup/TempChapterArt.py
 # 라벨 지도(픽셀마다 "단계 * 10 + 색 번호")를 뒤에서 앞으로 칠한다 → 레이어가 겹치지 않고, 선화는 라벨 경계에서 뽑아 모든 영역이 닫힌다
 import math
 import os
@@ -13,8 +13,8 @@ LINE_RGB = (43, 38, 34)
 LINE_WIDTH = 12            # ArtSpec §4 권장 10~14 px
 BLEED = LINE_WIDTH // 2    # 색 영역이 선 아래로 들어가는 폭 (ArtSpec §4)
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-OUT = os.path.join(ROOT, 'ArtSource', 'Chapter1')
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+OUT = os.path.join(ROOT, 'ArtSource', '_archive', 'Chapter1-temp')  # 보관용 — 지금 챕터 1 그림은 ArtSource/Chapter1(2026-10-04)
 PREVIEW = os.path.join(ROOT, 'Builds', 'ChapterArtPreview.png')
 
 # (번호, 파일 소재, 한글, 메모) — 번호 = 칠하는 순서 = 스테이지 순서

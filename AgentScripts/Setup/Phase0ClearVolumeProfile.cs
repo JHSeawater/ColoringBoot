@@ -2,7 +2,7 @@ using UnityEditor;
 
 // Phase 0.2 — URP 에셋 2개의 파이프라인 볼륨 프로필 참조 해제 (run_script 빌더)
 // MCP set_serialized_field는 값이 문자열이라 오브젝트 참조를 null로 비울 수 없어서 SerializedObject로 처리한다.
-// 사용: run_script file=AgentScripts/Phase0ClearVolumeProfile.cs entry=Phase0ClearVolumeProfile.Apply
+// 사용: run_script file=AgentScripts/Setup/Phase0ClearVolumeProfile.cs entry=Phase0ClearVolumeProfile.Apply
 public static class Phase0ClearVolumeProfile
 {
     static readonly string[] RpAssets = { "Assets/Settings/Mobile_RPAsset.asset", "Assets/Settings/PC_RPAsset.asset" };

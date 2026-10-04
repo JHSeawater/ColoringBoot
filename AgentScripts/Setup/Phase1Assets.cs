@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using ColoringBoot.Game;
 
-// Phase 1.2 에셋 준비 — run_script(file=AgentScripts/Phase1Assets.cs, entry=...)
+// Phase 1.2 에셋 준비 — run_script(file=AgentScripts/Setup/Phase1Assets.cs, entry=...)
 // ImportTmp: TMP Essential Resources를 대화상자 없이 임포트(메뉴로 하면 임포트 창이 떠서 MCP가 멈춘다)
 // CreatePalette: 기본 팔레트(프로토타입 라이트 테마 --p1 ~ --p7). 다시 실행하면 값을 덮어쓴다
 public static class Phase1Assets

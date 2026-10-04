@@ -3,10 +3,10 @@ using ColoringBoot.Game;
 using UnityEditor;
 using UnityEngine;
 
-// 팔레트 에셋 (Phase 4.4 · 점검 F2, 사용자 결정 2026-09-30) — run_script(file=AgentScripts/Phase4Palettes.cs, entry=Phase4Palettes.Build)
+// 팔레트 에셋 (Phase 4.4 · 점검 F2, 사용자 결정 2026-09-30) — run_script(file=AgentScripts/Build/PaletteBuilder.cs, entry=PaletteBuilder.Build)
 // 기본 팔레트에 이름(default)을 붙이고, 파스텔 팔레트(pastel)와 팔레트 목록(PaletteCatalog — 첫 칸 = 기본)을 만든다. 다시 실행하면 값을 덮어쓴다.
 // 파스텔 색은 GDD §2.3 예시(분홍 · 레몬 · 하늘 → 살구 · 연보라 · 연두 · 차콜)를 옮긴 초안 — 휴대폰 확인 뒤 여기서 고친다
-public static class Phase4Palettes
+public static class PaletteBuilder
 {
     private const string Folder = "Assets/Data/Palettes";
     private const string DefaultPath = Folder + "/DefaultPalette.asset";

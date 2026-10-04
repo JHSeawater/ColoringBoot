@@ -2,9 +2,9 @@ using System.Linq;
 using System.Text;
 using UnityEditor;
 
-// 빌드 용량 정리 (Phase 4.1 · 점검 F3, 사용자 결정 2026-09-30) — run_script(file=AgentScripts/Phase4BuildSize.cs, entry=Phase4BuildSize.Apply, args=[dryRun])
+// 빌드 용량 정리 (Phase 4.1 · 점검 F3, 사용자 결정 2026-09-30) — run_script(file=AgentScripts/Setup/Phase4BuildSize.cs, entry=Phase4BuildSize.Apply, args=[dryRun])
 // ① Unity 스플래시 끄기(Unity 6은 Personal도 가능) ② 안 쓰는 TMP 기본 폰트 LiberationSans 빼기 — Resources 폴더라 참조가 없어도 빌드에 통째로 들어갔다.
-// TMP 기본 폰트는 Pretendard SDF(Phase2Font), 폴백 목록은 비어 있다
+// TMP 기본 폰트는 Pretendard SDF(Build/FontBuilder), 폴백 목록은 비어 있다
 public static class Phase4BuildSize
 {
     private static readonly string[] _unusedFontAssets =

@@ -6,7 +6,7 @@ using System.Text;
 
 // 에디터 Console 창의 에러 항목을 읽는다 (진단용 run_script 빌더).
 // MCP console 버퍼가 도메인 리로드 중 놓친 항목까지 본다 — console_status의 groundTruth.consoleErrors와 버퍼 수가 다를 때 사용.
-// 사용: run_script file=AgentScripts/ConsoleDump.cs entry=ConsoleDump.Errors
+// 사용: run_script file=AgentScripts/QA/ConsoleDump.cs entry=ConsoleDump.Errors
 public static class ConsoleDump
 {
     // LogEntry.mode 중 에러 계열 비트: Error · Assert · Fatal · AssetImportError · ScriptingError · ScriptCompileError · GraphCompileError · ScriptingException · ScriptingAssertion

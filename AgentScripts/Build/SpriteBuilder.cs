@@ -3,10 +3,10 @@ using UnityEditor;
 using UnityEngine;
 
 // Phase 1.2 임시 스프라이트 4종 생성 (흰색 · 가장자리 안티앨리어싱, 색은 코드가 Image.color로 입힌다)
-// 실행: run_script(file=AgentScripts/Phase1Sprites.cs, entry=Phase1Sprites.Build) — 여러 번 실행해도 같은 결과(덮어씀)
-// Phase 4.3 아이콘 2종(자물쇠 · 별, 스테이지 선택 화면): entry=Phase1Sprites.BuildIcons — 작게(128px) 만든다
-// Phase 7.1 버튼 모양(디자인 시안 A): entry=Phase1Sprites.BuildRound — 둥근 사각형 바탕 · 외곽선(9-slice) · 얇은 육각 외곽선
-public static class Phase1Sprites
+// 실행: run_script(file=AgentScripts/Build/SpriteBuilder.cs, entry=SpriteBuilder.Build) — 여러 번 실행해도 같은 결과(덮어씀)
+// Phase 4.3 아이콘 2종(자물쇠 · 별, 스테이지 선택 화면): entry=SpriteBuilder.BuildIcons — 작게(128px) 만든다
+// Phase 7.1 버튼 모양(디자인 시안 A): entry=SpriteBuilder.BuildRound — 둥근 사각형 바탕 · 외곽선(9-slice) · 얇은 육각 외곽선
+public static class SpriteBuilder
 {
     private const string Folder = "Assets/Art/Sprites";
     private const int Size = 256;

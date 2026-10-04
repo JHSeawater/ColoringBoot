@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditor.Build;
 
 // Phase 0.2 — WebGL Player Settings 적용 (run_script 빌더. Assets 밖이라 임포트 · 도메인 리로드 없음)
-// 사용: run_script file=AgentScripts/Phase0WebGLSettings.cs entry=Phase0WebGLSettings.Preview (조회) / Phase0WebGLSettings.Apply (적용)
+// 사용: run_script file=AgentScripts/Setup/Phase0WebGLSettings.cs entry=Phase0WebGLSettings.Preview (조회) / Phase0WebGLSettings.Apply (적용)
 public static class Phase0WebGLSettings
 {
     // 제거한 패키지(Sentis · App UI)가 남긴 스크립팅 심볼과 설정 참조

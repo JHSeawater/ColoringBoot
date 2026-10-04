@@ -1,5 +1,5 @@
 # 챕터 그림 → 게임용 (Phase 5.3) — 규격 점검(ArtCheck) → 절반 크기 → 레이어마다 여백 자르기 → PNG + layout.json
-# python AgentScripts/ChapterArtExport.py [원본 폴더] [출력 폴더]  — 다음은 run_script(file=AgentScripts/ChapterArtBuilder.cs, entry=ChapterArtBuilder.Build)
+# python AgentScripts/Build/ChapterArtExport.py [원본 폴더] [출력 폴더]  — 다음은 run_script(file=AgentScripts/Build/ChapterArtBuilder.cs, entry=ChapterArtBuilder.Build)
 import json
 import os
 import re
@@ -56,5 +56,5 @@ def export(source, target):
 
 
 if __name__ == '__main__':
-    # 챕터 1 게임 그림 = 시험 그림(Phase 7.2, 2026-10-03). 임시 도안은 ArtSource/Chapter1에 그대로 있다
-    export(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/chapter1_test', sys.argv[2] if len(sys.argv) > 2 else 'Assets/Art/Chapters/Chapter1')
+    # 챕터 1 게임 그림 = ArtSource/Chapter1(사용자 시험 그림, Phase 7.2). 임시 도안은 ArtSource/_archive/Chapter1-temp에 보관(2026-10-04)
+    export(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/Chapter1', sys.argv[2] if len(sys.argv) > 2 else 'Assets/Art/Chapters/Chapter1')

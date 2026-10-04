@@ -2,8 +2,8 @@ using ColoringBoot.Game;
 using UnityEditor;
 using UnityEngine;
 
-// 스테이지 하나를 목록에서 빼고 JSON 파일을 지운다 — run_script(file=AgentScripts/RemoveStage.cs, entry=RemoveStage.Remove, args=["파일 이름"])
-// 지운 뒤 Phase2Font.Build → BoardSceneBuilder.BuildPrefabs → BuildEditorScene → BuildScene(그 이름에만 쓰인 글자 정리)
+// 스테이지 하나를 목록에서 빼고 JSON 파일을 지운다 — run_script(file=AgentScripts/Tools/RemoveStage.cs, entry=RemoveStage.Remove, args=["파일 이름"])
+// 지운 뒤 FontBuilder.Build → BoardSceneBuilder.BuildPrefabs → BuildEditorScene → BuildScene(그 이름에만 쓰인 글자 정리)
 public static class RemoveStage
 {
     public static string Remove(string file)

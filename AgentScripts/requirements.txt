@@ -1,0 +1,4 @@
+# AgentScripts Python 도구(ArtCheck · ChapterArtExport · TempChapterArt) — pip install -r AgentScripts/requirements.txt
+# 2026-10-04 이 PC에서 확인한 버전: Pillow 11.3.0 · numpy 2.2.6
+Pillow>=11
+numpy>=2

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace ColoringBoot.Game
 {
     // 챕터 그림 (Phase 5, ArtSpec.md) — 선화 + 색칠 단계 레이어. 단계 i는 스테이지 목록의 i번째 스테이지가 칠한다(GDD §5).
-    // 레이어는 여백을 잘라 낸 조각이고, 캔버스(픽셀, 왼쪽 위 기준) 안의 자리를 함께 갖는다 — AgentScripts/ChapterArtBuilder.cs가 채운다
+    // 레이어는 여백을 잘라 낸 조각이고, 캔버스(픽셀, 왼쪽 위 기준) 안의 자리를 함께 갖는다 — AgentScripts/Build/ChapterArtBuilder.cs가 채운다
     [CreateAssetMenu(menuName = "ColoringBoot/Chapter Art", fileName = "ChapterArt")]
     public sealed class ChapterArt : ScriptableObject
     {

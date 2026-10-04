@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ColoringBoot.Game
 {
     // 화면 디자인 기준 (Phase 7.1 — 시안 A "종이와 갈색 선", 2026-10-03 사용자 결정): 챕터 그림의 진한 갈색 선을 화면의 선 · 글자로 쓴다.
-    // AgentScripts/BoardSceneBuilder가 이 값으로 씬 · 프리팹을 만든다 — 값을 바꾸면 BuildPrefabs → BuildScene을 다시 실행
+    // AgentScripts/Build/BoardSceneBuilder가 이 값으로 씬 · 프리팹을 만든다 — 값을 바꾸면 BuildPrefabs → BuildScene을 다시 실행
     // 퍼즐 칸 색은 여기 없다(규칙 색 = 팔레트, GDD §2.3)
     [CreateAssetMenu(menuName = "ColoringBoot/UI Theme", fileName = "UiTheme")]
     public sealed class UiTheme : ScriptableObject

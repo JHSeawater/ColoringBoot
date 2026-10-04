@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-// 보드 에디터 플레이 QA (Phase 1.2~) — run_script(file=AgentScripts/BoardQa.cs, entry=...)
+// 보드 에디터 플레이 QA (Phase 1.2~) — run_script(file=AgentScripts/QA/BoardQa.cs, entry=...)
 // 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션

@@ -1,4 +1,4 @@
-# 챕터 그림 파일 점검 (ArtSpec.md §6 중 코드로 볼 수 있는 항목) — python AgentScripts/ArtCheck.py ArtSource/Chapter1
+# 챕터 그림 파일 점검 (ArtSpec.md §6 중 코드로 볼 수 있는 항목) — python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 # 읽기 전용. 실패 항목이 있으면 종료 코드 1
 import os
 import re
@@ -93,4 +93,4 @@ def main(folder):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/chapter1_test')
+    main(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/Chapter1')

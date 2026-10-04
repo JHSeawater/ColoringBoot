@@ -10,7 +10,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// 프리팹 · 보드 씬 구성 (Phase 1.2에서 만들고 Phase 2에서 확장) — run_script(file=AgentScripts/BoardSceneBuilder.cs, entry=...)
+// 프리팹 · 보드 씬 구성 (Phase 1.2에서 만들고 Phase 2에서 확장) — run_script(file=AgentScripts/Build/BoardSceneBuilder.cs, entry=...)
 // BuildPrefabs → BuildScene 순서. 둘 다 다시 실행하면 같은 결과로 덮어쓴다(씬은 Main Camera만 남기고 다시 만든다)
 public static class BoardSceneBuilder
 {
@@ -22,7 +22,7 @@ public static class BoardSceneBuilder
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
     private const string CatalogPath = "Assets/Data/StageCatalog.asset";
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
-    private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/ChapterArtBuilder.cs 먼저
+    private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/Build/ChapterArtBuilder.cs 먼저
     private const string ThemePath = "Assets/Data/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
     private const string MotionPath = "Assets/Data/MotionSettings.asset";     // 보드 연출 값(Phase 7.4) — 없으면 기본값으로 만든다
     private const string ChapterTitle = "포도밭 오후";                         // 챕터 제목(GDD §5 세계관 — 챕터 제목만 둔다)
@@ -111,7 +111,7 @@ public static class BoardSceneBuilder
         foreach (string name in PrototypeStages)
         {
             var stage = AssetDatabase.LoadAssetAtPath<TextAsset>($"Assets/Data/Stages/{name}.json")
-                ?? throw new System.InvalidOperationException($"{name}.json 없음 — AgentScripts/Refresh.cs 먼저 실행");
+                ?? throw new System.InvalidOperationException($"{name}.json 없음 — AgentScripts/Tools/Refresh.cs 먼저 실행");
             if (catalog.Stages.Contains(stage)) continue;
             stages.arraySize++;
             stages.GetArrayElementAtIndex(stages.arraySize - 1).objectReferenceValue = stage;
@@ -631,7 +631,7 @@ public static class BoardSceneBuilder
         var label = NewUI("Label", parent);
         Stretch(label, Vector2.zero, Vector2.zero);
         var tmp = label.AddComponent<TextMeshProUGUI>();
-        tmp.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath) ?? throw new System.InvalidOperationException("한글 폰트 에셋 없음 — AgentScripts/Phase2Font.cs 먼저 실행");
+        tmp.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath) ?? throw new System.InvalidOperationException("한글 폰트 에셋 없음 — AgentScripts/Build/FontBuilder.cs 먼저 실행");
         tmp.text = text;
         tmp.fontSize = size;
         tmp.color = StrongInk;
@@ -678,7 +678,7 @@ public static class BoardSceneBuilder
             SerializedProperty property = so.FindProperty(field);
             if (property == null) throw new System.ArgumentException($"{target.GetType().Name}에 필드 {field} 없음");
             // 디스크에 막 쓴 에셋은 임포트 전이라 null로 읽힌다(2026-09-28: Grape.json) — 조용히 비우지 말고 멈춘다
-            if (value == null) throw new System.ArgumentException($"{target.GetType().Name}.{field}에 넣을 에셋을 찾지 못함 — AgentScripts/Refresh.cs 먼저 실행");
+            if (value == null) throw new System.ArgumentException($"{target.GetType().Name}.{field}에 넣을 에셋을 찾지 못함 — AgentScripts/Tools/Refresh.cs 먼저 실행");
             property.objectReferenceValue = value;
         }
         so.ApplyModifiedPropertiesWithoutUndo();

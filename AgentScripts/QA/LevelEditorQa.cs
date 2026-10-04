@@ -7,7 +7,7 @@ using ColoringBoot.LevelEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-// 레벨 에디터 플레이 QA (LevelEditor.unity를 플레이한 상태에서) — run_script(file=AgentScripts/LevelEditorQa.cs, entry=...)
+// 레벨 에디터 플레이 QA (LevelEditor.unity를 플레이한 상태에서) — run_script(file=AgentScripts/QA/LevelEditorQa.cs, entry=...)
 // 칠하기 · 획 긋기는 실제 포인터 이벤트로, IMGUI 버튼 동작은 컨트롤러의 private 메서드를 리플렉션으로 부른다
 public static class LevelEditorQa
 {

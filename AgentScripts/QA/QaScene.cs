@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-// /qa-scene 2~4절 점검 (읽기 전용 — 아무것도 바꾸지 않는다) — run_script(file=AgentScripts/QaScene.cs, entry=QaScene.Check)
+// /qa-scene 2~4절 점검 (읽기 전용 — 아무것도 바꾸지 않는다) — run_script(file=AgentScripts/QA/QaScene.cs, entry=QaScene.Check)
 // 실패한 항목만 모아 돌려준다. 모두 통과면 "통과 N항목"
 public static class QaScene
 {

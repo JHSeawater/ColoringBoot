@@ -5,7 +5,7 @@ description: 보드 씬(Assets/Scenes/Board.unity) 셋업 전수 실측 — 읽�
 
 # /qa-scene — 보드 씬 셋업 실측 (읽기 전용)
 
-Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 `AgentScripts/BoardSceneBuilder.cs`(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `Phase2Font.cs` 먼저) 또는 MCP 배선 도구로 한다.
+Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 정본인 빌더 `AgentScripts/Build/BoardSceneBuilder.cs`를 고쳐 다시 실행한다(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `AgentScripts/Build/FontBuilder.cs` 먼저). MCP로 씬을 직접 고친 값은 다음 `BuildScene` 때 사라진다 — 급할 때만 쓰고 빌더에도 같은 수정을 넣는다(CLAUDE.md §2).
 
 ## 0. 전제
 - `editor_status`: `ready`, `playMode: stopped`, `projectPath`가 이 프로젝트. Play Mode면 멈추라고 알리고 중단(플레이 중 값은 저장 안 됨).
@@ -40,7 +40,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 씬이 `isDirty: true`면 저장 안 된 변경이 있다고 보고한다.
 
-점검은 `run_script`(file=`AgentScripts/QaScene.cs`, entry=`QaScene.Check`)가 2~4절을 한 번에 한다(읽기 전용). 계층 · 빌드 씬 목록만 따로 조회.
+점검은 `run_script`(file=`AgentScripts/QA/QaScene.cs`, entry=`QaScene.Check`)가 2~4절을 한 번에 한다(읽기 전용). 계층 · 빌드 씬 목록만 따로 조회.
 
 ## 2. 설정값 (`get_component_properties` / `get_serialized_fields`, format=value)
 - `/Canvas` Canvas: renderMode = Screen Space - Overlay
@@ -52,7 +52,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner`
-- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Phase4Stages.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton`
+- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton`
 - `…/SelectScreen` StageSelectView: `_title` · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton`
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
@@ -65,10 +65,10 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `Assets/Data/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
 - 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
-- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`Phase2Font.Build` 결과의 빠진 글자 0 · 아틀라스 1장)
+- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자 0 · 아틀라스 1장)
 
 ## 5. 빌드 씬 목록 (`get_build_settings`)
 - 활성 씬 목록 = `Assets/Scenes/Board.unity` 하나, enabled
 
 ## 6. 보고
-항목 · 기대 · 실측 · 판정(통과/실패) 표 하나. 실패만 따로 모아 원인 추정과 수정 방법(어느 빌더 · 어느 MCP 명령)을 적되 **실행하지 않는다**. 모두 통과면 한 줄로 "보드 씬 셋업 전수 통과(N항목)".
+항목 · 기대 · 실측 · 판정(통과/실패) 표 하나. 실패만 따로 모아 원인 추정과 수정 방법(어느 빌더를 어떻게 고쳐 다시 실행할지)을 적되 **실행하지 않는다**. 모두 통과면 한 줄로 "보드 씬 셋업 전수 통과(N항목)".

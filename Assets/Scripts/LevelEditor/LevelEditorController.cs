@@ -359,7 +359,7 @@ namespace ColoringBoot.LevelEditor
             _catalogIndex = _catalog.Stages.ToList().IndexOf(asset);
 
             string font = _gameFont.HasCharacters(_name, out List<char> missing) ? "" :
-                $" 게임 폰트에 없는 글자 [{new string(missing.ToArray())}] — AgentScripts/Phase2Font.cs를 다시 실행하세요.";
+                $" 게임 폰트에 없는 글자 [{new string(missing.ToArray())}] — AgentScripts/Build/FontBuilder.cs를 다시 실행하세요.";
             _status = $"'{path}'에 저장했어요(최소 {result.Path.Count}수, 목록 {_catalogIndex + 1}번째).{font}";
         }
     }

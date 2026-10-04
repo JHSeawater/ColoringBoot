@@ -6,8 +6,8 @@ using ColoringBoot.Game;
 using UnityEditor;
 using UnityEngine;
 
-// 챕터 그림 에셋 (Phase 5.3) — 먼저 python AgentScripts/ChapterArtExport.py(원본 → 게임 크기 · 여백 자르기 · layout.json)
-// run_script(file=AgentScripts/ChapterArtBuilder.cs, entry=ChapterArtBuilder.Build). 다시 실행하면 같은 결과로 덮어쓴다
+// 챕터 그림 에셋 (Phase 5.3) — 먼저 python AgentScripts/Build/ChapterArtExport.py(원본 → 게임 크기 · 여백 자르기 · layout.json)
+// run_script(file=AgentScripts/Build/ChapterArtBuilder.cs, entry=ChapterArtBuilder.Build). 다시 실행하면 같은 결과로 덮어쓴다
 public static class ChapterArtBuilder
 {
     private const string Folder = "Assets/Art/Chapters/Chapter1";

@@ -8,6 +8,36 @@
 
 ---
 
+### 📅 [2026-10-04] 폴더 · 파일 구조 정리 — AgentScripts · ArtSource · CLAUDE.md · 배포 방식
+
+* **조사(사용자 요청 — 남은 개발 · 유지보수에 맞는 구조)**:
+  * 게임 코드(Core 12 · Game 24 · LevelEditor 2 · 테스트 13)는 정돈돼 있다.
+  * 저장소 용량의 88%가 배포 브랜치다: gh-pages 13커밋 86.5 MiB · main 11.6 MiB(배포마다 약 9 MB가 쌓임).
+  * AgentScripts 21개가 한 폴더에 있고 이름이 Phase 번호다(다시 돌리는 빌더 · QA · 한 번 적용한 기록이 섞임).
+  * 폰트 빌더가 `Scripts/Game` · `Data/Stages`의 바로 아래 파일만 읽는다 → 하위 폴더로 나누면 글자가 소리 없이 빠진다(씬 점검이 못 잡음).
+  * 빌더의 에셋 경로 상수 + 없으면 기본값으로 만드는 방식(`UiTheme` · `MotionSettings`) → 에셋만 옮기면 기본값 에셋이 하나 더 생긴다.
+  * 씬 정본이 빌더라는 규칙이 문서에 없고, `/qa-scene`은 "MCP 배선 도구로 고친다"고 안내했다.
+  * `ArtSource` 이름이 거꾸로였다(`Chapter1` = 안 쓰는 임시 도안, `chapter1_test` = 지금 그림).
+  * CLAUDE.md "코드 구조"가 4.4 KB짜리 한 줄이고, §4 크기 이력이 Phase마다 늘어났다.
+  * `InputSystem_Actions`는 프로젝트 전체 입력으로 등록만 돼 있다 — UI 모듈은 패키지 기본 액션(`DefaultInputActions`), 키보드는 `Keyboard.current`를 쓴다.
+* **결정(사용자 2026-10-04)**: 정리안 A①~④ · B⑤ · C 모두 승인.
+* **반영**:
+  * ① `AgentScripts/` → `Build/`(BoardSceneBuilder · SpriteBuilder ← Phase1Sprites · FontBuilder ← Phase2Font · PaletteBuilder ← Phase4Palettes · StageOrder ← Phase4Stages · ChapterArtBuilder · ChapterArtExport.py · ArtCheck.py) · `QA/` · `Tools/` · `Setup/`(한 번 적용한 기록, 이름 그대로) + `README.md`(무엇 · 언제 다시 실행 · 실행 방법 · 옛 이름 · 빌더 규칙) · `requirements.txt`(Pillow · numpy). 경로 고침: 폰트 빌더가 읽는 BoardSceneBuilder 경로 · 배포 스크립트와 TempChapterArt의 루트 계산(한 단계 더 위) · 스크립트 머리 주석의 실행 경로 · Assets 코드 3곳(주석 2 · 레벨 에디터 안내 문구 1). 폰트 빌더에 "바로 아래 파일만 읽음" 경고 주석.
+  * ② CLAUDE.md §2 · `/qa-scene`: 보드 씬 · 레벨 에디터 씬 · 프리팹의 정본 = `BoardSceneBuilder`(직접 고친 값은 다음 `BuildScene`에서 사라짐).
+  * ③ `ArtSource/chapter1_test` → `ArtSource/Chapter1`, 임시 도안 → `ArtSource/_archive/Chapter1-temp`(보관 — "임시 도안은 그대로 둔다" 결정 유지). 도구 기본 경로 · ArtSpec 예시 경로를 고치고 아트 담당 페이지를 다시 게시.
+  * ④ CLAUDE.md: "코드 구조"를 폴더 표 + 짧은 항목 4개로, 스크립트 목록은 README로, §4는 지금 기준선만 남기고 크기 이력은 새 `Docs/BuildHistory.md` 표(Phase 0 ~ 7.6, 13줄)로. 문서 지도에 두 문서 추가. 크기는 42.4 → 41.9 KB — 새 규칙(씬 정본 · 배포 방식 · 폰트 경고)과 표가 더해져 제안 때 예상(약 33 KB)보다 크다. 얻은 것은 크기보다 한 줄짜리 문단을 없앤 것.
+  * ⑤ `deploy-pages.sh`: gh-pages를 매번 부모 없는 커밋 하나로 바꿔 `--force-with-lease`로 강제 push한다(push가 실패하면 로컬을 되돌림), 커밋 메시지에 빌드 바이트. CLAUDE.md §2에 확인한 빌드를 날짜 · 빌드 바이트로 기록하는 방식을 적음.
+  * C: Task.md에 예약 — Phase 7.7 `[Editor] (사용자) gh-pages 정리` · `[Doc] 지난 기록 보관(Docs/Archive)`, Phase 8 "구조 — 착수 때 먼저" 5항목(폰트 빌더 하위 폴더 + 글자 점검 · 챕터 데이터 자리 · 콘텐츠 회귀 테스트 · (선택) Game 하위 폴더 · `InputSystem_Actions` 정리), Phase 9 README · CREDITS. 사운드 출처 기록 위치는 루트 `CREDITS.md`로 바꿈.
+* **막힌 것**: ⑤의 첫 실행(지금 배포본 그대로 gh-pages를 커밋 하나로 바꾸는 강제 push)을 자동 모드 안전 장치가 막았다(Git Destructive). 우회하지 않고 사용자 실행으로 남겼다(Task.md 7.7). gh-pages는 그대로(`da45b01`, 13커밋)임을 확인.
+* **확인**: AgentScripts C# 17개 컴파일(dry run) 통과 · `QaScene` 169항목 · EditMode 108/108 · 재컴파일 에러 0 · 콘솔 에러 0(무해 1건) · `ArtCheck.py` 기본 경로 통과 · 새 원본 폴더에서 다시 가공한 13개 파일이 게임 파일과 바이트까지 같음 · `deploy-pages.sh` 문법 · 루트 계산 · 빌드 바이트(9,128,611) · LF 줄바꿈.
+* **하지 않는 것(이유)**: Git LFS(main 11.6 MiB, 챕터 5장을 더해도 +15 MB 안팎) · Unity YAML 병합 설정(1인 개발 — 팀이 생기면) · 문서 5종을 `Docs/`로 옮기기(바뀌는 경로가 많음) · URP 설정 · TMP 셰이더 · Prototype 폴더(빌드 영향 없음).
+* **해결된 이슈**:
+  * 스크립트 이름 · 위치가 하는 일을 말해 주지 않던 문제, 씬 정본 규칙이 없던 문제, 원본 그림 폴더 이름 혼동.
+  * 폴더를 나누면 폰트 글자가 소리 없이 빠지는 위험 — 경고 주석 · Phase 8 선행 항목으로 막음.
+  * 배포 브랜치가 저장소를 키우던 구조 — 스크립트를 바꿈(첫 정리는 사용자 실행 대기).
+
+---
+
 ### 📅 [2026-10-04] 프로젝트 전체 점검(Phase 0~7) · 줄 중간 빈자리 규칙 확정 · 문서 정리
 
 * **점검(읽기 전용)**: 출시 · 발표 계획 전에 지금까지의 작업이 계획대로 됐는지, 문서(GDD · Task · DevelopLog · CLAUDE.md · ArtSpec · 스킬 · 공유 페이지 2개) 사이에 어긋남이 있는지 봤다. 보고서 공유 페이지는 만들지 않고 이 기록으로 대신한다(사용자 결정).
