@@ -53,6 +53,10 @@ public static class QaScene
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
             "_palettes", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
             "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner");
+        // 보드를 덮는 패널(옵션 · 기록) — 열려 있으면 키보드 입력을 받지 않는다(2026-10-05)
+        SerializedProperty overlays = new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_overlays");
+        Expect(overlays.arraySize == 2 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
+            && (overlays.GetArrayElementAtIndex(1).objectReferenceValue as GameObject)?.name == "StatsPanel", "PuzzleController._overlays = 옵션 · 기록 패널");
         var flow = Object.FindAnyObjectByType<GameFlow>();
         CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",

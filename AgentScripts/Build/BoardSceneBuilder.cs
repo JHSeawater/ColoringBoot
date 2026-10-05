@@ -294,6 +294,8 @@ public static class BoardSceneBuilder
             ("_clearBanner", clearBanner),
             ("_clearLabel", clearLabel),
             ("_stuckBanner", stuckBanner));
+        // 보드를 덮는 패널 — 열려 있으면 키보드가 뒤의 보드를 움직이지 않는다(2026-10-05)
+        SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject);
 
         var game = new GameObject("Game", typeof(GameFlow));
         SetRefs(game.GetComponent<GameFlow>(),
@@ -681,6 +683,15 @@ public static class BoardSceneBuilder
             if (value == null) throw new System.ArgumentException($"{target.GetType().Name}.{field}에 넣을 에셋을 찾지 못함 — AgentScripts/Tools/Refresh.cs 먼저 실행");
             property.objectReferenceValue = value;
         }
+        so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void SetArray(Object target, string field, params Object[] values)
+    {
+        var so = new SerializedObject(target);
+        SerializedProperty property = so.FindProperty(field) ?? throw new System.ArgumentException($"{target.GetType().Name}에 필드 {field} 없음");
+        property.arraySize = values.Length;
+        for (int i = 0; i < values.Length; i++) property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 

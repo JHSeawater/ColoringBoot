@@ -101,8 +101,8 @@ namespace ColoringBoot.Game
             if (!focus && _pointerId != NoPointer) CancelDrag();
         }
 
-        // 끌기 취소: 획을 긋지 않고 미리보기만 지운다 (프로토타입 pointercancel과 같음 — 점검 F4)
-        private void CancelDrag()
+        // 끌기 취소: 획을 긋지 않고 미리보기만 지운다 (프로토타입 pointercancel과 같음 — 점검 F4). 되돌리기 · 처음부터도 부른다(PuzzleController)
+        public void CancelDrag()
         {
             _pointerId = NoPointer;
             _dragDirection = -1;

@@ -25,6 +25,7 @@ namespace ColoringBoot.Game
         [SerializeField] private GameObject _clearBanner;
         [SerializeField] private TMP_Text _clearLabel;
         [SerializeField] private GameObject _stuckBanner;
+        [SerializeField] private GameObject[] _overlays;   // 보드를 덮는 패널(옵션 · 기록) — 하나라도 열려 있으면 키보드 입력을 받지 않는다
 
         private SaveData _data;
         private string _stageId;   // 스테이지 파일 이름 — 기록의 키
@@ -128,6 +129,8 @@ namespace ColoringBoot.Game
             if (_session == null) return;
             // 걸린 시간은 앱이 앞에 있고 아직 풀지 못했을 때만 센다
             if (!_session.IsSolved && Application.isFocused) _data.Stats.AddTime(_stageId, Time.unscaledDeltaTime);
+            // 패널이 보드를 덮고 있으면 키보드로 뒤의 보드를 움직이지 않는다 (2026-10-05 코드 점검 8)
+            if (IsCovered()) return;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
@@ -204,10 +207,21 @@ namespace ColoringBoot.Game
             _afterStroke = null;
         }
 
+        private bool IsCovered()
+        {
+            foreach (GameObject overlay in _overlays)
+            {
+                if (overlay != null && overlay.activeInHierarchy) return true;
+            }
+            return false;
+        }
+
+        // 되돌리기 · 처음부터는 끌던 획을 버린다 — 바뀐 상태에 옛 미리보기 · 옛 획이 남지 않게 (2026-10-05 코드 점검 9)
         private void Undo()
         {
             if (_session == null || !_session.Undo()) return;
             StopAfterStroke();
+            _boardView.CancelDrag();
             _data.Stats.Undid(_stageId);
             _data.SaveStats();
             Refresh();
@@ -217,6 +231,7 @@ namespace ColoringBoot.Game
         {
             if (_session == null || _session.MoveCount == 0) return;
             StopAfterStroke();
+            _boardView.CancelDrag();
             _session.Restart();
             _data.Stats.Restarted(_stageId);
             _data.SaveStats();
