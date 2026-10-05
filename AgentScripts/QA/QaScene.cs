@@ -46,6 +46,9 @@ public static class QaScene
         var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
         foreach (TMP_Text text in canvas.GetComponentsInChildren<TMP_Text>(true))
             Expect(text.font == font, $"폰트 {text.transform.parent.name}/{text.name}");
+        // 씬 글자가 모두 폰트에 있다 — 없으면 게임에 □(폰트 빌더를 다시 실행, 2026-10-05)
+        string sceneMissing = MissingGlyphs(font, canvas.GetComponentsInChildren<TMP_Text>(true).Select(t => t.text));
+        Expect(sceneMissing.Length == 0, $"씬 글자가 폰트에 없음 [{sceneMissing}]");
 
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
             "_palettes", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
@@ -74,6 +77,8 @@ public static class QaScene
             SolveResult solved = Solver.Solve(board, board.CreateStartState());
             Expect(solved.Solved && stage.MinMoves == solved.Path.Count, $"스테이지 {asset.name} 풀림 · minMoves {stage.MinMoves} = 솔버 {(solved.Solved ? solved.Path.Count : -1)}");
         }
+        string nameMissing = MissingGlyphs(font, catalog.Stages.Select(s => Stage.Parse(s.text).Name));
+        Expect(nameMissing.Length == 0, $"스테이지 이름 글자가 폰트에 없음 [{nameMissing}]");
 
         // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
         var art = (ChapterArt)new SerializedObject(flow).FindProperty("_art").objectReferenceValue;
@@ -109,6 +114,10 @@ public static class QaScene
 
         return fails.Count == 0 ? $"통과 {count}항목" : $"실패 {fails.Count}/{count}: {string.Join(" · ", fails)}";
     }
+
+    // 폰트에 없는 글자(제어 문자 제외)를 겹치지 않게 모은다
+    private static string MissingGlyphs(TMP_FontAsset font, IEnumerable<string> texts) =>
+        new string(texts.Where(t => t != null).SelectMany(t => t).Where(c => !char.IsControl(c) && !font.HasCharacter(c)).Distinct().ToArray());
 
     private static void CheckBoardView(BoardView view, bool target, System.Action<bool, string> expect)
     {

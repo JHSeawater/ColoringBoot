@@ -21,9 +21,16 @@ public static class FontBuilder
     private const int AtlasSize = 1024;
 
     private static readonly string[] _sourceFiles = { "AgentScripts/Build/BoardSceneBuilder.cs" };
-    // 아래 두 폴더는 바로 아래 파일만 읽는다 — 하위 폴더로 나누기 전에 여기부터 고친다(안 그러면 글자가 빠져 게임에 □, Task.md Phase 8)
+    // 아래 두 폴더는 하위 폴더까지 읽는다(2026-10-05 — Game 스크립트를 하위 폴더로 나눔 · Phase 8 챕터별 스테이지 폴더 대비)
     private const string GameCodeFolder = "Assets/Scripts/Game";
     private const string StageFolder = "Assets/Data/Stages";
+
+    // 읽기 전용 — 지금 코드 · 스테이지에서 모을 글자만 돌려준다(폰트 에셋은 그대로). 폴더를 옮기기 전후 비교용
+    public static string Preview()
+    {
+        string characters = CollectCharacters();
+        return $"글자 {characters.Length}개: {characters}";
+    }
 
     public static string Build()
     {
@@ -67,19 +74,19 @@ public static class FontBuilder
         for (char c = ' '; c <= '~'; c++) set.Add(c);
 
         var literal = new Regex("\"((?:[^\"\\\\]|\\\\.)*)\"");
-        IEnumerable<string> code = _sourceFiles.Concat(Directory.GetFiles(GameCodeFolder, "*.cs"));
+        IEnumerable<string> code = _sourceFiles.Concat(Directory.GetFiles(GameCodeFolder, "*.cs", SearchOption.AllDirectories));
         foreach (string file in code)
         {
             foreach (string line in File.ReadAllLines(file, Encoding.UTF8))
             {
-                if (line.Contains("Debug.Log") || line.Contains("Exception(") || line.Contains("[Tooltip(")) continue; // 콘솔 로그 · 예외 메시지 · 인스펙터 설명은 화면에 안 나온다
+                if (line.Contains("Debug.Log") || line.Contains("Exception(") || line.Contains("[Tooltip(") || line.Contains("[Header(")) continue; // 콘솔 로그 · 예외 메시지 · 인스펙터 설명 · 머리글은 화면에 안 나온다
                 string body = line.Split(new[] { "//" }, System.StringSplitOptions.None)[0]; // 줄 주석 제외
                 foreach (Match m in literal.Matches(body)) Add(set, m.Groups[1].Value);
             }
         }
 
         var name = new Regex("\"name\"\\s*:\\s*\"([^\"]*)\"");
-        foreach (string file in Directory.GetFiles(StageFolder, "*.json"))
+        foreach (string file in Directory.GetFiles(StageFolder, "*.json", SearchOption.AllDirectories))
             Add(set, name.Match(File.ReadAllText(file, Encoding.UTF8)).Groups[1].Value);
 
         return new string(set.ToArray());
