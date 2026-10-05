@@ -1,19 +1,16 @@
 using System;
-using System.Collections;
 using ColoringBoot.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace ColoringBoot.Game
 {
     // 보드 그리기와 보드 입력 — 칸 배치 · 화면 맞춤 · 드래그/탭 · 방향 버튼 · 붓질 미리보기.
     // 규칙 판단은 하지 않는다: 미리보기는 Core의 Trace로, 붓질은 BrushRequested로 알린다
+    // 파일: BoardView.cs(필드 · 칸 만들기 · 그리기 · 배치 · 선택) · BoardView.Input.cs(끌기 · 탭 · 키보드) · BoardView.Preview.cs(붓질 미리보기) · BoardView.Motion.cs(연출) — 필드는 모두 이 파일에
     [RequireComponent(typeof(RectTransform))]
-    public sealed class BoardView : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+    public sealed partial class BoardView : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
         private const float Sqrt3 = 1.7320508f;
         private const int DirectionCount = 6;
@@ -167,105 +164,6 @@ namespace ColoringBoot.Game
             }
         }
 
-        // 붓질 물결: Render 뒤에 부른다. cells = 붓이 지나간 칸(출발 쪽부터, PuzzleSession.Trace), before = 긋기 전 색.
-        // 칸마다 차례로 새 색이 되며 튄다. 끝나는 데 걸리는 시간(초)을 돌려준다 — 연출이 없으면 0
-        public float PlayStroke(int[] cells, PaintColor[] before, int count)
-        {
-            if (_motion == null || count <= 0) return 0f;
-            StopMotion();
-            Array.Copy(cells, _waveCells, count);
-            Array.Copy(before, _waveBefore, count);
-            _waveCount = count;
-            _motionRoutine = StartCoroutine(Wave());
-            return (count - 1) * _motion.StrokeStep + _motion.PopSeconds;
-        }
-
-        // 클리어: 모든 칸이 차례로 튄다
-        public float PlayClear()
-        {
-            if (_motion == null) return 0f;
-            StopMotion();
-            _motionRoutine = StartCoroutine(Ripple());
-            return (_cells.Length - 1) * _motion.ClearStep + _motion.ClearPopSeconds;
-        }
-
-        // 막힘: 보드가 좌우로 흔들리다 멈춘다
-        public float PlayShake()
-        {
-            if (_motion == null) return 0f;
-            StopMotion();
-            _motionRoutine = StartCoroutine(Shake());
-            return _motion.ShakeSeconds;
-        }
-
-        private IEnumerator Wave()
-        {
-            float step = _motion.StrokeStep, pop = _motion.PopSeconds;
-            float total = (_waveCount - 1) * step + pop;
-            for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
-            {
-                for (int k = 0; k < _waveCount; k++)
-                {
-                    int cell = _waveCells[k];
-                    float local = time - k * step;
-                    PaintColor now = _session.ColorAt(cell);
-                    _cells[cell].SetFill(ColorOf(local < 0f ? _waveBefore[k] : now));
-                    bool changed = now != _waveBefore[k];
-                    _cells[cell].transform.localScale = Vector3.one * (changed ? Pop(local, pop, _motion.PopScale) : 1f);
-                }
-                yield return null;
-            }
-            FinishMotion();
-        }
-
-        private IEnumerator Ripple()
-        {
-            float step = _motion.ClearStep, pop = _motion.ClearPopSeconds;
-            float total = (_cells.Length - 1) * step + pop;
-            for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
-            {
-                for (int i = 0; i < _cells.Length; i++)
-                    _cells[i].transform.localScale = Vector3.one * Pop(time - i * step, pop, _motion.ClearPopScale);
-                yield return null;
-            }
-            FinishMotion();
-        }
-
-        private IEnumerator Shake()
-        {
-            float seconds = _motion.ShakeSeconds;
-            for (float time = 0f; time < seconds; time += Time.unscaledDeltaTime)
-            {
-                float k = time / seconds;
-                float x = _motion.ShakeAmplitude * Mathf.Sin(k * _motion.ShakeCycles * 2f * Mathf.PI) * (1f - k);
-                _rect.anchoredPosition = _basePosition + new Vector2(x, 0f);
-                yield return null;
-            }
-            FinishMotion();
-        }
-
-        // local초 지난 칸의 크기: 0 → 1 → 0을 반 사인으로(시작 전 · 끝난 뒤는 1)
-        private static float Pop(float local, float seconds, float scale) =>
-            local <= 0f || local >= seconds ? 1f : 1f + (scale - 1f) * Mathf.Sin(local / seconds * Mathf.PI);
-
-        // 연출을 끝난 모습으로: 크기 · 위치 원래대로, 물결 중이던 칸은 지금 색으로
-        private void StopMotion()
-        {
-            if (_motionRoutine == null) return;
-            StopCoroutine(_motionRoutine);
-            FinishMotion();
-        }
-
-        private void FinishMotion()
-        {
-            _motionRoutine = null;
-            if (_cells == null) return;
-            for (int k = 0; k < _waveCount; k++) _cells[_waveCells[k]].SetFill(ColorOf(_session.ColorAt(_waveCells[k])));
-            _waveCount = 0;
-            foreach (CellView cell in _cells) cell.transform.localScale = Vector3.one;
-            _rect.anchoredPosition = _basePosition;
-        }
-
         public void SetSymbols(bool visible)
         {
             _showSymbols = visible;
@@ -279,119 +177,6 @@ namespace ColoringBoot.Game
             _pointerId = NoPointer;
             ClearPreview();
             Select(-1);
-        }
-
-        // 키보드: 선택한 칸에서 want 쪽(화면 방향)의 가장 알맞은 칸으로. 선택이 없으면 첫 칸
-        public void MoveSelection(Vector2 want)
-        {
-            if (!_interactable || _board == null) return;
-            int current = _selected < 0 ? 0 : _selected;
-            int best = current;
-            float bestScore = float.MinValue;
-            for (int i = 0; i < _centers.Length; i++)
-            {
-                if (i == current) continue;
-                Vector2 offset = _centers[i] - _centers[current];
-                float distance = offset.magnitude;
-                float dot = Vector2.Dot(offset, want) / distance;
-                if (dot < KeyMinDot) continue;
-                float score = dot - distance / (_radius * KeyDistanceWeight);
-                if (score <= bestScore) continue;
-                bestScore = score;
-                best = i;
-            }
-            Select(best);
-        }
-
-        // 키보드: 선택한 칸에서 dir로 긋는다. 선택이 없으면 첫 칸을 고르기만 한다(프로토타입과 같음)
-        public void BrushSelected(HexDirection dir)
-        {
-            if (!_interactable || _board == null) return;
-            if (_selected < 0) Select(0);
-            else if (_board.LineLength(_selected, dir) > 1) OnDirectionClicked(dir);
-        }
-
-        public void ClearSelection() => Select(-1);
-
-        public void OnPointerDown(PointerEventData eventData)
-        {
-            if (!_interactable || _board == null || _pointerId != NoPointer) return;
-            Vector2 local = ToBoardLocal(eventData);
-            int cell = CellAt(local);
-            if (cell < 0)
-            {
-                Select(-1);
-                return;
-            }
-            _pointerId = eventData.pointerId;
-            _dragCell = cell;
-            _dragStart = local;
-            _dragDirection = -1;
-        }
-
-        public void OnDrag(PointerEventData eventData)
-        {
-            if (eventData.pointerId != _pointerId) return;
-            Vector2 delta = ToBoardLocal(eventData) - _dragStart;
-            int direction = delta.magnitude < DragThreshold * _radius ? -1 : NearestDirection(delta);
-            if (direction == _dragDirection) return;
-            _dragDirection = direction;
-            if (direction < 0)
-            {
-                ClearPreview();
-                return;
-            }
-            Select(-1);
-            ShowPreview(_dragCell, (HexDirection)direction);
-        }
-
-        public void OnPointerUp(PointerEventData eventData)
-        {
-            if (eventData.pointerId != _pointerId) return;
-            if (IsCanceledTouch(eventData))
-            {
-                CancelDrag();
-                return;
-            }
-            _pointerId = NoPointer;
-            if (_dragDirection < 0)
-            {
-                // 끌지 않고 뗌 = 탭: 칸 선택(같은 칸이면 해제) → 방향 버튼
-                Select(_dragCell == _selected ? -1 : _dragCell);
-                return;
-            }
-            var dir = (HexDirection)_dragDirection;
-            _dragDirection = -1;
-            ClearPreview();
-            if (_board.LineLength(_dragCell, dir) > 1) BrushRequested?.Invoke(_dragCell, dir);
-        }
-
-        // 앱이 포커스를 잃으면(앱 전환 · 알림) 끌던 획을 버린다 — 뒤따르는 OnPointerUp은 추적 중인 포인터가 없어 무시된다
-        private void OnApplicationFocus(bool focus)
-        {
-            if (!focus && _pointerId != NoPointer) CancelDrag();
-        }
-
-        // 끌기 취소: 획을 긋지 않고 미리보기만 지운다 (프로토타입 pointercancel과 같음 — 점검 F4)
-        private void CancelDrag()
-        {
-            _pointerId = NoPointer;
-            _dragDirection = -1;
-            ClearPreview();
-        }
-
-        // Input System UI 모듈은 취소된 터치에도 OnPointerUp을 보낸다 → 터치가 취소(Canceled)됐거나 포커스를 잃은 채 떼어졌으면 취소로 본다
-        private static bool IsCanceledTouch(PointerEventData eventData)
-        {
-            if (!(eventData is ExtendedPointerEventData touch) || touch.pointerType != UIPointerType.Touch) return false;
-            if (!Application.isFocused) return true;
-            if (!(touch.device is Touchscreen screen)) return false;
-            foreach (TouchControl control in screen.touches)
-            {
-                if (control.touchId.ReadValue() == touch.touchId)
-                    return control.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Canceled;
-            }
-            return false;
         }
 
         private void OnRectTransformDimensionsChange()
@@ -434,79 +219,6 @@ namespace ColoringBoot.Game
             PlaceButtons();
         }
 
-        // 미리보기: 붓 경로(붓 색이 묻은 구간은 그 색, 빈 붓은 가는 선)와 칠해질 칸의 결과 색
-        private void ShowPreview(int cell, HexDirection dir)
-        {
-            ClearPreview();
-            if (cell < 0 || _board.LineLength(cell, dir) < 2) return;
-
-            int count = _session.Trace(cell, dir, _traceCells, _traceBrushes);
-            Vector2 toward = _directionVectors[(int)dir];
-            Vector2 previous = _centers[_traceCells[0]] - toward * (TrailOvershoot * _radius);
-            for (int k = 0; k <= count; k++)
-            {
-                Vector2 next = k < count ? _centers[_traceCells[k]] : _centers[_traceCells[count - 1]] + toward * (TrailOvershoot * _radius);
-                PaintColor brush = k == 0 ? PaintColor.Empty : _traceBrushes[k - 1];
-                DrawSegment(_trail[k], previous, next, brush);
-                previous = next;
-            }
-
-            for (int k = 0; k < count; k++)
-            {
-                int i = _traceCells[k];
-                PaintColor result = _traceBrushes[k];
-                if (result != PaintColor.Empty && result != _session.ColorAt(i)) _cells[i].SetGhost(true, ColorOf(result));
-            }
-        }
-
-        private void ClearPreview()
-        {
-            if (_trail == null) return;
-            for (int k = 0; k < _trail.Length; k++) _trail[k].gameObject.SetActive(false);
-            for (int i = 0; i < _cells.Length; i++) _cells[i].SetGhost(false, Color.clear);
-        }
-
-        private void DrawSegment(Image segment, Vector2 from, Vector2 to, PaintColor brush)
-        {
-            Vector2 delta = to - from;
-            var rect = segment.rectTransform;
-            rect.anchoredPosition = (from + to) * 0.5f;
-            rect.sizeDelta = new Vector2(delta.magnitude, (brush == PaintColor.Empty ? EmptyWidth : BrushWidth) * _radius);
-            rect.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-            Color color = brush == PaintColor.Empty ? _emptyTrailColor : _palette.Get(brush);
-            if (brush != PaintColor.Empty) color.a = _trailAlpha;
-            segment.color = color;
-            segment.gameObject.SetActive(true);
-        }
-
-        private int CellAt(Vector2 local)
-        {
-            int best = -1;
-            float bestDistance = HitRadius * _radius;
-            for (int i = 0; i < _centers.Length; i++)
-            {
-                float distance = Vector2.Distance(_centers[i], local);
-                if (distance > bestDistance) continue;
-                bestDistance = distance;
-                best = i;
-            }
-            return best;
-        }
-
-        private static int NearestDirection(Vector2 delta)
-        {
-            int best = 0;
-            float bestDot = float.MinValue;
-            for (int d = 0; d < DirectionCount; d++)
-            {
-                float dot = Vector2.Dot(delta, _directionVectors[d]);
-                if (dot <= bestDot) continue;
-                bestDot = dot;
-                best = d;
-            }
-            return best;
-        }
-
         private void Select(int cell)
         {
             if (_selected >= 0) _cells[_selected].SetSelected(false);
@@ -538,13 +250,6 @@ namespace ColoringBoot.Game
             int cell = _selected;
             Select(-1);
             if (cell >= 0) BrushRequested?.Invoke(cell, dir);
-        }
-
-        // 화면 좌표 → 보드 영역 가운데 기준 좌표
-        private Vector2 ToBoardLocal(PointerEventData eventData)
-        {
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(_rect, eventData.position, eventData.pressEventCamera, out Vector2 local);
-            return local - _rect.rect.center;
         }
 
         private Color ColorOf(PaintColor color) => color == PaintColor.Empty ? _emptyColor : _palette.Get(color);
