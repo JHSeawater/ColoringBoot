@@ -322,10 +322,11 @@
 
 ### 구조 — 착수 때 먼저 (2026-10-04 구조 정리 C)
 
-- [ ] [Code] 폰트 빌더(`AgentScripts/Build/FontBuilder.cs`)가 하위 폴더까지 읽게(Game 코드 · 스테이지) + `QaScene`에 "스테이지 이름 · 씬 글자가 모두 폰트에 있음" 점검 — 폴더를 나누기 전에 한다(지금은 바로 아래 파일만 읽어, 나누면 글자가 빠져 게임에 □)
+- [x] [Code] 폰트 빌더(`AgentScripts/Build/FontBuilder.cs`)가 하위 폴더까지 읽게(Game 코드 · 스테이지) + `QaScene`에 "스테이지 이름 · 씬 글자가 모두 폰트에 있음" 점검 — 폴더를 나누기 전에 한다(지금은 바로 아래 파일만 읽어, 나누면 글자가 빠져 게임에 □) → 2026-10-05 앞당겨 함(Phase 7 중, 스크립트 폴더 정리의 선행): Game 코드 · 스테이지 폴더를 하위 폴더까지 읽음 · `[Header]` 줄도 제외(화면에 안 나오는 인스펙터 머리글 17자가 모이던 것) · 읽기 전용 `Preview`, `QaScene`에 씬 글자 · 스테이지 이름 점검 2개 → 171항목. 모으는 글자 215자가 폰트(217자 — 남는 타 · 틀은 다음 폰트 재생성 때 빠짐) 안에 모두 있음
 - [ ] [Editor] 챕터 데이터 자리 — `Assets/Data/Chapters/ChapterN/`(Stages · 그림 에셋 · 챕터 정보) · `Palettes/`(+ PaletteCatalog) · `Settings/`(UiTheme · MotionSettings)로 옮기고 빌더 경로 상수를 함께 바꾼다. 빌더는 챕터마다 복사하지 않고 챕터 번호를 인자로(그림 빌더 · 순서 · 레벨 에디터 저장 경로 · `RemoveStage`). 챕터 구조 코드(`GameFlow` 여러 챕터 · 목록)는 착수 때 세부 확정
 - [ ] [Code] 콘텐츠 회귀 테스트(EditMode) — 모든 게임 스테이지가 읽히고 · 풀리고 · `minMoves`가 맞고 · 파일 이름(저장 키)이 챕터끼리 겹치지 않음 → `/phase-close` 테스트 관문이 콘텐츠도 지킨다
-- [ ] [Code] (선택) Game 스크립트 하위 폴더 — `Board/` · `Screens/` · `Data/` · `Platform/`(저장 · 광고 · 소리 · 주소 — Phase 9 앱인토스 교체 범위), `.meta`와 함께 옮김. 폰트 빌더 수정 뒤
+- [x] [Code] Game 스크립트 하위 폴더 — `Board/` · `Screens/` · `Data/` · `Platform/`(저장 · 광고 · 소리 · 주소 — Phase 9 앱인토스 교체 범위), `.meta`와 함께 옮김. 폰트 빌더 수정 뒤 → 2026-10-05 앞당겨 함(사용자 결정 — Core도 함께): Core `Rules/` · `Stages/` · `Solver/` · `Records/`, Game `Board/` · `Screens/` · `Data/` · `Platform/` — 36개를 `AssetDatabase.MoveAsset`으로 옮김(내용 그대로 R100 · 스크립트 GUID 36개 같음 · 네임스페이스 그대로). 재컴파일 에러 0 · EditMode 108/108 · `QaScene` 171항목 · 모으는 글자 그대로
+- [x] [Code] `BoardView`를 partial 파일 4개로 나눔(동작 그대로) — `BoardView.cs`(필드 · 칸 만들기 · 그리기 · 배치 · 선택) · `.Input` · `.Preview` · `.Motion`. 2026-10-05 사용자 결정("프로젝트 관리에 유리한 쪽" → 기믹 변경과 섞이지 않게 지금) — 메서드 블록을 스크립트로 그대로 옮김(원본 내용 줄이 빠짐없이 한 번씩 · 바뀐 줄은 클래스 선언 하나 · GUID 같음). 에디터 플레이: 미리보기 6구간 · 결과 4칸, 끌기 · 탭 · 방향 버튼 · 되돌리기 · 처음부터, 막힘 · 클리어 안내가 연출 뒤 켜짐, 그림 화면 → 2번, 키보드 칸 이동 · 긋기, 콘솔 에러 0
 - [ ] [Editor] `InputSystem_Actions` 정리 — 프로젝트 전체 입력 등록만 돼 있고 코드 · UI 모듈은 쓰지 않음. 등록 해제 · 삭제 뒤 사운드 빌드에서 입력 정상 · 빌드마다 되돌리던 `preloadedAssets` 변화가 사라지는지 확인(ProjectSettings 변경 — git으로만 되돌림)
 
 ### 콘텐츠

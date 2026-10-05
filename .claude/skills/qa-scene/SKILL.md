@@ -65,7 +65,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `Assets/Data/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
 - 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
-- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자 0 · 아틀라스 1장)
+- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자 0 · 아틀라스 1장) · 씬 글자 · 스테이지 이름이 모두 폰트에 있음(`QaScene`이 점검, 2026-10-05)
 
 ## 5. 빌드 씬 목록 (`get_build_settings`)
 - 활성 씬 목록 = `Assets/Scenes/Board.unity` 하나, enabled

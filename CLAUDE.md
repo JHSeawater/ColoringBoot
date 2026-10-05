@@ -84,7 +84,7 @@ MCP 안전 규칙:
 * `set_component_properties`의 열거형 값은 인스펙터 표시 이름을 쓴다(예: `Solid Color`, `SolidColor` 아님). 값 하나가 틀리면 그 호출 전체가 적용되지 않는다.
 * `set_serialized_field`로 오브젝트 참조를 비울(null) 수 없다 — 값이 문자열로 전달되어 "null"이라는 경로로 해석된다. 참조 해제는 `run_script`에서 `SerializedObject`로 한다.
 * 명령이 오래 걸리면 `editor_status`를 본다. `blocked_by_dialog`면 재시도를 멈추고 대화상자 내용(title/message/buttons)을 사용자에게 알린다(MCP로 클릭할 수 없다). 에디터가 비활성 창이라 멈춘 것이면 `set_autotick`(enable=true).
-* CLI `--json` 출력은 명령 결과를 `data.result`에 **이스케이프된 JSON 문자열**로 담는다. 폴링 스크립트는 원문을 grep하지 말고 파싱해서 판정한다(2026-09-24: 빌드는 6분 만에 끝났는데 완료를 못 잡아 30분 대기). `build_status` 응답은 전체 빌드 리포트라 수십만 자다 — 필요한 필드(`status` · `result` · `totalErrors` · `warnings`)만 뽑는다.
+* CLI `--json` 출력은 명령 결과를 `data.result`에 **이스케이프된 JSON 문자열**로 담는다. 폴링 스크립트는 원문을 grep하지 말고 파싱해서 판정한다(2026-09-24: 빌드는 6분 만에 끝났는데 완료를 못 잡아 30분 대기). Git Bash에서 `unity command … --json | python`으로 바로 넘기면 빈 입력이 될 때가 있다(2026-10-05) → 파일로 받거나 Python `subprocess`로 부른다. `build_status` 응답은 전체 빌드 리포트라 수십만 자다 — 필요한 필드(`status` · `result` · `totalErrors` · `warnings`)만 뽑는다.
 * 에디터를 재시작한 직후 첫 MCP 호출이 60초 시간 초과로 실패할 수 있다(2026-09-24 실측 — `editor_status`는 정상, 재시도하자 즉시 응답). 같은 명령을 한 번 재시도하고, 계속 실패하면 CLI(`unity command`)로 확인한다.
 * C# 실행: 여러 줄 코드는 `eval`에 문자열로 넣지 말고 파일로 써서 `run_script`로 실행한다(빌더 스크립트는 `Assets/` 밖 `AgentScripts/`에 — 임포트·도메인 리로드 방지. 한 파일씩 컴파일되므로 스크립트끼리 서로 참조할 수 없다. 목록 · 규칙은 `AgentScripts/README.md`). `eval`은 한 줄짜리 조회용.
 * Write로 `Assets/`에 직접 쓴 에셋(JSON 등)은 Unity가 임포트하기 전까지 `LoadAssetAtPath`가 null을 준다 — 빌더에서 참조하기 전에 `run_script`(file=`AgentScripts/Tools/Refresh.cs`)로 임포트시킨다(2026-09-28: 씬 참조가 조용히 비었음).
@@ -116,12 +116,12 @@ MCP 안전 규칙:
 **로직과 표현 분리 (GDD §10):**
 * 보드 상태 · 붓질 처리 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`를 상속하지 않는 **순수 C#** 클래스다. `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만).
 * 이 규칙은 어셈블리 정의(asmdef)의 **`noEngineReferences: true`**로 컴파일러가 강제하게 한다. 로직 테스트는 EditMode 테스트 어셈블리에 둔다.
-* **코드 구조** (2026-09-24 확정 · 2026-10-04 정리) — 네임스페이스 = 어셈블리 이름:
+* **코드 구조** (2026-09-24 확정 · 2026-10-04 · 10-05 정리) — 네임스페이스 = 어셈블리 이름(하위 폴더는 네임스페이스를 나누지 않는다):
 
 | 위치 | 내용 |
 |---|---|
-| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`): 좌표 · 보드 · 붓질 · 판정 · 세션 · 스테이지 읽기/쓰기 · 솔버 · 생성기 · 진행 기록 |
-| `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층: 화면 · 입력 · 연출 · 저장 · 소리 |
+| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`). `Rules/`(좌표 · 색 · 보드 · 붓질 · 판정 · 세션 — 기믹 규칙도 여기) · `Stages/`(스테이지 코드 읽기 · 쓰기) · `Solver/`(솔버 · 생성기) · `Records/`(진행 · 플레이 기록) |
+| `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층. `Board/`(한 판 — `PuzzleController` · `BoardView` · 칸 · 조합표) · `Screens/`(`GameFlow` · 화면 · 패널 · 전환) · `Data/`(ScriptableObject 타입) · `Platform/`(저장 · 광고 · 소리 · 주소 — 앱인토스 연동 때 바꿀 곳). `BoardView`는 partial 파일 4개: `BoardView.cs`(필드 · 칸 만들기 · 그리기 · 배치 · 선택 — 필드는 모두 여기) · `.Input`(끌기 · 탭 · 키보드) · `.Preview`(미리보기) · `.Motion`(연출) |
 | `Assets/Scripts/LevelEditor/` | `ColoringBoot.LevelEditor` — `defineConstraints: UNITY_EDITOR`(빌드에 안 들어가고 씬에는 붙음) + `Assets/Scenes/LevelEditor.unity`(빌드 목록 제외, 플레이해서 쓴다 · 조작 패널은 IMGUI) |
 | `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 프로토타입 스테이지 회귀 기준은 게임 데이터와 분리한 사본 `PrototypeStages/`(고치지 않는다) |
 | `Assets/Data/` | 스테이지 JSON(`Stages/`) · 목록(`StageCatalog`) · 팔레트 · 챕터 그림(`Chapter1Art`) · 디자인 값(`UiTheme`) · 연출 값(`MotionSettings`) |
@@ -231,7 +231,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **화면 y축 부호** — Unity는 y가 위, 프로토타입(SVG)은 아래. 배치 공식을 그대로 옮기면 1시와 5시 등이 위아래로 뒤집힌다(§3 화면 배치).
 * **순수 로직에 `UnityEngine` 유입** — asmdef가 막았을 때 참조를 추가해 우회하지 않는다.
 * **비동기 MCP 명령의 완료 가정 · 설정 변경의 Undo 기대** — §2 MCP 안전 규칙.
-* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례 — 이 프로젝트는 2026-09-30에 LiberationSans를 지웠다. TMP Essential Resources를 다시 임포트하면 되살아나 빌드에 들어간다). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정 — 1024² 한 장, 샘플링 56: 64에서 254자에 두 장이 되어 2026-09-30에 낮춤. `FontBuilder.Build` 결과가 두 장이 되면 용량과 함께 보고한다). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Build/FontBuilder.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 · `[Tooltip]` 줄은 제외 — 2026-10-02부터 인스펙터 설명 글자를 빼서 278 → 199자). 빌더는 `Assets/Scripts/Game` · `Assets/Data/Stages`의 바로 아래 파일만 읽는다 — 하위 폴더로 나누기 전에 빌더부터 고친다(Task.md Phase 8). 주의: 이 TMP 버전은 `AtlasPopulationMode.Static`을 폐기 예정(obsolete)으로 표시한다 — 지금은 빌드 · 표시 정상(2026-09-29). TMP를 올릴 때 Dynamic 방식으로 옮길지(용량 · 원본 폰트 포함 여부) 다시 정한다.
+* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례 — 이 프로젝트는 2026-09-30에 LiberationSans를 지웠다. TMP Essential Resources를 다시 임포트하면 되살아나 빌드에 들어간다). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정 — 1024² 한 장, 샘플링 56: 64에서 254자에 두 장이 되어 2026-09-30에 낮춤. `FontBuilder.Build` 결과가 두 장이 되면 용량과 함께 보고한다). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Build/FontBuilder.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 · `[Tooltip]` · `[Header]` 줄은 제외 — 2026-10-02부터 인스펙터 설명 글자를 빼서 278 → 199자, 2026-10-05부터 머리글도). 빌더는 `Assets/Scripts/Game` · `Assets/Data/Stages`를 하위 폴더까지 읽고(2026-10-05), `QaScene`이 씬 글자 · 스테이지 이름이 모두 폰트에 있는지 점검한다. 폰트를 다시 만들지 않고 모을 글자만 보려면 `FontBuilder.Preview`. 주의: 이 TMP 버전은 `AtlasPopulationMode.Static`을 폐기 예정(obsolete)으로 표시한다 — 지금은 빌드 · 표시 정상(2026-09-29). TMP를 올릴 때 Dynamic 방식으로 옮길지(용량 · 원본 폰트 포함 여부) 다시 정한다.
 * **에디터에서만 확인하고 완료 처리** — §4 "빌드로 확인".
 * **GitHub Pages + Brotli** — 서버가 `Content-Encoding: br` 헤더를 주지 못하면 로드에 실패한다 → Decompression Fallback을 켜거나 압축 방식을 바꾼다.
 * **배포 직후 옛 파일과 섞임** — 빌드 파일 이름이 매번 같으면(`WebGL.wasm.unityweb` 등) 브라우저가 GitHub Pages 캐시(10분)의 옛 파일과 새 파일을 섞어 실행해 `RangeError: Maximum call stack size exceeded`로 멈춘다(2026-10-03: 직전 배포를 열어 본 PC 크롬만 — 휴대폰 · 로컬 서버 · 가로 화면 강제는 정상, 몇 분 뒤 저절로 풀림). → `Name Files As Hashes` 켬(빌드마다 이름이 다름, `AgentScripts/Setup/Phase7WebTemplate.cs`) · 템플릿 CSS는 `index.html` 안에. 남는 경우: 배포 직후 옛 `index.html`이 캐시에서 열리면 지워진 옛 파일을 찾아 "불러오지 못했어요" → 새로고침. 헤드리스 Chrome은 이 PC에서 WebGL 본체를 끝까지 못 돌린다 — 실제 브라우저 확인은 Claude in Chrome(콘솔 읽기)으로.

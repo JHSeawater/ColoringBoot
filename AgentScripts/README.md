@@ -13,7 +13,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 - **스크립트끼리 서로 참조할 수 없다**(한 파일씩 컴파일). 공통 코드가 필요하면 각 파일에 둔다.
 - **이 빌더들이 정본이다** — 보드 씬 · 레벨 에디터 씬 · 프리팹 · 스프라이트 · 폰트 · 팔레트 · 챕터 그림 에셋. 에디터나 MCP로 직접 고친 값은 다음 빌드 때 사라진다 → 빌더를 고쳐 다시 실행한다(급히 직접 고쳤다면 빌더에도 같은 수정).
 - **에셋을 옮기거나 이름을 바꾸면 빌더의 경로 상수도 함께 바꾼다.** `UiTheme` · `MotionSettings` · 파스텔 팔레트는 없으면 기본값으로 새로 만들므로(사람이 고친 값 유지용), 경로가 어긋나면 기본값 에셋이 조용히 하나 더 생긴다.
-- **폰트 빌더는 `Assets/Scripts/Game`과 `Assets/Data/Stages`의 바로 아래 파일만 읽는다** — 하위 폴더로 나누기 전에 빌더부터 고친다(안 그러면 그 글자가 빠져 게임에 □로 나온다. Task.md Phase 8).
+- **폰트 빌더는 `Assets/Scripts/Game` · `Assets/Data/Stages`를 하위 폴더까지 읽고, 로그 · 예외 메시지 · `[Tooltip]` · `[Header]` 줄은 뺀다**(2026-10-05). 화면 글자가 폰트에 없으면 게임에 □로 나온다 — `QaScene`이 씬 글자 · 스테이지 이름을 점검한다.
 - Python: `pip install -r AgentScripts/requirements.txt`. Windows 표준 출력은 cp949라 스크립트가 `sys.stdout.reconfigure(encoding='utf-8')`를 부른다.
 
 ## Build/ — 다시 돌리는 빌더
@@ -22,7 +22,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 |---|---|---|---|
 | `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` · `BuildCatalog`(프로토타입 9개 중 빠진 것만 목록에) |
 | `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) |
-| `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` |
+| `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
 | `StageOrder.cs` | `StageCatalog` 순서(챕터 1) | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder` |
 | `ArtCheck.py` | (읽기 전용) 그림 파일 규격 점검 — `ArtSpec.md` §6 | 그림을 받았을 때 | `python … [원본 폴더]`(없으면 `ArtSource/Chapter1`) |
@@ -33,7 +33,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 
 | 파일 | 하는 일 | entry |
 |---|---|---|
-| `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트 · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
+| `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
 | `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 | `Paint` · `Record` · `Check` · `Save` 등 |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |

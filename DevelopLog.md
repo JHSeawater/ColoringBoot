@@ -8,6 +8,24 @@
 
 ---
 
+### 📅 [2026-10-05] 스크립트 폴더 정리(Core · Game) · BoardView 나누기 · 폰트 빌더 보강
+
+* **요청(사용자)**: `Assets/Scripts`가 폴더 3개뿐이라 앞으로 코드를 보기 불편하다 → 정리안 1번(Core + Game) 선택. BoardView는 "프로젝트 관리에 유리한 쪽으로" → 지금 나눔. 이유: 동작이 바뀌지 않는 정리를 한 번에 묶어 검증해 두면, Phase 8 기믹 변경과 섞이지 않아 변경 내역을 보거나 되돌리기 쉽다.
+* **① 폰트 빌더(선행 — 안 하면 하위 폴더의 화면 문구가 빠져 □)**: `Scripts/Game` · `Data/Stages`를 하위 폴더까지 읽게, 읽기 전용 `FontBuilder.Preview` 추가. `QaScene`에 "씬 글자 · 스테이지 이름이 모두 폰트에 있음" 2항목 → 171항목. 대조: 폰트에 있는 '붓' 있음 · 없는 '똠' 없음으로 판정.
+  * 발견: 옮기기 전 모으는 글자가 234자인데 폰트는 217자였다. 빠진 17자는 모두 `MotionSettings`의 인스펙터 머리글(`[Header("붓질 — 색이 줄을 따라 번진다")]` 등, Phase 7.4)이라 화면에는 나오지 않는다(□ 문제 아님). `[Tooltip]`처럼 `[Header]` 줄도 빼도록 고침 → 215자, 폰트 217자 안에 모두 있음(폰트에만 있는 타 · 틀은 옛 머리글 글자 — 다음 폰트 재생성 때 빠짐). 이 215자를 기준으로 삼음.
+* **② 폴더**: Core `Rules/`(HexDirection · HexCoord · PaintColor · Board · PuzzleSession) · `Stages/`(Stage · StageParser · StageWriter) · `Solver/`(Solver · Generator) · `Records/`(Progress · PlayStats), Game `Board/`(PuzzleController · BoardView · CellView · MixTableView) · `Screens/`(GameFlow · StageSelectView · StageButtonView · ChapterView · OptionsView · StatsView · ScreenFade · SafeAreaFitter) · `Data/`(StageCatalog · ChapterArt · ColorPalette · PaletteCatalog · UiTheme · MotionSettings) · `Platform/`(SaveData · IKeyValueStore · PlayerPrefsStore · IAdService · SoundController · UrlQuery). 네임스페이스는 어셈블리 이름 그대로, LevelEditor(2개) · 테스트는 그대로.
+  * 36개를 `AssetDatabase.MoveAsset`(저장소 밖 일회성 스크립트)으로 옮겼다 — git 이름 바꾸기 72건 모두 R100(내용 그대로) · 스크립트 GUID 36개 모두 같음 · 새 폴더 `.meta` 8개. 모으는 글자 215자 그대로.
+* **③ BoardView**(569줄) → partial 파일 4개: `BoardView.cs`(필드 · 칸 만들기 · 그리기 · 배치 · 선택 — 필드는 모두 여기, 275줄) · `.Input.cs`(끌기 · 탭 · 끌기 취소 · 키보드, 162줄) · `.Preview.cs`(붓질 미리보기, 56줄) · `.Motion.cs`(연출, 111줄). 메서드 블록을 스크립트로 그대로 옮겼다 — 원본 내용 줄이 빠짐없이 한 번씩, 바뀐 줄은 클래스 선언(`partial`) 하나, 새 줄은 파일 머리(using · 네임스페이스 · 설명 주석)뿐. BoardView GUID 같음.
+* **확인**: 재컴파일 에러 0 · EditMode 108/108 · `QaScene` 171항목 · 콘솔 에러 0. 에디터 플레이(CLI — MCP 연결이 끊겨 `unity command`로): 타이틀 → 선택 → 1번, (0,0) 3시 끌기 중 미리보기 6구간 · 결과 4칸(예상과 같음) → 떼면 1수, 되돌리기, 짧게 끌기 = 탭 → 3시 버튼으로 긋기, 처음부터, 막히는 획 직후 막힘 안내 꺼짐 → 2초 뒤 켜짐(흔들림 뒤), 솔버 풀이 끌기 3수 클리어 → 클리어 안내 → "다음" → 그림 화면 "색칠 1 / 11" → 2번, 키보드 경로(`MoveSelection` · `BrushSelected`)로 긋기. 끝난 뒤 에디터 저장 키 삭제 · 씬 변경 없음. 동작이 바뀌지 않아 WebGL 빌드는 다음 빌드(Phase 8)에서 함께 확인.
+* **문서**: CLAUDE.md §3 구조 표(하위 폴더 · BoardView 파일) · §8 폰트(`[Header]` 제외 · 하위 폴더 · `QaScene` 점검 · `Preview`) · §2 CLI 메모(Git Bash에서 `unity command … | python`이 빈 입력이 될 때가 있음 → 파일 · `subprocess`), AgentScripts README · `/qa-scene`, Task.md Phase 8 구조 항목 2개 완료 + BoardView 항목.
+* **커밋**: `0b55212`(폰트 빌더 · 씬 점검) · `f3a809d`(폴더 이동 — 이름 바꾸기만) · `5258db2`(BoardView 나누기) · 이 기록(문서).
+* **해결된 이슈**:
+  * 스크립트 폴더가 3개뿐이라 코드를 찾고 읽기 불편하던 문제 — 역할별 하위 폴더 8개.
+  * BoardView 한 파일에 배치 · 입력 · 미리보기 · 연출이 섞여 있던 문제.
+  * 폴더를 나누면 폰트 글자가 소리 없이 빠지는 위험 — 빌더 보강 + 씬 점검으로 막음. 화면에 안 나오는 머리글 글자가 폰트 수집에 섞이던 문제.
+
+---
+
 ### 📅 [2026-10-04] 폴더 · 파일 구조 정리 — AgentScripts · ArtSource · CLAUDE.md · 배포 방식
 
 * **조사(사용자 요청 — 남은 개발 · 유지보수에 맞는 구조)**:
