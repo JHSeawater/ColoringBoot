@@ -14,6 +14,8 @@ namespace ColoringBoot.Game
         private const string StatsQuery = "stats";   // ?stats — 플레이테스트 기록 보기
         private const string PaletteQuery = "palette"; // ?palette=<이름> — 모든 스테이지를 그 팔레트로(QA · 휴대폰 색 확인)
         private const string ResetQuery = "reset";   // ?reset — 진행 · 기록 지우기 (휴대폰 하나로 여러 명이 테스트할 때)
+        private const string LabQuery = "lab";       // ?lab — 시험 목록(소재 맵 시험, 2026-10-06): 모두 열림 · 그림 화면 없음
+        private const string LabTitle = "시험";
         private const string NextText = "다음";
         private const string ListText = "목록";
         private const string CompleteText = "그림 완성!";
@@ -41,9 +43,13 @@ namespace ColoringBoot.Game
         [Header("타이틀 (Phase 7.3)")]
         [SerializeField] private GameObject _titleScreen;      // 실행하면 처음 보는 화면(주소에 ?stage=가 있으면 건너뜀)
         [SerializeField] private Button _startButton;
+        [Header("시험 목록 (?lab)")]
+        [SerializeField] private StageCatalog _labCatalog;
 
         private SaveData _data;
         private IAdService _ads;
+        private StageCatalog _list;  // 지금 여는 목록 — 챕터 1(_catalog) 또는 시험 목록(_labCatalog)
+        private bool _lab;
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
         private int?[] _minMoves;
         private int _current = -1;
@@ -55,14 +61,24 @@ namespace ColoringBoot.Game
         {
             _data = new SaveData(new PlayerPrefsStore());
             _ads = new NoAdService();
-            _stages = new string[_catalog.Stages.Count];
+            UseList(_catalog, false);
+            if (_art.Steps.Count != _stages.Length)
+                Debug.LogWarning($"챕터 그림 단계 {_art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
+        }
+
+        // 여는 목록을 정한다 — 스테이지 파일 이름(기록의 키)과 최소 수를 그 목록에서 읽는다. lab: 시험 목록(모두 열림 · 그림 없음)
+        private void UseList(StageCatalog list, bool lab)
+        {
+            _list = list;
+            _lab = lab;
+            _stages = new string[list.Stages.Count];
             _minMoves = new int?[_stages.Length];
             for (int i = 0; i < _stages.Length; i++)
             {
-                _stages[i] = _catalog.Stages[i].name;
+                _stages[i] = list.Stages[i].name;
                 try
                 {
-                    _minMoves[i] = Stage.Parse(_catalog.Stages[i].text).MinMoves;
+                    _minMoves[i] = Stage.Parse(list.Stages[i].text).MinMoves;
                 }
                 catch (FormatException)
                 {
@@ -70,8 +86,6 @@ namespace ColoringBoot.Game
                 }
             }
             _painted = new bool[_stages.Length];
-            if (_art.Steps.Count != _stages.Length)
-                Debug.LogWarning($"챕터 그림 단계 {_art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
         }
 
         private void OnEnable()
@@ -109,6 +123,7 @@ namespace ColoringBoot.Game
             }
             ApplySettings();
             if (UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
+            if (UrlQuery.TryGet(url, LabQuery, out _)) UseList(_labCatalog, true);
 
             int start = -1;
             if (UrlQuery.TryGet(url, StageQuery, out string name))
@@ -117,22 +132,24 @@ namespace ColoringBoot.Game
                 if (start < 0) Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 타이틀을 엽니다", this);
             }
             if (start >= 0) OpenStage(start);
+            else if (_lab) ShowSelect();
             else _titleScreen.SetActive(true);
 
-            if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_catalog, _data.Stats);
+            if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _data.Stats);
         }
 
-        // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다
+        // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다. 시험 목록에는 그림이 없다
         private void ShowSelect()
         {
-            int justPainted = _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
+            int justPainted = !_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
             _puzzle.Close();
             _current = -1;
             _titleScreen.SetActive(false);
             _boardScreen.SetActive(false);
             _chapterScreen.SetActive(false);
-            _select.Show(_stages, _minMoves, _data);
-            _selectPicture.Show(_art, UpdatePainted(), justPainted);
+            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : null, _lab);
+            _selectPicture.gameObject.SetActive(!_lab);
+            if (!_lab) _selectPicture.Show(_art, UpdatePainted(), justPainted);
         }
 
         private void OpenStage(int index)
@@ -142,7 +159,7 @@ namespace ColoringBoot.Game
             _chapterScreen.SetActive(false);
             _boardScreen.SetActive(true);
             _paintShown = false;
-            if (!_puzzle.Open(_catalog.Stages[index], index + 1, _data, _paletteOverride))
+            if (!_puzzle.Open(_list.Stages[index], index + 1, _data, _paletteOverride))
             {
                 ShowSelect();
                 return;
@@ -154,7 +171,7 @@ namespace ColoringBoot.Game
         // 클리어 띠의 "다음" — 처음 클리어했으면 그림 화면에서 그 단계를 칠한 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
         {
-            if (_current >= 0 && _puzzle.FirstClear && !_paintShown)
+            if (!_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown)
             {
                 ShowPicture(_current);
                 return;

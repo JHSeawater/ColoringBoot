@@ -21,6 +21,7 @@ public static class BoardSceneBuilder
     private const string ScenePath = "Assets/Scenes/Board.unity";
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
     private const string CatalogPath = "Assets/Data/StageCatalog.asset";
+    private const string LabCatalogPath = "Assets/Data/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
     private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/Build/ChapterArtBuilder.cs 먼저
     private const string ThemePath = "Assets/Data/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
@@ -319,7 +320,8 @@ public static class BoardSceneBuilder
             ("_chapterNextButton", chapterNextButton),
             ("_chapterNextLabel", chapterNextButton.GetComponentInChildren<TMP_Text>()),
             ("_titleScreen", titleScreen),
-            ("_startButton", startButton));
+            ("_startButton", startButton),
+            ("_labCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(LabCatalogPath)));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
@@ -436,7 +438,8 @@ public static class BoardSceneBuilder
         Fade(screen);
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
-        TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted).text = ChapterTitle;
+        TMP_Text subtitle = TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted);
+        subtitle.text = ChapterTitle;
         picture = Picture(screen, -210f, new Vector2(480f, 600f));
 
         var grid = NewUI("Grid", screen);
@@ -481,7 +484,7 @@ public static class BoardSceneBuilder
         template.SetActive(false);
 
         var view = screen.AddComponent<StageSelectView>();
-        SetRefs(view, ("_title", title), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
+        SetRefs(view, ("_title", title), ("_subtitle", subtitle.gameObject), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
         SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_clearedFill", Strong), ("_openText", Strong), ("_clearedText", StrongInk));
         screen.SetActive(false);
         return view;

@@ -12,6 +12,7 @@ namespace ColoringBoot.Game
         private const string LockedNotice = "앞 스테이지를 먼저 풀어 주세요";
 
         [SerializeField] private TMP_Text _title;
+        [SerializeField] private GameObject _subtitle;      // 챕터 제목 줄 — 시험 목록(?lab)에서는 숨긴다
         [SerializeField] private RectTransform _grid;
         [SerializeField] private StageButtonView _buttonTemplate;
         [SerializeField] private GameObject _noticePanel;   // 안내 띠(바탕) — 글자는 _notice
@@ -28,19 +29,25 @@ namespace ColoringBoot.Game
         private IReadOnlyList<string> _stages;
         private IReadOnlyList<int?> _minMoves;
         private SaveData _data;
+        private string _listName;
+        private bool _allOpen;
         private WaitForSeconds _noticeWait;
         private Coroutine _noticeRoutine;
 
         // 고른 스테이지(열린 것만 — 잠긴 버튼은 안내만 띄운다)
         public event Action<int> StageChosen;
 
-        // stages: 스테이지 파일 이름(기록의 키), minMoves: 스테이지별 최소 수(완벽 판정)
-        public void Show(IReadOnlyList<string> stages, IReadOnlyList<int?> minMoves, SaveData data)
+        // stages: 스테이지 파일 이름(기록의 키), minMoves: 스테이지별 최소 수(완벽 판정).
+        // listName: 제목에 쓸 목록 이름(없으면 챕터 이름 · 챕터 제목 줄 표시), allOpen: 해금과 상관없이 모두 열림(시험 목록)
+        public void Show(IReadOnlyList<string> stages, IReadOnlyList<int?> minMoves, SaveData data, string listName = null, bool allOpen = false)
         {
             _stages = stages;
             _minMoves = minMoves;
             _data = data;
+            _listName = listName ?? _chapterName;
+            _allOpen = allOpen;
             gameObject.SetActive(true);
+            _subtitle.SetActive(listName == null);
             _noticePanel.SetActive(false);
             while (_buttons.Count < stages.Count)
             {
@@ -50,6 +57,8 @@ namespace ColoringBoot.Game
                 button.Button.onClick.AddListener(() => OnClicked(index));
                 _buttons.Add(button);
             }
+            // 목록이 바뀌어 짧아지면 남는 버튼을 숨긴다
+            for (int i = 0; i < _buttons.Count; i++) _buttons[i].gameObject.SetActive(i < stages.Count);
             Refresh();
         }
 
@@ -57,21 +66,21 @@ namespace ColoringBoot.Game
         {
             int next = _data.Progress.NextStage(_stages);
             int cleared = 0;
-            for (int i = 0; i < _buttons.Count; i++)
+            for (int i = 0; i < _stages.Count; i++)
             {
                 string stage = _stages[i];
-                bool unlocked = _data.Progress.IsUnlocked(_stages, i);
+                bool unlocked = _allOpen || _data.Progress.IsUnlocked(_stages, i);
                 bool isCleared = _data.Progress.IsCleared(stage);
                 if (isCleared) cleared++;
                 Color fill = !unlocked ? _lockedFill : isCleared ? _clearedFill : _openFill;
                 _buttons[i].Set(i + 1, unlocked, _data.Progress.IsPerfect(stage, _minMoves[i]), i == next, fill, isCleared ? _clearedText : _openText);
             }
-            _title.text = $"{_chapterName} · {cleared} / {_stages.Count}";
+            _title.text = $"{_listName} · {cleared} / {_stages.Count}";
         }
 
         private void OnClicked(int index)
         {
-            if (_data.Progress.IsUnlocked(_stages, index))
+            if (_allOpen || _data.Progress.IsUnlocked(_stages, index))
             {
                 StageChosen?.Invoke(index);
                 return;

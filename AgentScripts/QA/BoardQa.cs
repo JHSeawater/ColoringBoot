@@ -11,6 +11,7 @@ using UnityEngine.UI;
 // 보드 에디터 플레이 QA (Phase 1.2~) — run_script(file=AgentScripts/QA/BoardQa.cs, entry=...)
 // 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
+// 시험 목록(?lab): Lab() → 선택 화면(모두 열림) → 같은 방식
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
 {
@@ -168,6 +169,17 @@ public static class BoardQa
             if (Active("ClearBanner")) text += $" · 띠: {screen.Find("ClearBanner/Label").GetComponent<TMPro.TMP_Text>().text} [{screen.Find("ClearBanner/NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
         }
         return text;
+    }
+
+    // 시험 목록(?lab)으로 바꿔 선택 화면을 연다 — 에디터에는 주소가 없어 GameFlow의 목록 전환(UseList)을 직접 부른다 (2026-10-06)
+    public static string Lab()
+    {
+        var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
+        const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
+        object lab = typeof(GameFlow).GetField("_labCatalog", Private).GetValue(flow);
+        typeof(GameFlow).GetMethod("UseList", Private).Invoke(flow, new[] { lab, true });
+        typeof(GameFlow).GetMethod("ShowSelect", Private).Invoke(flow, null);
+        return Flow();
     }
 
     // 선택 화면에서 number번 스테이지 버튼을 누른다

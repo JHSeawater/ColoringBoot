@@ -61,10 +61,10 @@ public static class QaScene
         CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
             "_art", "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
-            "_titleScreen", "_startButton");
+            "_titleScreen", "_startButton", "_labCatalog");
         foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
-        CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
+        CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
         CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");
         CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton");
         CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
@@ -83,6 +83,20 @@ public static class QaScene
         }
         string nameMissing = MissingGlyphs(font, catalog.Stages.Select(s => Stage.Parse(s.text).Name));
         Expect(nameMissing.Length == 0, $"스테이지 이름 글자가 폰트에 없음 [{nameMissing}]");
+
+        // 시험 목록(주소 ?lab, 2026-10-06): 읽힘 · 풀림 · minMoves 일치 · 이름 글자 · 파일 이름(기록의 키)이 챕터 목록과 겹치지 않음
+        var lab = (StageCatalog)new SerializedObject(flow).FindProperty("_labCatalog").objectReferenceValue;
+        Expect(lab.Stages.Count > 0 && lab.Stages.All(s => s != null), "시험 목록 비지 않음 · 빈 칸 없음");
+        foreach (TextAsset asset in lab.Stages)
+        {
+            Stage stage = Stage.Parse(asset.text);
+            var board = new Board(stage);
+            SolveResult solved = Solver.Solve(board, board.CreateStartState());
+            Expect(solved.Solved && stage.MinMoves == solved.Path.Count, $"시험 {asset.name} 풀림 · minMoves {stage.MinMoves} = 솔버 {(solved.Solved ? solved.Path.Count : -1)}");
+        }
+        string labMissing = MissingGlyphs(font, lab.Stages.Select(s => Stage.Parse(s.text).Name));
+        Expect(labMissing.Length == 0, $"시험 목록 이름 글자가 폰트에 없음 [{labMissing}]");
+        Expect(!lab.Stages.Any(s => catalog.Stages.Any(c => c.name == s.name)), "시험 목록 파일 이름이 챕터 목록과 겹치지 않음");
 
         // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
         var art = (ChapterArt)new SerializedObject(flow).FindProperty("_art").objectReferenceValue;
@@ -105,7 +119,7 @@ public static class QaScene
             var colors = new SerializedObject(each).FindProperty("_colors");
             Expect(colors.arraySize == 7 && Enumerable.Range(0, 7).All(i => colors.GetArrayElementAtIndex(i).colorValue.a == 1f), $"팔레트 {each.Id} 7색 · 알파 1");
         }
-        foreach (TextAsset stage in catalog.Stages)
+        foreach (TextAsset stage in catalog.Stages.Concat(lab.Stages))
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
         foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine" })
         {
