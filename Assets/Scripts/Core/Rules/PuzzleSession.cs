@@ -46,6 +46,25 @@ namespace ColoringBoot.Core
             return true;
         }
 
+        // 힌트 (GDD §6, 2026-10-07): 지금 상태에서 최소 풀이의 다음 한 수. 지금 상태로는 풀 수 없으면(막힘 · 막힘 표시 없는 막다른 길)
+        // 가장 최근 획부터 거슬러 몇 수 되돌려야 다시 풀 수 있는지. limit = 상태 하나당 탐색 상한 — 넘으면 Unknown (런타임은 작게, CLAUDE.md §4)
+        public Hint FindHint(int limit)
+        {
+            SolveResult now = Solver.Solve(Board, _state, limit);
+            if (now.Solved) return now.Path.Count == 0 ? Hint.Solved : Hint.Next(now.Path[0], now.Path.Count);
+            if (now.Limited) return Hint.Unknown;
+
+            int undos = 0;
+            foreach (PaintColor[] before in _history) // Stack은 가장 최근 것부터 나온다
+            {
+                undos++;
+                SolveResult back = Solver.Solve(Board, before, limit);
+                if (back.Solved) return Hint.Undo(undos);
+                if (back.Limited) return Hint.Unknown;
+            }
+            return Hint.Unknown; // 시작 상태부터 풀 수 없다(스테이지 오류)
+        }
+
         // 처음부터: 시작 상태로 돌아가고 기록을 지운다 — 되돌릴 수 없다 (프로토타입과 같음)
         public void Restart()
         {

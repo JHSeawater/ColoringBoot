@@ -48,7 +48,7 @@ namespace ColoringBoot.Game
                 if (minMoves.HasValue) text.Append($"(최소 {minMoves.Value})");
                 int seconds = (int)s.Seconds;
                 text.Append($" · {seconds / SecondsPerMinute}분 {seconds % SecondsPerMinute}초\n");
-                text.Append($"    열기 {s.Opens} · 붓질 {s.Strokes} · 되돌리기 {s.Undos} · 처음부터 {s.Restarts}\n");
+                text.Append($"    열기 {s.Opens} · 붓질 {s.Strokes} · 되돌리기 {s.Undos} · 처음부터 {s.Restarts} · 힌트 {s.Hints}\n");
             }
             _text.text = text.ToString();
             gameObject.SetActive(true);

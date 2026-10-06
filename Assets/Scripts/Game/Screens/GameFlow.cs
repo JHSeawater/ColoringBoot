@@ -45,11 +45,14 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _startButton;
         [Header("시험 목록 (?lab)")]
         [SerializeField] private StageCatalog _labCatalog;
+        [Header("따라 하기 (튜토리얼)")]
+        [SerializeField] private StageCatalog _tutorialCatalog;   // 레슨 i = TutorialLessons의 i번째 (2026-10-07)
 
         private SaveData _data;
         private IAdService _ads;
         private StageCatalog _list;  // 지금 여는 목록 — 챕터 1(_catalog) 또는 시험 목록(_labCatalog)
         private bool _lab;
+        private int _lesson = -1;    // 따라 하기 중이면 레슨 번호
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
         private int?[] _minMoves;
         private int _current = -1;
@@ -61,6 +64,7 @@ namespace ColoringBoot.Game
         {
             _data = new SaveData(new PlayerPrefsStore());
             _ads = new NoAdService();
+            _puzzle.SetAds(_ads);
             UseList(_catalog, false);
             if (_art.Steps.Count != _stages.Length)
                 Debug.LogWarning($"챕터 그림 단계 {_art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
@@ -95,9 +99,10 @@ namespace ColoringBoot.Game
             _selectOptionsButton.onClick.AddListener(ShowOptions);
             _nextButton.onClick.AddListener(Next);
             _chapterNextButton.onClick.AddListener(ContinueAfterPicture);
-            _startButton.onClick.AddListener(ShowSelect);
+            _startButton.onClick.AddListener(StartGame);
             _select.StageChosen += OpenStage;
             _options.Changed += ApplySettings;
+            _options.TutorialRequested += StartTutorial;
         }
 
         private void OnDisable()
@@ -107,9 +112,37 @@ namespace ColoringBoot.Game
             _selectOptionsButton.onClick.RemoveListener(ShowOptions);
             _nextButton.onClick.RemoveListener(Next);
             _chapterNextButton.onClick.RemoveListener(ContinueAfterPicture);
-            _startButton.onClick.RemoveListener(ShowSelect);
+            _startButton.onClick.RemoveListener(StartGame);
             _select.StageChosen -= OpenStage;
             _options.Changed -= ApplySettings;
+            _options.TutorialRequested -= StartTutorial;
+        }
+
+        // 타이틀의 [시작] — 따라 하기를 아직 안 봤으면 그것부터, 봤으면 목록
+        private void StartGame()
+        {
+            if (_data.TutorialSeen) ShowSelect();
+            else StartTutorial();
+        }
+
+        // 따라 하기 처음부터 (첫 시작 · 옵션 "규칙 다시 보기")
+        private void StartTutorial() => OpenLesson(0);
+
+        // 따라 하기 레슨을 연다 (GDD §6, 2026-10-07) — 보드 화면을 그대로 쓰고, 클리어 띠 "다음"으로 다음 레슨 · 마지막이면 목록
+        private void OpenLesson(int lesson)
+        {
+            _titleScreen.SetActive(false);
+            _select.gameObject.SetActive(false);
+            _chapterScreen.SetActive(false);
+            _boardScreen.SetActive(true);
+            _current = -1;
+            _lesson = lesson;
+            if (!_puzzle.OpenLesson(_tutorialCatalog.Stages[lesson], lesson, _data))
+            {
+                ShowSelect();
+                return;
+            }
+            _nextLabel.text = NextText;
         }
 
         // 모든 Awake · OnEnable 뒤에 첫 화면을 연다
@@ -141,6 +174,12 @@ namespace ColoringBoot.Game
         // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다. 시험 목록에는 그림이 없다
         private void ShowSelect()
         {
+            if (_lesson >= 0)
+            {
+                // 따라 하기를 끝냈거나 목록으로 나갔다 — 다음부터는 자동으로 열지 않는다
+                _lesson = -1;
+                _data.TutorialSeen = true;
+            }
             int justPainted = !_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
             _puzzle.Close();
             _current = -1;
@@ -159,6 +198,7 @@ namespace ColoringBoot.Game
             _chapterScreen.SetActive(false);
             _boardScreen.SetActive(true);
             _paintShown = false;
+            _lesson = -1;
             if (!_puzzle.Open(_list.Stages[index], index + 1, _data, _paletteOverride))
             {
                 ShowSelect();
@@ -171,6 +211,12 @@ namespace ColoringBoot.Game
         // 클리어 띠의 "다음" — 처음 클리어했으면 그림 화면에서 그 단계를 칠한 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
         {
+            if (_lesson >= 0)
+            {
+                if (_lesson + 1 < _tutorialCatalog.Stages.Count) OpenLesson(_lesson + 1);
+                else ShowSelect();
+                return;
+            }
             if (!_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown)
             {
                 ShowPicture(_current);

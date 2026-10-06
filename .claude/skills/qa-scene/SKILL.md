@@ -29,10 +29,10 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 | `…/BoardScreen/TargetView` | BoardView(목표 썸네일) | O |
 | `…/BoardScreen/MixTable` | HorizontalLayoutGroup · MixTableView | O |
 | `…/BoardScreen/BoardArea` | Image(투명, raycastTarget) · BoardView | O |
-| `…/BoardScreen/ClearBanner`(Label · NextButton) · `…/StuckBanner`(Label · UndoButton) | Image · Label | **X**(처음엔 꺼짐) |
-| `…/BoardScreen/UndoButton` · `…/RestartButton` | Image · Button · Label | O |
+| `…/BoardScreen/ClearBanner`(Label · NextButton) · `…/StuckBanner`(Label · UndoButton) · `…/GuideBanner`(Label — 따라 하기 · 힌트 안내, 2026-10-07) | Image · Label | **X**(처음엔 꺼짐) |
+| `…/BoardScreen/UndoButton` · `…/RestartButton` · `…/HintButton` | Image · Button · Label | O |
 | `…/ChapterScreen`(Caption · Picture · NextButton) | Picture에 ChapterView(큰 챕터 그림, Phase 5) | **X**(처음 클리어한 뒤) |
-| `…/OptionsPanel`(Title · SymbolsButton · SoundButton · CloseButton) | Image(불투명) · OptionsView | **X** |
+| `…/OptionsPanel`(Title · SymbolsButton · SoundButton · TutorialButton · CloseButton) | Image(불투명) · OptionsView | **X** |
 | `…/StatsPanel`(Text · CloseButton) | Image(불투명) · StatsView | **X**(주소 `?stats`) |
 | `/Sound` | SoundController | O |
 | `/Puzzle` | PuzzleController | O |
@@ -48,13 +48,14 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `…/BoardScreen/BoardArea` Image: color.a = 0 · raycastTarget = true
 - `…/BoardScreen/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/BoardScreen/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
 - 연출 값(Phase 7.4): BoardArea BoardView `_motion` = `Assets/Data/MotionSettings.asset` · TargetView `_motion` = null(목표 썸네일은 연출 없음)
+- 안내 손가락 표시(2026-10-07): BoardArea BoardView `_guideSprite` null 아님 · TargetView `_guideSprite` = null
 - 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
-- `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner` · `_overlays` = 옵션 · 기록 패널(열려 있으면 키보드 무시, 2026-10-05)
-- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton`
-- `…/SelectScreen` StageSelectView: `_title` · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
-- `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton`
+- `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner` · `_hintButton` · `_guideBanner` · `_guideLabel` · `_overlays` = 옵션 · 기록 패널(열려 있으면 키보드 무시, 2026-10-05)
+- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton` · `_labCatalog`(시험 목록 `?lab` — 모두 풀리고 `minMoves` 일치 · 이름 글자 · 파일 이름이 챕터 목록과 안 겹침, 2026-10-06) · `_tutorialCatalog`(따라 하기 — 레슨 수 = `TutorialLessons.Count` · 안내대로 그으면 풀림(= 최소 수) · 일부러 막히는 획은 막힘 · 문구 · 이름 글자 · 파일 이름 안 겹침, 2026-10-07)
+- `…/SelectScreen` StageSelectView: `_title` · `_subtitle`(챕터 제목 줄 — 시험 목록에서 숨김) · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
+- `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton` · `_tutorialButton`(규칙 다시 보기)
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
 - `…/MixTable` MixTableView: `_chipSprite`
 - 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing` · `_ghost` · `_symbol`

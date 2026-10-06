@@ -40,7 +40,10 @@ public static class QaScene
         // 연출(Phase 7.4): 플레이 보드만 MotionSettings — 목표 썸네일은 없음, 안내 띠는 나타나며 켜짐
         Expect(new SerializedObject(area.GetComponent<BoardView>()).FindProperty("_motion").objectReferenceValue is MotionSettings, "BoardArea 연출 값(MotionSettings)");
         Expect(new SerializedObject(safeArea.Find("BoardScreen/TargetView").GetComponent<BoardView>()).FindProperty("_motion").objectReferenceValue == null, "TargetView 연출 없음");
-        foreach (string banner in new[] { "BoardScreen/ClearBanner", "BoardScreen/StuckBanner" })
+        // 따라 하기 · 힌트 손가락 표시(2026-10-07): 플레이 보드만
+        Expect(new SerializedObject(area.GetComponent<BoardView>()).FindProperty("_guideSprite").objectReferenceValue != null, "BoardArea 안내 손가락 표시");
+        Expect(new SerializedObject(safeArea.Find("BoardScreen/TargetView").GetComponent<BoardView>()).FindProperty("_guideSprite").objectReferenceValue == null, "TargetView 안내 표시 없음");
+        foreach (string banner in new[] { "BoardScreen/ClearBanner", "BoardScreen/StuckBanner", "BoardScreen/GuideBanner" })
             Expect(safeArea.Find(banner)?.GetComponent<ScreenFade>() != null, $"{banner} 전환(ScreenFade)");
 
         var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
@@ -52,7 +55,8 @@ public static class QaScene
 
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
             "_palettes", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
-            "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner");
+            "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner",
+            "_hintButton", "_guideBanner", "_guideLabel");
         // 보드를 덮는 패널(옵션 · 기록) — 열려 있으면 키보드 입력을 받지 않는다(2026-10-05)
         SerializedProperty overlays = new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_overlays");
         Expect(overlays.arraySize == 2 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
@@ -61,12 +65,12 @@ public static class QaScene
         CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
             "_art", "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
-            "_titleScreen", "_startButton", "_labCatalog");
+            "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog");
         foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
         CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");
-        CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton");
+        CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton", "_tutorialButton");
         CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
         Expect(Object.FindAnyObjectByType<SoundController>() != null, "SoundController 있음");
         var catalog = (StageCatalog)new SerializedObject(flow).FindProperty("_catalog").objectReferenceValue;
@@ -98,6 +102,28 @@ public static class QaScene
         Expect(labMissing.Length == 0, $"시험 목록 이름 글자가 폰트에 없음 [{labMissing}]");
         Expect(!lab.Stages.Any(s => catalog.Stages.Any(c => c.name == s.name)), "시험 목록 파일 이름이 챕터 목록과 겹치지 않음");
 
+        // 따라 하기(2026-10-07): 레슨 수 = 목록 수 · 안내한 획대로 그으면 풀림(= 최소 수) · 일부러 막히는 획은 막힘 · 문구 글자 · 파일 이름이 다른 목록과 안 겹침
+        var tutorial = (StageCatalog)new SerializedObject(flow).FindProperty("_tutorialCatalog").objectReferenceValue;
+        Expect(tutorial.Stages.Count == TutorialLessons.Count && tutorial.Stages.All(s => s != null), $"따라 하기 목록 {tutorial.Stages.Count}개 = 레슨 {TutorialLessons.Count}개");
+        for (int i = 0; i < Mathf.Min(tutorial.Stages.Count, TutorialLessons.Count); i++)
+        {
+            Stage stage = Stage.Parse(tutorial.Stages[i].text);
+            var board = new Board(stage);
+            PaintColor[] state = board.CreateStartState();
+            bool brushed = TutorialLessons.Path(i).All(g => board.IndexOf(g.Cell) >= 0 && board.Brush(state, board.IndexOf(g.Cell), g.Direction));
+            Expect(brushed && board.IsSolved(state) && stage.MinMoves == TutorialLessons.Path(i).Count, $"따라 하기 {i + 1} 안내대로 풀림 · 최소 {stage.MinMoves}수");
+            TutorialLessons.Guide? trap = TutorialLessons.Trap(i);
+            if (trap.HasValue)
+            {
+                PaintColor[] trapped = board.CreateStartState();
+                int cell = board.IndexOf(trap.Value.Cell);
+                Expect(cell >= 0 && board.Brush(trapped, cell, trap.Value.Direction) && board.IsDead(trapped), $"따라 하기 {i + 1} 일부러 막히는 획이 막힘");
+            }
+        }
+        string lessonMissing = MissingGlyphs(font, TutorialLessons.Texts().Concat(tutorial.Stages.Select(s => Stage.Parse(s.text).Name)));
+        Expect(lessonMissing.Length == 0, $"따라 하기 문구 · 이름 글자가 폰트에 없음 [{lessonMissing}]");
+        Expect(!tutorial.Stages.Any(s => catalog.Stages.Concat(lab.Stages).Any(c => c.name == s.name)), "따라 하기 파일 이름이 다른 목록과 겹치지 않음");
+
         // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
         var art = (ChapterArt)new SerializedObject(flow).FindProperty("_art").objectReferenceValue;
         Expect(art.Steps.Count == catalog.Stages.Count, $"그림 단계 {art.Steps.Count}개 = 스테이지 {catalog.Stages.Count}개");
@@ -119,7 +145,7 @@ public static class QaScene
             var colors = new SerializedObject(each).FindProperty("_colors");
             Expect(colors.arraySize == 7 && Enumerable.Range(0, 7).All(i => colors.GetArrayElementAtIndex(i).colorValue.a == 1f), $"팔레트 {each.Id} 7색 · 알파 1");
         }
-        foreach (TextAsset stage in catalog.Stages.Concat(lab.Stages))
+        foreach (TextAsset stage in catalog.Stages.Concat(lab.Stages).Concat(tutorial.Stages))
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
         foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine" })
         {

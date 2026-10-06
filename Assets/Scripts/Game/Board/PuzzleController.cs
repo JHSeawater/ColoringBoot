@@ -26,7 +26,17 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _clearLabel;
         [SerializeField] private GameObject _stuckBanner;
         [SerializeField] private GameObject[] _overlays;   // 보드를 덮는 패널(옵션 · 기록) — 하나라도 열려 있으면 키보드 입력을 받지 않는다
+        [SerializeField] private Button _hintButton;
+        [SerializeField] private GameObject _guideBanner;  // 따라 하기 · 힌트 안내 한 줄 (2026-10-07)
+        [SerializeField] private TMP_Text _guideLabel;
 
+        private const int HintLimit = 200000;     // 힌트 탐색 상한(상태 하나당) — 지금 스테이지 최악 4만여 개(2026-10-07 에디터 실측 327 ms)
+        private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
+        private const string HintNotFound = "힌트를 찾지 못했어요";
+
+        private IAdService _ads;
+        private int _lesson = -1;    // 따라 하기 레슨(-1 = 아님) — TutorialLessons
+        private bool _trapDone;      // 레슨의 일부러 막혀 보기를 마쳤는가
         private SaveData _data;
         private string _stageId;   // 스테이지 파일 이름 — 기록의 키
         private PuzzleSession _session;
@@ -60,6 +70,8 @@ namespace ColoringBoot.Game
             _data = data;
             _stageId = asset.name;
             FirstClear = false;
+            _lesson = -1;
+            _trapDone = false;
             StopAfterStroke();
             _session = new PuzzleSession(new Board(stage));
             _minMoves = stage.MinMoves;
@@ -80,6 +92,18 @@ namespace ColoringBoot.Game
             Refresh();
             return true;
         }
+
+        // 따라 하기 레슨을 연다(TutorialLessons의 lesson번째) — 정해진 획만 그을 수 있고, 손가락 표시와 한 줄 설명이 나온다
+        public bool OpenLesson(TextAsset asset, int lesson, SaveData data)
+        {
+            if (!Open(asset, lesson + 1, data)) return false;
+            _lesson = lesson;
+            Refresh();
+            return true;
+        }
+
+        // 광고 자리 — 힌트는 보상형 광고를 거친다(지금은 NoAdService라 바로 준다)
+        public void SetAds(IAdService ads) => _ads = ads;
 
         // 스테이지의 팔레트 이름 → 팔레트 에셋. 이름이 없으면 기본, 모르는 이름이면 기본 + 경고
         private ColorPalette ChoosePalette(string id, string stage)
@@ -113,6 +137,7 @@ namespace ColoringBoot.Game
             _undoButton.onClick.AddListener(Undo);
             _stuckUndoButton.onClick.AddListener(Undo);
             _restartButton.onClick.AddListener(Restart);
+            _hintButton.onClick.AddListener(RequestHint);
         }
 
         private void OnDisable()
@@ -121,6 +146,7 @@ namespace ColoringBoot.Game
             _undoButton.onClick.RemoveListener(Undo);
             _stuckUndoButton.onClick.RemoveListener(Undo);
             _restartButton.onClick.RemoveListener(Restart);
+            _hintButton.onClick.RemoveListener(RequestHint);
         }
 
         // PC 입력 (CLAUDE.md §6): Ctrl+Z 되돌리기 · 방향키 칸 선택 · 숫자키 1 · 3 · 5 · 7 · 9 · 0(11시) 붓질 · Esc 선택 해제
@@ -158,6 +184,12 @@ namespace ColoringBoot.Game
         private void OnBrushRequested(int cell, HexDirection dir)
         {
             if (_session == null || _session.IsSolved) return;
+            // 따라 하기: 안내한 줄 · 방향만 긋는다(같은 줄의 어느 칸이든). 아니면 안내를 다시 보인다
+            if (_lesson >= 0 && !LessonAllows(cell, dir))
+            {
+                ShowLessonGuide();
+                return;
+            }
             int count = _session.Trace(cell, dir, _path, _pathBrushes);
             for (int k = 0; k < count; k++) _pathBefore[k] = _session.ColorAt(_path[k]);
             bool wasDead = _session.IsDead;
@@ -219,7 +251,9 @@ namespace ColoringBoot.Game
         // 되돌리기 · 처음부터는 끌던 획을 버린다 — 바뀐 상태에 옛 미리보기 · 옛 획이 남지 않게 (2026-10-05 코드 점검 9)
         private void Undo()
         {
+            bool wasDead = _session != null && _session.IsDead;
             if (_session == null || !_session.Undo()) return;
+            if (_lesson >= 0 && wasDead) _trapDone = true;   // 따라 하기: 막혔다가 되돌리면 본 풀이로
             StopAfterStroke();
             _boardView.CancelDrag();
             _data.Stats.Undid(_stageId);
@@ -230,6 +264,7 @@ namespace ColoringBoot.Game
         private void Restart()
         {
             if (_session == null || _session.MoveCount == 0) return;
+            if (_lesson >= 0 && _session.IsDead) _trapDone = true;
             StopAfterStroke();
             _boardView.CancelDrag();
             _session.Restart();
@@ -263,11 +298,80 @@ namespace ColoringBoot.Game
             _clearBanner.SetActive(solved && !holdBanners);
             if (solved)
             {
-                _clearLabel.text = _data.Progress.IsPerfect(_stageId, _minMoves) ? $"완벽! 최소 {best.Value}수" : $"완성! 최고 {best.Value}수";
+                if (_lesson >= 0) _clearLabel.text = TutorialLessons.Done(_lesson);
+                else _clearLabel.text = _data.Progress.IsPerfect(_stageId, _minMoves) ? $"완벽! 최소 {best.Value}수" : $"완성! 최고 {best.Value}수";
             }
             _stuckBanner.SetActive(!solved && _session.IsDead && !holdBanners);
             _undoButton.interactable = _session.MoveCount > 0;
             _restartButton.interactable = _session.MoveCount > 0;
+            // 안내(따라 하기 · 힌트)는 상태가 바뀔 때마다 지운다 — 따라 하기면 다음 획 안내를 다시 보인다. 따라 하기에서는 힌트를 쓰지 않는다(버튼은 흐리게)
+            _boardView.HideGuide();
+            _guideBanner.SetActive(false);
+            _hintButton.interactable = !solved && _lesson < 0;
+            if (_lesson >= 0 && !solved) ShowLessonGuide();
+        }
+
+        // 따라 하기: 지금 그을 획이 있으면 손가락 표시 · 한 줄 설명(막혀서 되돌려야 할 때는 막힘 띠의 되돌리기를 쓴다)
+        private void ShowLessonGuide()
+        {
+            if (_session.IsDead || !TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return;
+            _boardView.ShowGuide(_session.Board.IndexOf(guide.Cell), guide.Direction);
+            ShowGuideText(guide.Caption);
+        }
+
+        // 안내한 줄 · 방향인가 — 같은 줄이면 어느 칸에서 그어도 결과가 같다(CLAUDE.md §3)
+        private bool LessonAllows(int cell, HexDirection dir)
+        {
+            if (_session.IsDead || !TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return false;
+            return dir == guide.Direction && _session.Board.CoordOf(cell).LineKey(dir) == guide.Cell.LineKey(dir);
+        }
+
+        // 힌트 버튼 — 보상형 광고 자리를 거친다(지금은 바로). 횟수 제한 없음 · "완벽"과 무관 (GDD §5 · §6, 2026-10-07)
+        private void RequestHint()
+        {
+            if (_session == null || _session.IsSolved || _lesson >= 0) return;
+            _ads.ShowRewarded(ShowHint);
+        }
+
+        private void ShowHint()
+        {
+            if (_session == null || _session.IsSolved) return;
+            if (_afterStroke != null)
+            {
+                // 붓질 연출 중이면 끝난 모습으로 정리한 뒤(막힘 띠가 나중에 겹쳐 뜨지 않게)
+                StopAfterStroke();
+                Refresh();
+            }
+            _boardView.CancelDrag();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Hint hint = _session.FindHint(HintLimit);
+            if (watch.ElapsedMilliseconds > SlowHintMs) Debug.Log($"힌트 계산 {watch.ElapsedMilliseconds} ms ({_stageId})", this);
+            _data.Stats.Hinted(_stageId);
+            _data.SaveStats();
+
+            switch (hint.Kind)
+            {
+                case HintKind.Next:
+                    // 줄의 출발 끝(붓이 처음 지나는 칸)에서 그 방향으로 끄는 모습을 보인다
+                    _session.Trace(hint.Move.Cell, hint.Move.Direction, _path, _pathBrushes);
+                    _boardView.ShowGuide(_path[0], hint.Move.Direction);
+                    ShowGuideText($"표시한 대로 그어 보세요 · 남은 {hint.Count}수");
+                    break;
+                case HintKind.Undo:
+                    ShowGuideText($"지금은 풀 수 없어요 · {hint.Count}수 되돌려 보세요");
+                    break;
+                default:
+                    ShowGuideText(HintNotFound);
+                    break;
+            }
+        }
+
+        // 안내 띠는 막힘 띠와 같은 자리 — 안내를 보이는 동안 막힘 띠를 가린다(다음 Refresh에서 돌아온다)
+        private void ShowGuideText(string text)
+        {
+            _stuckBanner.SetActive(false);
+            _guideLabel.text = text;
+            _guideBanner.SetActive(true);
         }
     }
 }

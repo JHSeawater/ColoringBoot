@@ -1,12 +1,62 @@
+using System.Collections;
 using ColoringBoot.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace ColoringBoot.Game
 {
-    // BoardView 붓질 미리보기 — 붓 경로 선 · 칠해질 칸의 결과 색 (경로는 Core Trace, 필드는 BoardView.cs)
+    // BoardView 붓질 미리보기 — 붓 경로 선 · 칠해질 칸의 결과 색 (경로는 Core Trace, 필드는 BoardView.cs) · 안내 손가락 표시
     public sealed partial class BoardView
     {
+        // 안내 (튜토리얼 · 힌트, 2026-10-07): cell에서 dir 쪽으로 끄는 손가락 표시 + 그 획의 미리보기. HideGuide · 다음 끌기까지 남는다
+        public void ShowGuide(int cell, HexDirection dir)
+        {
+            StopGuide();
+            if (_layoutDirty)
+            {
+                // 스테이지를 연 프레임이면 칸 자리가 아직 없다 — 먼저 배치한다
+                _layoutDirty = false;
+                Layout();
+            }
+            ShowPreview(cell, dir);
+            if (_guide == null) return;
+            _guideCell = cell;
+            _guideDirection = dir;
+            _guide.gameObject.SetActive(true);
+            _guideRoutine = StartCoroutine(AnimateGuide());
+        }
+
+        public void HideGuide()
+        {
+            StopGuide();
+            ClearPreview();
+        }
+
+        private void StopGuide()
+        {
+            if (_guideRoutine != null) StopCoroutine(_guideRoutine);
+            _guideRoutine = null;
+            if (_guide != null) _guide.gameObject.SetActive(false);
+        }
+
+        // 손가락 표시: 칸에서 방향 쪽으로 움직였다가 흐려지기를 되풀이한다
+        private IEnumerator AnimateGuide()
+        {
+            RectTransform rect = _guide.rectTransform;
+            for (float time = 0f; ; time += Time.unscaledDeltaTime)
+            {
+                float k = time % GuideCycle / GuideCycle;
+                float move = Mathf.Clamp01(k / GuideMovePart);
+                float fade = k <= GuideMovePart ? 1f : 1f - (k - GuideMovePart) / (1f - GuideMovePart);
+                rect.anchoredPosition = _centers[_guideCell] + _directionVectors[(int)_guideDirection] * (move * GuideDistance * _radius);
+                rect.sizeDelta = Vector2.one * (GuideSize * _radius);
+                Color color = _guideColor;
+                color.a *= fade;
+                _guide.color = color;
+                yield return null;
+            }
+        }
+
         // 미리보기: 붓 경로(붓 색이 묻은 구간은 그 색, 빈 붓은 가는 선)와 칠해질 칸의 결과 색
         private void ShowPreview(int cell, HexDirection dir)
         {

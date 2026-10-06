@@ -18,11 +18,15 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _soundButton;
         [SerializeField] private TMP_Text _soundLabel;
         [SerializeField] private Button _closeButton;
+        [SerializeField] private Button _tutorialButton;   // 규칙 다시 보기(따라 하기, 2026-10-07)
 
         private SaveData _data;
 
         // 설정이 바뀌었다 (GameFlow가 보드 · 소리에 적용)
         public event Action Changed;
+
+        // 규칙 다시 보기 — 옵션을 닫고 GameFlow가 따라 하기를 연다
+        public event Action TutorialRequested;
 
         public void Show(SaveData data)
         {
@@ -36,6 +40,7 @@ namespace ColoringBoot.Game
             _symbolsButton.onClick.AddListener(ToggleSymbols);
             _soundButton.onClick.AddListener(ToggleSound);
             _closeButton.onClick.AddListener(Hide);
+            _tutorialButton.onClick.AddListener(RequestTutorial);
         }
 
         private void OnDisable()
@@ -43,6 +48,13 @@ namespace ColoringBoot.Game
             _symbolsButton.onClick.RemoveListener(ToggleSymbols);
             _soundButton.onClick.RemoveListener(ToggleSound);
             _closeButton.onClick.RemoveListener(Hide);
+            _tutorialButton.onClick.RemoveListener(RequestTutorial);
+        }
+
+        private void RequestTutorial()
+        {
+            Hide();
+            TutorialRequested?.Invoke();
         }
 
         private void ToggleSymbols()

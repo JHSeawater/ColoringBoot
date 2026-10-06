@@ -12,6 +12,7 @@ using UnityEngine.UI;
 // 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 시험 목록(?lab): Lab() → 선택 화면(모두 열림) → 같은 방식
+// 따라 하기: 저장 키가 없으면 타이틀 [시작]이 레슨 1을 연다 → Drag로 안내한 획 → Press("BoardScreen/ClearBanner/NextButton"). 힌트: Press("BoardScreen/HintButton")
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
 {
@@ -167,6 +168,10 @@ public static class BoardQa
             Transform screen = safe.Find("BoardScreen");
             text += $" | {screen.Find("StageName").GetComponentInChildren<TMPro.TMP_Text>().text} · {screen.Find("MoveCounter").GetComponentInChildren<TMPro.TMP_Text>().text}";
             if (Active("ClearBanner")) text += $" · 띠: {screen.Find("ClearBanner/Label").GetComponent<TMPro.TMP_Text>().text} [{screen.Find("ClearBanner/NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
+            if (Active("StuckBanner")) text += " · 막힘 띠";
+            // 따라 하기 · 힌트 안내(2026-10-07): 안내 띠 문구 · 손가락 표시 · 힌트 버튼
+            if (Active("GuideBanner")) text += $" · 안내: {screen.Find("GuideBanner/Label").GetComponent<TMPro.TMP_Text>().text}";
+            text += $" · 손가락 {screen.Find("BoardArea/Guide")?.gameObject.activeSelf == true} · 힌트 버튼 {screen.Find("HintButton").GetComponent<Button>().interactable}";
         }
         return text;
     }

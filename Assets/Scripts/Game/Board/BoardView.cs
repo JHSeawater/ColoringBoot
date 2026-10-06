@@ -24,6 +24,10 @@ namespace ColoringBoot.Game
         private const float EmptyWidth = 0.09f;      // 빈 붓 구간 굵기
         private const float KeyMinDot = 0.45f;       // 방향키 칸 이동: 이 각도(코사인) 안쪽 칸만 후보
         private const float KeyDistanceWeight = 6f;  // 방향키 칸 이동: 거리 벌점(반지름 × 이 값당 1)
+        private const float GuideCycle = 1.2f;       // 안내 손가락 표시 한 번(초): 끌기 → 흐려짐
+        private const float GuideMovePart = 0.7f;    // 그중 움직이는 비율
+        private const float GuideDistance = 1.7f;    // 움직이는 거리
+        private const float GuideSize = 0.6f;        // 표시 지름
 
         [SerializeField] private CellView _cellPrefab;
         [SerializeField] private Button _directionButtonPrefab;
@@ -47,6 +51,9 @@ namespace ColoringBoot.Game
         [SerializeField] private float _symbolDarkAbove = 0.6f;
         [Tooltip("붓질 물결 · 클리어 · 막힘 연출 값 — 비우면 연출 없음(목표 썸네일 · 레벨 에디터)")]
         [SerializeField] private MotionSettings _motion;
+        [Tooltip("안내 손가락 표시(튜토리얼 · 힌트) — 비우면 표시 없음(목표 썸네일 · 레벨 에디터)")]
+        [SerializeField] private Sprite _guideSprite;
+        [SerializeField] private Color _guideColor = new Color32(0x38, 0x20, 0x08, 0x99);
 
         // 붓질 요청 (칸 인덱스, 방향)
         public event Action<int, HexDirection> BrushRequested;
@@ -78,6 +85,12 @@ namespace ColoringBoot.Game
         private PaintColor[] _waveBefore;
         private int _waveCount;
 
+        // 안내 손가락 표시 (튜토리얼 · 힌트, 2026-10-07)
+        private Image _guide;
+        private Coroutine _guideRoutine;
+        private int _guideCell;
+        private HexDirection _guideDirection;
+
         // 드래그: 처음 누른 손가락만 따라간다
         private int _pointerId = NoPointer;
         private int _dragCell;
@@ -90,7 +103,11 @@ namespace ColoringBoot.Game
             _basePosition = _rect.anchoredPosition;
         }
 
-        private void OnDisable() => StopMotion();
+        private void OnDisable()
+        {
+            StopMotion();
+            StopGuide();
+        }
 
         // 스테이지마다 다시 부른다 — 이전 스테이지의 칸 · 선 · 버튼을 치우고 새로 만든다
         public void Build(PuzzleSession session, ColorPalette palette)
@@ -103,6 +120,7 @@ namespace ColoringBoot.Game
                 Destroy(child.gameObject);
             }
             StopMotion();
+            StopGuide();
             _selected = -1;
             _pointerId = NoPointer;
             _dragDirection = -1;
@@ -143,6 +161,18 @@ namespace ColoringBoot.Game
                 AddTrigger(trigger, EventTriggerType.PointerExit, ClearPreview);
                 button.gameObject.SetActive(false);
                 _buttons[d] = (RectTransform)button.transform;
+            }
+
+            // 안내 손가락 표시: 맨 위(방향 버튼 다음)에 그린다
+            _guide = null;
+            if (_guideSprite != null)
+            {
+                var guide = new GameObject("Guide", typeof(RectTransform), typeof(Image));
+                guide.transform.SetParent(transform, false);
+                _guide = guide.GetComponent<Image>();
+                _guide.sprite = _guideSprite;
+                _guide.raycastTarget = false;
+                guide.SetActive(false);
             }
             _layoutDirty = true;
         }

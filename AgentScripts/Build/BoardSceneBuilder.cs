@@ -22,6 +22,7 @@ public static class BoardSceneBuilder
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
     private const string CatalogPath = "Assets/Data/StageCatalog.asset";
     private const string LabCatalogPath = "Assets/Data/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
+    private const string TutorialCatalogPath = "Assets/Data/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
     private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/Build/ChapterArtBuilder.cs 먼저
     private const string ThemePath = "Assets/Data/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
@@ -258,6 +259,8 @@ public static class BoardSceneBuilder
         SetRefs(boardView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
         SetValues(boardView, ("_emptyColor", T.EmptyCell), ("_emptyTrailColor", new Color(Lead.r, Lead.g, Lead.b, 0.55f)));
         SetRefs(boardView, ("_motion", LoadOrCreate<MotionSettings>(MotionPath)));   // 플레이 보드만 연출(목표 썸네일 · 레벨 에디터는 없음)
+        SetRefs(boardView, ("_guideSprite", Sprite("Circle")));                        // 따라 하기 · 힌트 손가락 표시도 플레이 보드만
+        SetValues(boardView, ("_guideColor", new Color(Lead.r, Lead.g, Lead.b, 0.6f)));
 
         // 안내 띠 (아래 버튼 위). 클리어 안내에는 다음 버튼, 막힘 안내에는 되돌리기 버튼을 함께 둔다
         GameObject clearBanner = Banner(boardScreen, "ClearBanner", Strong, "", 300f);
@@ -265,10 +268,19 @@ public static class BoardSceneBuilder
         Button nextButton = BannerButton(clearBanner, "NextButton", "다음", Strong);
         GameObject stuckBanner = Banner(boardScreen, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
         Button stuckUndoButton = BannerButton(stuckBanner, "UndoButton", "되돌리기", Warn);
+        // 따라 하기 · 힌트 안내 한 줄 (2026-10-07) — 막힘 띠와 같은 자리, 길면 글자를 줄인다
+        GameObject guideBanner = Banner(boardScreen, "GuideBanner", T.Next, "", 0f);
+        TMP_Text guideLabel = guideBanner.GetComponentInChildren<TMP_Text>();
+        guideLabel.rectTransform.offsetMin = new Vector2(30f, 0f);
+        guideLabel.rectTransform.offsetMax = new Vector2(-30f, 0f);
+        guideLabel.enableAutoSizing = true;
+        guideLabel.fontSizeMin = 32f;
+        guideLabel.fontSizeMax = 52f;
 
-        // 아래 버튼 줄 (한 손이 닿는 곳) — 자주 누르는 둘만
-        Button undoButton = BottomButton(boardScreen, "UndoButton", "되돌리기", -250f, 460f, false);
-        Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 250f, 460f, false);
+        // 아래 버튼 줄 (한 손이 닿는 곳) — 되돌리기 · 처음부터 · 힌트
+        Button undoButton = BottomButton(boardScreen, "UndoButton", "되돌리기", -340f, 300f, false);
+        Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 0f, 300f, false);
+        Button hintButton = BottomButton(boardScreen, "HintButton", "힌트", 340f, 300f, false);
         boardScreen.SetActive(false);
 
         GameObject chapterScreen = ChapterScreen(safeArea, out ChapterView chapterPicture, out TMP_Text chapterCaption, out Button chapterNextButton);
@@ -294,7 +306,10 @@ public static class BoardSceneBuilder
             ("_stuckUndoButton", stuckUndoButton),
             ("_clearBanner", clearBanner),
             ("_clearLabel", clearLabel),
-            ("_stuckBanner", stuckBanner));
+            ("_stuckBanner", stuckBanner),
+            ("_hintButton", hintButton),
+            ("_guideBanner", guideBanner),
+            ("_guideLabel", guideLabel));
         // 보드를 덮는 패널 — 열려 있으면 키보드가 뒤의 보드를 움직이지 않는다(2026-10-05)
         SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject);
 
@@ -321,7 +336,8 @@ public static class BoardSceneBuilder
             ("_chapterNextLabel", chapterNextButton.GetComponentInChildren<TMP_Text>()),
             ("_titleScreen", titleScreen),
             ("_startButton", startButton),
-            ("_labCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(LabCatalogPath)));
+            ("_labCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(LabCatalogPath)),
+            ("_tutorialCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(TutorialCatalogPath)));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
@@ -502,13 +518,14 @@ public static class BoardSceneBuilder
 
         Button symbols = PanelButton(panel, "SymbolsButton", "", 260f);
         Button sound = PanelButton(panel, "SoundButton", "", 80f);
+        Button tutorial = PanelButton(panel, "TutorialButton", "규칙 다시 보기", -100f);
         Button close = PanelButton(panel, "CloseButton", "닫기", -300f);
 
         var view = panel.AddComponent<OptionsView>();
         SetRefs(view,
             ("_symbolsButton", symbols), ("_symbolsLabel", symbols.GetComponentInChildren<TMP_Text>()),
             ("_soundButton", sound), ("_soundLabel", sound.GetComponentInChildren<TMP_Text>()),
-            ("_closeButton", close));
+            ("_closeButton", close), ("_tutorialButton", tutorial));
         panel.SetActive(false);
         return view;
     }

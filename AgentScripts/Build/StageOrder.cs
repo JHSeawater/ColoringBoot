@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 // 챕터 1 스테이지 순서 (Phase 4.5, 사용자 결정 2026-10-02) — run_script(file=AgentScripts/Build/StageOrder.cs, entry=StageOrder.SetOrder)
-// 시험 목록(?lab) 순서 — entry=StageOrder.SetLabOrder (2026-10-06)
+// 시험 목록(?lab) 순서 — entry=StageOrder.SetLabOrder (2026-10-06) · 따라 하기 순서 — entry=StageOrder.SetTutorialOrder (2026-10-07)
 // StageCatalog를 이 순서로 맞춘다(다시 실행해도 같은 결과). 목록에 있는데 여기 없는 스테이지가 있으면 바꾸지 않고 알린다
 public static class StageOrder
 {
@@ -45,16 +45,27 @@ public static class StageOrder
     };
 
     // 시험 목록 에셋을 이 순서로 맞춘다(없으면 만든다) — run_script(file=AgentScripts/Build/StageOrder.cs, entry=StageOrder.SetLabOrder)
-    public static string SetLabOrder()
+    public static string SetLabOrder() => WriteCatalog(LabCatalogPath, LabFolder, LabOrder);
+
+    // 따라 하기(튜토리얼, 2026-10-07): 레슨 i = 이 순서의 i번째 — Assets/Scripts/Game/Board/TutorialLessons.cs와 짝
+    private const string TutorialCatalogPath = "Assets/Data/TutorialCatalog.asset";
+    private const string TutorialFolder = "Assets/Data/Stages/Tutorial";
+    private static readonly string[] TutorialOrder = { "TutorialBrush", "TutorialMix", "TutorialUndo" };
+
+    // entry=StageOrder.SetTutorialOrder
+    public static string SetTutorialOrder() => WriteCatalog(TutorialCatalogPath, TutorialFolder, TutorialOrder);
+
+    // 목록 에셋을 order 순서로 맞춘다(없으면 만든다)
+    private static string WriteCatalog(string catalogPath, string folder, string[] order)
     {
-        var stages = LabOrder.Select(name => AssetDatabase.LoadAssetAtPath<TextAsset>($"{LabFolder}/{name}.json")).ToArray();
-        string[] missing = LabOrder.Where((name, i) => stages[i] == null).ToArray();
+        var stages = order.Select(name => AssetDatabase.LoadAssetAtPath<TextAsset>($"{folder}/{name}.json")).ToArray();
+        string[] missing = order.Where((name, i) => stages[i] == null).ToArray();
         if (missing.Length > 0) return $"파일 없음: {string.Join(", ", missing)} — AgentScripts/Tools/Refresh.cs 먼저";
-        var catalog = AssetDatabase.LoadAssetAtPath<StageCatalog>(LabCatalogPath);
+        var catalog = AssetDatabase.LoadAssetAtPath<StageCatalog>(catalogPath);
         if (catalog == null)
         {
             catalog = ScriptableObject.CreateInstance<StageCatalog>();
-            AssetDatabase.CreateAsset(catalog, LabCatalogPath);
+            AssetDatabase.CreateAsset(catalog, catalogPath);
         }
 
         var so = new SerializedObject(catalog);
@@ -63,6 +74,6 @@ public static class StageOrder
         for (int i = 0; i < stages.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = stages[i];
         so.ApplyModifiedPropertiesWithoutUndo();
         AssetDatabase.SaveAssets();
-        return $"시험 목록 {stages.Length}개: {string.Join(" → ", LabOrder)} → {LabCatalogPath}";
+        return $"목록 {stages.Length}개: {string.Join(" → ", order)} → {catalogPath}";
     }
 }
