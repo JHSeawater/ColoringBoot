@@ -33,6 +33,8 @@ namespace ColoringBoot.Game
         private const int HintLimit = 200000;     // 힌트 탐색 상한(상태 하나당) — 지금 스테이지 최악 4만여 개(2026-10-07 에디터 실측 327 ms)
         private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
         private const string HintNotFound = "힌트를 찾지 못했어요";
+        private const float GoalPulseScale = 0.12f;   // 따라 하기 1 클리어: 목표 그림이 커졌다 작아지는 정도 · 한 번 걸리는 초
+        private const float GoalPulseCycle = 1f;
 
         private IAdService _ads;
         private int _lesson = -1;    // 따라 하기 레슨(-1 = 아님) — TutorialLessons
@@ -47,6 +49,7 @@ namespace ColoringBoot.Game
         private PaintColor[] _pathBrushes;
         private PaintColor[] _pathBefore;
         private Coroutine _afterStroke;   // 물결이 끝난 뒤 클리어 반응 · 막힘 흔들림 → 안내 띠
+        private Coroutine _goalPulse;     // 목표 그림 강조(따라 하기 1 클리어 띠가 떠 있는 동안)
 
         // 이번에 연 판에서 처음 클리어했는가 — 그림 칠하기 연출(GameFlow, Phase 5). 되돌렸다 다시 풀어도 유지
         public bool FirstClear { get; private set; }
@@ -118,6 +121,7 @@ namespace ColoringBoot.Game
         public void Close()
         {
             StopAfterStroke();
+            StopGoalPulse();
             if (_session != null) _data.SaveStats();
             _session = null;
         }
@@ -184,8 +188,8 @@ namespace ColoringBoot.Game
         private void OnBrushRequested(int cell, HexDirection dir)
         {
             if (_session == null || _session.IsSolved) return;
-            // 따라 하기: 안내한 줄 · 방향만 긋는다(같은 줄의 어느 칸이든). 아니면 안내를 다시 보인다
-            if (_lesson >= 0 && !LessonAllows(cell, dir))
+            // 따라 하기: 안내한 줄 · 방향만 긋는다(같은 줄의 어느 칸이든 — 혼자 풀기 레슨은 아무 획이나). 아니면 안내를 다시 보인다
+            if (_lesson >= 0 && !TutorialLessons.IsFree(_lesson) && !LessonAllows(cell, dir))
             {
                 ShowLessonGuide();
                 return;
@@ -218,6 +222,7 @@ namespace ColoringBoot.Game
             {
                 yield return Wait(_boardView.PlayClear());
                 _clearBanner.SetActive(true);
+                if (_lesson >= 0 && TutorialLessons.PointsAtGoal(_lesson)) _goalPulse = StartCoroutine(PulseGoal());
             }
             else
             {
@@ -237,6 +242,25 @@ namespace ColoringBoot.Game
             if (_afterStroke == null) return;
             StopCoroutine(_afterStroke);
             _afterStroke = null;
+        }
+
+        // 목표 그림 강조: 커졌다 작아지기를 되풀이한다(멈추면 원래 크기)
+        private IEnumerator PulseGoal()
+        {
+            Transform goal = _targetView.transform;
+            for (float time = 0f; ; time += Time.unscaledDeltaTime)
+            {
+                float k = 0.5f - 0.5f * Mathf.Cos(time / GoalPulseCycle * 2f * Mathf.PI);
+                goal.localScale = Vector3.one * (1f + GoalPulseScale * k);
+                yield return null;
+            }
+        }
+
+        private void StopGoalPulse()
+        {
+            if (_goalPulse != null) StopCoroutine(_goalPulse);
+            _goalPulse = null;
+            _targetView.transform.localScale = Vector3.one;
         }
 
         private bool IsCovered()
@@ -287,6 +311,7 @@ namespace ColoringBoot.Game
         // holdBanners: 클리어 · 막힘 띠를 아직 띄우지 않는다(붓질 연출 뒤 AfterStroke가 띄움)
         private void Refresh(bool holdBanners = false)
         {
+            StopGoalPulse();
             _boardView.Render();
             _targetView.Render();
             // 수 카운터: 현재 / 최소 (최소 수가 없는 스테이지는 현재만) · 최고 기록
@@ -304,17 +329,23 @@ namespace ColoringBoot.Game
             _stuckBanner.SetActive(!solved && _session.IsDead && !holdBanners);
             _undoButton.interactable = _session.MoveCount > 0;
             _restartButton.interactable = _session.MoveCount > 0;
-            // 안내(따라 하기 · 힌트)는 상태가 바뀔 때마다 지운다 — 따라 하기면 다음 획 안내를 다시 보인다. 따라 하기에서는 힌트를 쓰지 않는다(버튼은 흐리게)
+            // 안내(따라 하기 · 힌트)는 상태가 바뀔 때마다 지운다 — 따라 하기면 다음 획 안내를 다시 보인다. 따라 하기에서는 힌트를 쓰지 않는다(버튼은 흐리게 — 혼자 풀기 레슨만 씀)
             _boardView.HideGuide();
             _guideBanner.SetActive(false);
-            _hintButton.interactable = !solved && _lesson < 0;
+            _hintButton.interactable = !solved && (_lesson < 0 || TutorialLessons.IsFree(_lesson));
             if (_lesson >= 0 && !solved) ShowLessonGuide();
         }
 
-        // 따라 하기: 지금 그을 획이 있으면 손가락 표시 · 한 줄 설명(막혀서 되돌려야 할 때는 막힘 띠의 되돌리기를 쓴다)
+        // 따라 하기: 지금 그을 획이 있으면 손가락 표시 · 한 줄 설명(막혀서 되돌려야 할 때는 막힘 띠의 되돌리기를 쓴다). 혼자 풀기 레슨은 안내 한 줄만
         private void ShowLessonGuide()
         {
-            if (_session.IsDead || !TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return;
+            if (_session.IsDead) return;
+            if (TutorialLessons.IsFree(_lesson))
+            {
+                ShowGuideText(TutorialLessons.Note(_lesson));
+                return;
+            }
+            if (!TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return;
             _boardView.ShowGuide(_session.Board.IndexOf(guide.Cell), guide.Direction);
             ShowGuideText(guide.Caption);
         }
@@ -329,7 +360,7 @@ namespace ColoringBoot.Game
         // 힌트 버튼 — 보상형 광고 자리를 거친다(지금은 바로). 횟수 제한 없음 · "완벽"과 무관 (GDD §5 · §6, 2026-10-07)
         private void RequestHint()
         {
-            if (_session == null || _session.IsSolved || _lesson >= 0) return;
+            if (_session == null || _session.IsSolved || (_lesson >= 0 && !TutorialLessons.IsFree(_lesson))) return;
             _ads.ShowRewarded(ShowHint);
         }
 

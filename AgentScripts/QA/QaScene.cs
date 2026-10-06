@@ -110,6 +110,13 @@ public static class QaScene
             Stage stage = Stage.Parse(tutorial.Stages[i].text);
             var board = new Board(stage);
             PaintColor[] state = board.CreateStartState();
+            if (TutorialLessons.IsFree(i))
+            {
+                // 혼자 풀기(복습): 솔버로 풀리고 최소 수가 맞는가
+                SolveResult free = Solver.Solve(board, state);
+                Expect(free.Solved && stage.MinMoves == free.Path.Count, $"따라 하기 {i + 1}(혼자 풀기) 풀림 · minMoves {stage.MinMoves} = 솔버 {(free.Solved ? free.Path.Count : -1)}");
+                continue;
+            }
             bool brushed = TutorialLessons.Path(i).All(g => board.IndexOf(g.Cell) >= 0 && board.Brush(state, board.IndexOf(g.Cell), g.Direction));
             Expect(brushed && board.IsSolved(state) && stage.MinMoves == TutorialLessons.Path(i).Count, $"따라 하기 {i + 1} 안내대로 풀림 · 최소 {stage.MinMoves}수");
             TutorialLessons.Guide? trap = TutorialLessons.Trap(i);

@@ -14,5 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.StageCatalog
   _stages:
   - {fileID: 4900000, guid: f2c137461735f324a916a962d3cb5f96, type: 3}
+  - {fileID: 4900000, guid: bd876b84e1e7a594eb970ac84aeadad0, type: 3}
   - {fileID: 4900000, guid: a9155c69eb6b56b428d26d0d3cddea23, type: 3}
   - {fileID: 4900000, guid: 055ad1089efb0094abece01f0a249d5d, type: 3}
+  - {fileID: 4900000, guid: 29a90466e17525a4295517c25970bb6c, type: 3}

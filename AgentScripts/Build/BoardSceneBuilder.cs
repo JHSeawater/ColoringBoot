@@ -265,6 +265,12 @@ public static class BoardSceneBuilder
         // 안내 띠 (아래 버튼 위). 클리어 안내에는 다음 버튼, 막힘 안내에는 되돌리기 버튼을 함께 둔다
         GameObject clearBanner = Banner(boardScreen, "ClearBanner", Strong, "", 300f);
         TMP_Text clearLabel = clearBanner.GetComponentInChildren<TMP_Text>();
+        // 따라 하기 문구가 길어 한 줄 그대로 글자를 줄인다 (2026-10-07 — 줄바꿈을 두면 끝 낱말만 다음 줄로 꺾임)
+        clearLabel.rectTransform.offsetMin = new Vector2(30f, 0f);
+        clearLabel.textWrappingMode = TextWrappingModes.NoWrap;
+        clearLabel.enableAutoSizing = true;
+        clearLabel.fontSizeMin = 32f;
+        clearLabel.fontSizeMax = 52f;
         Button nextButton = BannerButton(clearBanner, "NextButton", "다음", Strong);
         GameObject stuckBanner = Banner(boardScreen, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
         Button stuckUndoButton = BannerButton(stuckBanner, "UndoButton", "되돌리기", Warn);

@@ -50,7 +50,7 @@ public static class StageOrder
     // 따라 하기(튜토리얼, 2026-10-07): 레슨 i = 이 순서의 i번째 — Assets/Scripts/Game/Board/TutorialLessons.cs와 짝
     private const string TutorialCatalogPath = "Assets/Data/TutorialCatalog.asset";
     private const string TutorialFolder = "Assets/Data/Stages/Tutorial";
-    private static readonly string[] TutorialOrder = { "TutorialBrush", "TutorialMix", "TutorialUndo" };
+    private static readonly string[] TutorialOrder = { "TutorialBrush", "TutorialSweep", "TutorialMix", "TutorialUndo", "TutorialReview" };
 
     // entry=StageOrder.SetTutorialOrder
     public static string SetTutorialOrder() => WriteCatalog(TutorialCatalogPath, TutorialFolder, TutorialOrder);
