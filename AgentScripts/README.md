@@ -24,7 +24,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) |
 | `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
-| `StageOrder.cs` | `StageCatalog` 순서(챕터 1) | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder` |
+| `StageOrder.cs` | `StageCatalog` 순서(챕터 1) · 시험 목록 `LabCatalog`(`?lab`, 없으면 만듦) | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder` · `SetLabOrder` |
 | `ArtCheck.py` | (읽기 전용) 그림 파일 규격 점검 — `ArtSpec.md` §6 | 그림을 받았을 때 | `python … [원본 폴더]`(없으면 `ArtSource/Chapter1`) |
 | `ChapterArtExport.py` | 점검 → 절반 크기 · 여백 자르기 → `Assets/Art/Chapters/Chapter1` + `layout.json` | 챕터 그림을 바꿀 때(다음 줄과 차례로) | `python … [원본 폴더] [출력 폴더]` |
 | `ChapterArtBuilder.cs` | 스프라이트 설정 · `Assets/Data/Chapter1Art.asset` | `ChapterArtExport.py` 바로 뒤 | `Build` |
@@ -34,7 +34,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 하는 일 | entry |
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
-| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` 등 |
+| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 | `Paint` · `Record` · `Check` · `Save` 등 |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
 
