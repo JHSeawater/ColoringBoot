@@ -409,6 +409,10 @@ public static class BoardSceneBuilder
         Stretch(textArea, new Vector2(40f, 200f), new Vector2(-40f, -40f));
         TMP_Text text = Label(textArea, "", 34f);
         text.alignment = TextAlignmentOptions.TopLeft;
+        // 따라 하기 기록까지 한 화면에 들어가게 글자를 줄인다 (2026-10-07)
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 20f;
+        text.fontSizeMax = 34f;
 
         var close = NewUI("CloseButton", panel);
         var closeRect = (RectTransform)close.transform;

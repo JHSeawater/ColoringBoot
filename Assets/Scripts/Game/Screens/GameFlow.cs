@@ -168,7 +168,7 @@ namespace ColoringBoot.Game
             else if (_lab) ShowSelect();
             else _titleScreen.SetActive(true);
 
-            if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _data.Stats);
+            if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _tutorialCatalog, _data.Stats);
         }
 
         // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다. 시험 목록에는 그림이 없다
