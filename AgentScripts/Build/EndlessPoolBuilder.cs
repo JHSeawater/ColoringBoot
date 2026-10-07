@@ -8,7 +8,8 @@ using UnityEditor;
 
 // 무한 모드 퍼즐 묶음 (GDD §5 · §8, 2026-10-07) — 생성기 조건으로 만들고 난이도별 임시 기준으로 거른다(플레이테스트 기록으로 고친다).
 // 결과: Assets/Data/Endless/{Easy,Normal,Hard}.txt — 한 줄에 스테이지 코드(JSON) 하나, 이미 섞인 순서(게임은 앞에서부터 차례로 낸다).
-// run_script(file=AgentScripts/Build/EndlessPoolBuilder.cs, entry=EndlessPoolBuilder.Build, args=["Easy", 300, 1]) — 같은 시드면 같은 묶음. 다시 만들면 덮어쓴다
+// run_script(file=AgentScripts/Build/EndlessPoolBuilder.cs, entry=EndlessPoolBuilder.Build, args=["Easy", 300, 1]) — 같은 시드면 같은 묶음. 다시 만들면 덮어쓴다.
+// 난이도마다 다른 시드를 쓴다(지금 쉬움 1 · 보통 2 · 어려움 3) — 같은 시드면 무작위 순서가 같아 난이도끼리 비슷한 퍼즐이 나온다(2026-10-07)
 public static class EndlessPoolBuilder
 {
     private const string Folder = "Assets/Data/Endless";
@@ -32,12 +33,60 @@ public static class EndlessPoolBuilder
         ["Hard"] = new Tier { Name = "어려움", MinMoves = 6, MaxMoves = 8, MinTrap = 0.5, MaxOrder = 0.2, MinSeeds = 3, MaxSeeds = 4, AllowBlack = true },
     };
 
+    // 거의 같은 퍼즐 거르기 (2026-10-07 — 보통 3번 · 어려움 1번처럼 모양이 같고 목표가 한두 칸만 달라 풀이가 거의 같았음):
+    // 칸 모양이 같고 목표 색이 SimilarRatio 이상 같으면 같은 퍼즐로 본다. 다른 난이도 묶음(파일이 있으면)과 이미 고른 퍼즐 모두와 비교한다
+    private const double SimilarRatio = 0.8;
+
+    private sealed class Seen
+    {
+        private readonly Dictionary<string, List<Dictionary<HexCoord, PaintColor>>> _byShape = new Dictionary<string, List<Dictionary<HexCoord, PaintColor>>>();
+
+        public bool AddIfNew(Stage stage)
+        {
+            string shape = ShapeKey(stage);
+            var targets = new Dictionary<HexCoord, PaintColor>();
+            foreach (StageCell c in stage.Cells) targets[c.Coord] = c.Target;
+            if (!_byShape.TryGetValue(shape, out List<Dictionary<HexCoord, PaintColor>> list))
+            {
+                list = new List<Dictionary<HexCoord, PaintColor>>();
+                _byShape.Add(shape, list);
+            }
+            foreach (Dictionary<HexCoord, PaintColor> other in list)
+            {
+                int same = 0;
+                foreach (KeyValuePair<HexCoord, PaintColor> cell in targets)
+                {
+                    if (other[cell.Key] == cell.Value) same++;
+                }
+                if ((double)same / targets.Count >= SimilarRatio) return false;
+            }
+            list.Add(targets);
+            return true;
+        }
+
+        // 칸 좌표 집합(순서 무관)
+        private static string ShapeKey(Stage stage)
+        {
+            var coords = new List<string>();
+            foreach (StageCell c in stage.Cells) coords.Add($"{c.Coord.Q},{c.Coord.R}");
+            coords.Sort(StringComparer.Ordinal);
+            return string.Join(";", coords);
+        }
+    }
+
     public static string Build(string tier, int count, int seed)
     {
         if (!_tiers.TryGetValue(tier, out Tier t)) return $"난이도 없음: {tier} (Easy · Normal · Hard)";
         var watch = Stopwatch.StartNew();
         var random = new SeededRandom((uint)seed);
-        var seen = new HashSet<string>();
+        // 다른 난이도 묶음의 퍼즐을 먼저 넣어 두고 비교한다
+        var seen = new Seen();
+        foreach (string other in _tiers.Keys)
+        {
+            string otherPath = $"{Folder}/{other}.txt";
+            if (other == tier || !File.Exists(otherPath)) continue;
+            foreach (string line in File.ReadAllLines(otherPath)) if (line.Trim().Length > 0) seen.AddIfNew(Stage.Parse(line));
+        }
         var lines = new List<string>();
         int calls = 0, duplicates = 0, outOfRange = 0;
         while (lines.Count < count)
@@ -61,13 +110,12 @@ public static class EndlessPoolBuilder
                 outOfRange++;
                 continue;
             }
-            string line = StageWriter.ToJson(generated.Stage);
-            if (!seen.Add(CellsKey(generated.Stage)))
+            if (!seen.AddIfNew(generated.Stage))
             {
                 duplicates++;
                 continue;
             }
-            lines.Add(line);
+            lines.Add(StageWriter.ToJson(generated.Stage));
         }
 
         Directory.CreateDirectory(Folder);
@@ -78,14 +126,6 @@ public static class EndlessPoolBuilder
         foreach (string line in lines) counts[Stage.Parse(line).MinMoves.Value]++;
         var histogram = new StringBuilder();
         for (int m = t.MinMoves; m <= t.MaxMoves; m++) histogram.Append($" {m}수 {counts[m]}");
-        return $"{path}: {lines.Count}개({histogram.ToString().Trim()}) · 생성기 호출 {calls} · 겹침 {duplicates} · 범위 밖 {outOfRange} · {watch.Elapsed.TotalSeconds:F0}초 · {new FileInfo(path).Length:N0}바이트";
-    }
-
-    // 같은 퍼즐 거르기 — 칸 · 시작 색 · 목표 색이 모두 같으면 같은 퍼즐
-    private static string CellsKey(Stage stage)
-    {
-        var key = new StringBuilder();
-        foreach (StageCell c in stage.Cells) key.Append(c.Coord.Q).Append(',').Append(c.Coord.R).Append(',').Append((int)c.Start).Append(',').Append((int)c.Target).Append(';');
-        return key.ToString();
+        return $"{path}: {lines.Count}개({histogram.ToString().Trim()}) · 생성기 호출 {calls} · 거의 같아 거름 {duplicates} · 범위 밖 {outOfRange} · {watch.Elapsed.TotalSeconds:F0}초 · {new FileInfo(path).Length:N0}바이트";
     }
 }
