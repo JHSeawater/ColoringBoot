@@ -148,17 +148,19 @@ namespace ColoringBoot.Game
         private void Start()
         {
             string url = Application.absoluteURL;
-            if (UrlQuery.TryGet(url, ResetQuery, out _))
+            // QA 주소 기능(?reset · ?palette= · ?lab · ?stage= · ?stats)은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
+            bool qa = UrlQuery.IsQaHost(url);
+            if (qa && UrlQuery.TryGet(url, ResetQuery, out _))
             {
                 _data.ClearRecords();
                 Debug.Log("주소에 ?reset — 진행 · 플레이 기록을 지웠습니다", this);
             }
             ApplySettings();
-            if (UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
-            if (UrlQuery.TryGet(url, LabQuery, out _)) UseList(_labCatalog, true);
+            if (qa && UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
+            if (qa && UrlQuery.TryGet(url, LabQuery, out _)) UseList(_labCatalog, true);
 
             int start = -1;
-            if (UrlQuery.TryGet(url, StageQuery, out string name))
+            if (qa && UrlQuery.TryGet(url, StageQuery, out string name))
             {
                 start = Array.FindIndex(_stages, s => string.Equals(s, name, StringComparison.OrdinalIgnoreCase));
                 if (start < 0) Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 타이틀을 엽니다", this);
@@ -167,7 +169,7 @@ namespace ColoringBoot.Game
             else if (_lab) ShowSelect();
             else _titleScreen.SetActive(true);
 
-            if (UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _tutorialCatalog, _data.Stats);
+            if (qa && UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _tutorialCatalog, _data.Stats);
         }
 
         // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다. 시험 목록에는 그림이 없다
