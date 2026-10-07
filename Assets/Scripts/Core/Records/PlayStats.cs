@@ -51,6 +51,25 @@ namespace ColoringBoot.Core
             return new StageStats(e.Opens, e.Strokes, e.Undos, e.Restarts, e.Hints, e.Seconds, e.ClearMoves);
         }
 
+        // 이름이 prefix로 시작하는 스테이지들의 합 — 무한 모드 난이도별 기록(2026-10-07). 클리어 수는 합할 수 없어 null
+        public StageStats Sum(string prefix)
+        {
+            int opens = 0, strokes = 0, undos = 0, restarts = 0, hints = 0;
+            double seconds = 0;
+            foreach (KeyValuePair<string, Entry> entry in _entries)
+            {
+                if (!entry.Key.StartsWith(prefix, StringComparison.Ordinal)) continue;
+                Entry e = entry.Value;
+                opens += e.Opens;
+                strokes += e.Strokes;
+                undos += e.Undos;
+                restarts += e.Restarts;
+                hints += e.Hints;
+                seconds += e.Seconds;
+            }
+            return new StageStats(opens, strokes, undos, restarts, hints, seconds, null);
+        }
+
         public void Opened(string stage) => Count(stage, e => e.Opens++);
         public void Stroked(string stage) => Count(stage, e => e.Strokes++);
         public void Undid(string stage) => Count(stage, e => e.Undos++);

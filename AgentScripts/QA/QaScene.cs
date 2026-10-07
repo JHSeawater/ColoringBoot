@@ -65,7 +65,8 @@ public static class QaScene
         CheckRefs(flow, Expect, "_chapter", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
             "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
-            "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog");
+            "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
+            "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
         foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
@@ -135,6 +136,23 @@ public static class QaScene
         string lessonMissing = MissingGlyphs(font, TutorialLessons.Texts().Concat(tutorial.Stages.Select(s => Stage.Parse(s.text).Name)));
         Expect(lessonMissing.Length == 0, $"따라 하기 문구 · 이름 글자가 폰트에 없음 [{lessonMissing}]");
         Expect(!tutorial.Stages.Any(s => catalog.Stages.Concat(lab.Stages).Any(c => c.name == s.name)), "따라 하기 파일 이름이 다른 목록과 겹치지 않음");
+
+        // 무한 모드(2026-10-07): 묶음 3개(쉬움 · 보통 · 어려움)가 연결되고 퍼즐이 있음 · 첫 줄이 읽힘 · 난이도 화면 배선 · 난이도 이름과 버튼 글자가 폰트에 있음
+        SerializedProperty pools = new SerializedObject(flow).FindProperty("_endlessPools");
+        Expect(pools.arraySize == 3, $"무한 모드 묶음 {pools.arraySize}개 = 3");
+        for (int i = 0; i < pools.arraySize; i++)
+        {
+            var pool = pools.GetArrayElementAtIndex(i).objectReferenceValue as TextAsset;
+            string[] lines = pool == null ? new string[0] : pool.text.Split('\n').Where(l => l.Trim().Length > 0).ToArray();
+            Expect(lines.Length > 0 && Stage.Parse(lines[0]).MinMoves.HasValue, $"무한 모드 묶음 {pool?.name} {lines.Length}개 · 첫 퍼즐 읽힘");
+        }
+        var endlessView = Object.FindAnyObjectByType<EndlessView>(FindObjectsInactive.Include);
+        CheckRefs(endlessView, Expect, "_backButton");
+        var endlessSo = new SerializedObject(endlessView);
+        Expect(endlessSo.FindProperty("_tierButtons").arraySize == 3 && endlessSo.FindProperty("_tierLabels").arraySize == 3, "EndlessView 난이도 버튼 · 글자 3개");
+        var endlessNames = (string[])typeof(GameFlow).GetField("EndlessNames", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).GetValue(null);
+        string endlessMissing = MissingGlyphs(font, endlessNames.Concat(new[] { "0123456789~수 · 푼 개 번" }));
+        Expect(endlessMissing.Length == 0, $"무한 모드 글자가 폰트에 없음 [{endlessMissing}]");
 
         // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
         ChapterArt art = chapter.Art;

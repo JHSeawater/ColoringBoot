@@ -143,7 +143,12 @@ public static class BoardQa
         bool select = safe.Find("SelectScreen").gameObject.activeSelf;
         bool board = safe.Find("BoardScreen").gameObject.activeSelf;
         bool chapter = safe.Find("ChapterScreen").gameObject.activeSelf;
-        string text = $"타이틀 {safe.Find("TitleScreen").gameObject.activeSelf} · 선택 {select} · 보드 {board} · 그림 {chapter} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
+        bool endless = safe.Find("EndlessScreen").gameObject.activeSelf;
+        string text = $"타이틀 {safe.Find("TitleScreen").gameObject.activeSelf}(무한 버튼 {safe.Find("TitleScreen/EndlessButton").gameObject.activeSelf}) · 선택 {select} · 보드 {board} · 그림 {chapter} · 무한 {endless} · 옵션 {safe.Find("OptionsPanel").gameObject.activeSelf}";
+        // 무한 모드(2026-10-07): 난이도 버튼 글자 · 목록의 무한 버튼 · 보드의 건너뛰기
+        if (endless) text += " | " + string.Join(" / ", safe.Find("EndlessScreen").GetComponentsInChildren<TMPro.TMP_Text>().Where(l => l.transform.parent.name.EndsWith("Button") && l.transform.parent.name != "BackButton").Select(l => l.text.Replace("\n", " ")));
+        if (select) text += $" | 목록의 무한 버튼 {safe.Find("SelectScreen/EndlessButton").gameObject.activeSelf}";
+        if (board) text += $" | 건너뛰기 {safe.Find("BoardScreen/SkipButton").gameObject.activeSelf}";
         if (chapter)
         {
             Transform screen = safe.Find("ChapterScreen");

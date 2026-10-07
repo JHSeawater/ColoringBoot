@@ -27,6 +27,8 @@ public static class BoardSceneBuilder
     private const string LabCatalogPath = "Assets/Data/Lab/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
     private const string TutorialCatalogPath = "Assets/Data/Tutorial/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
     private const string PaletteCatalogPath = "Assets/Data/Palettes/PaletteCatalog.asset";
+    private const string EndlessFolder = "Assets/Data/Endless";   // 무한 모드 퍼즐 묶음 — AgentScripts/Build/EndlessPoolBuilder.cs 먼저 (2026-10-07)
+    private static readonly string[] EndlessTiers = { "Easy", "Normal", "Hard" };
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
     private const string ThemePath = "Assets/Data/Settings/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
     private const string MotionPath = "Assets/Data/Settings/MotionSettings.asset";     // 보드 연출 값(Phase 7.4) — 없으면 기본값으로 만든다
@@ -215,8 +217,9 @@ public static class BoardSceneBuilder
         var buttonPrefab = AssetDatabase.LoadAssetAtPath<Button>(ButtonPrefabPath);
 
         // 화면(타이틀 · 선택 · 보드 · 그림)은 GameFlow가 켜고 끈다. 옵션 · 기록 패널은 그 위를 덮는다. 모두 켜질 때 짧게 나타난다(ScreenFade)
-        GameObject titleScreen = TitleScreen(safeArea, out Button startButton);
-        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton, out ChapterView selectPicture);
+        GameObject titleScreen = TitleScreen(safeArea, out Button startButton, out Button endlessButton);
+        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton, out ChapterView selectPicture, out Button selectEndlessButton);
+        EndlessView endlessView = EndlessScreen(safeArea);
         var boardScreen = NewUI("BoardScreen", safeArea);
         Stretch(boardScreen, Vector2.zero, Vector2.zero);
         Fade(boardScreen);
@@ -224,6 +227,13 @@ public static class BoardSceneBuilder
         // 위 버튼 줄: 목록(왼쪽) · 옵션(오른쪽)
         Button backButton = TopButton(boardScreen, "BackButton", "목록", false);
         Button boardOptionsButton = TopButton(boardScreen, "OptionsButton", "옵션", true);
+        // 무한 모드 건너뛰기 (2026-10-07) — 위 버튼 줄 가운데, 무한 모드에서만 GameFlow가 켠다
+        Button skipButton = TopButton(boardScreen, "SkipButton", "건너뛰기", false);
+        var skipRect = (RectTransform)skipButton.transform;
+        skipRect.anchorMin = skipRect.anchorMax = skipRect.pivot = new Vector2(0.5f, 1f);
+        skipRect.anchoredPosition = new Vector2(0f, -30f);
+        skipRect.sizeDelta = new Vector2(240f, 90f);
+        skipButton.gameObject.SetActive(false);
 
         // 스테이지 이름 · 수 카운터(왼쪽), 목표 그림 썸네일(오른쪽)
         TMP_Text stageName = TopLeftText(boardScreen, "StageName", -150f, 90f, 64f, Strong);
@@ -344,14 +354,50 @@ public static class BoardSceneBuilder
             ("_titleScreen", titleScreen),
             ("_startButton", startButton),
             ("_labCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(LabCatalogPath)),
-            ("_tutorialCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(TutorialCatalogPath)));
+            ("_tutorialCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(TutorialCatalogPath)),
+            ("_endless", endlessView),
+            ("_endlessButton", endlessButton),
+            ("_selectEndlessButton", selectEndlessButton),
+            ("_skipButton", skipButton));
+        SetArray(game.GetComponent<GameFlow>(), "_endlessPools", System.Array.ConvertAll(EndlessTiers, tier =>
+            (Object)(AssetDatabase.LoadAssetAtPath<TextAsset>($"{EndlessFolder}/{tier}.txt") ?? throw new System.InvalidOperationException($"{tier}.txt 없음 — EndlessPoolBuilder 먼저"))));
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";
     }
 
+    // 무한 모드 화면 (2026-10-07): 뒤로(왼쪽 위) · 제목 · 한 줄 설명 · 난이도 버튼 셋(글자는 GameFlow가 이름 · 최소 수 범위 · 푼 수로 채움)
+    private static EndlessView EndlessScreen(GameObject parent)
+    {
+        var screen = NewUI("EndlessScreen", parent);
+        Stretch(screen, Vector2.zero, Vector2.zero);
+        Fade(screen);
+        Button back = TopButton(screen, "BackButton", "뒤로", false);
+        CenterText(screen, "Title", -300f, 140f, 110f, Strong).text = "무한 모드";
+        CenterText(screen, "Subtitle", -420f, 70f, 46f, Muted).text = "난이도를 고르면 퍼즐이 계속 나와요";
+        string[] names = { "EasyButton", "NormalButton", "HardButton" };
+        var buttons = new Object[names.Length];
+        var labels = new Object[names.Length];
+        for (int i = 0; i < names.Length; i++)
+        {
+            var go = NewUI(names[i], screen);
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -700f - i * 290f);
+            rect.sizeDelta = new Vector2(760f, 240f);
+            buttons[i] = OutlinedButton(go, "", 54f);
+            labels[i] = go.GetComponentInChildren<TMP_Text>();
+        }
+        var view = screen.AddComponent<EndlessView>();
+        SetArray(view, "_tierButtons", buttons);
+        SetArray(view, "_tierLabels", labels);
+        SetRefs(view, ("_backButton", back));
+        screen.SetActive(false);
+        return view;
+    }
+
     // 타이틀 화면 (Phase 7.3): 기본색 세 칸(빨강 · 노랑 · 파랑) · 제목 · 한 줄 소개 · 시작 버튼. 로고 그림이 생기면 제목 글자 자리를 바꾼다
-    private static GameObject TitleScreen(GameObject parent, out Button start)
+    private static GameObject TitleScreen(GameObject parent, out Button start, out Button endless)
     {
         var screen = NewUI("TitleScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
@@ -374,6 +420,10 @@ public static class BoardSceneBuilder
         CenterText(screen, "Title", -820f, 200f, 160f, Strong).text = "컬러링붓";
         CenterText(screen, "Subtitle", -960f, 70f, 48f, Muted).text = "붓으로 칠하는 육각 퍼즐";
         start = BottomButton(screen, "StartButton", "시작", 0f, 460f, true);
+        // 무한 모드 (2026-10-07) — 시작 위, 따라 하기를 본 뒤에 GameFlow가 켠다
+        endless = BottomButton(screen, "EndlessButton", "무한 모드", 0f, 460f, false);
+        ((RectTransform)endless.transform).anchoredPosition = new Vector2(0f, 310f);
+        endless.gameObject.SetActive(false);
         screen.SetActive(false);
         return screen;
     }
@@ -458,7 +508,7 @@ public static class BoardSceneBuilder
     }
 
     // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 챕터 그림(작게) · 육각 번호 버튼 격자(4열) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
-    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton, out ChapterView picture)
+    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton, out ChapterView picture, out Button endlessButton)
     {
         var screen = NewUI("SelectScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
@@ -489,6 +539,13 @@ public static class BoardSceneBuilder
         RoundImage(notice, "RoundFill", Strong).raycastTarget = false;
         TMP_Text noticeText = Label(notice, "", 46f);
         notice.SetActive(false);
+
+        // 무한 모드 (2026-10-07) — 목록 아래(잠김 안내 띠 밑), 따라 하기를 본 뒤 챕터 목록에서만 GameFlow가 켠다
+        endlessButton = BottomButton(screen, "EndlessButton", "무한 모드", 0f, 460f, false);
+        var endlessRect = (RectTransform)endlessButton.transform;
+        endlessRect.anchoredPosition = new Vector2(0f, 80f);
+        endlessRect.sizeDelta = new Vector2(460f, 110f);
+        endlessButton.gameObject.SetActive(false);
 
         // 버튼 원본: 육각 바탕 · 다음 스테이지 테두리 · 번호 · 자물쇠 · 별
         var template = NewUI("StageButtonTemplate", screen);

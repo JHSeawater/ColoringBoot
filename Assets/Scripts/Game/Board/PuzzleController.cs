@@ -51,6 +51,9 @@ namespace ColoringBoot.Game
         private Coroutine _afterStroke;   // 물결이 끝난 뒤 클리어 반응 · 막힘 흔들림 → 안내 띠
         private Coroutine _goalPulse;     // 목표 그림 강조(따라 하기 1 클리어 띠가 떠 있는 동안)
 
+        // 지금 판을 풀었는가 — 무한 모드는 풀린 판을 떠날 때 다음 퍼즐로 넘어간다
+        public bool IsSolved => _session != null && _session.IsSolved;
+
         // 이번에 연 판에서 처음 클리어했는가 — 그림 칠하기 연출(GameFlow, Phase 5). 되돌렸다 다시 풀어도 유지
         public bool FirstClear { get; private set; }
 
@@ -68,10 +71,17 @@ namespace ColoringBoot.Game
                 Debug.LogError($"스테이지 '{asset.name}' 코드를 읽지 못했습니다: {e.Message}", this);
                 return false;
             }
-            ColorPalette palette = ChoosePalette(paletteOverride ?? stage.Palette, asset.name);
+            Open(stage, asset.name, $"{number}. {stage.Name}", data, paletteOverride);
+            return true;
+        }
+
+        // 스테이지를 연다 — id는 기록의 키(파일 이름 · 무한 모드 퍼즐 번호), title은 위쪽 이름 줄 (2026-10-07 무한 모드)
+        public void Open(Stage stage, string id, string title, SaveData data, string paletteOverride = null)
+        {
+            ColorPalette palette = ChoosePalette(paletteOverride ?? stage.Palette, id);
 
             _data = data;
-            _stageId = asset.name;
+            _stageId = id;
             FirstClear = false;
             _lesson = -1;
             _trapDone = false;
@@ -88,12 +98,11 @@ namespace ColoringBoot.Game
             _mixTable.Build(palette);
             _boardView.SetSymbols(_symbols);
             _targetView.SetSymbols(_symbols);
-            _stageName.text = $"{number}. {stage.Name}";
+            _stageName.text = title;
 
             _data.Stats.Opened(_stageId);
             _data.SaveStats();
             Refresh();
-            return true;
         }
 
         // 따라 하기 레슨을 연다(TutorialLessons의 lesson번째) — 정해진 획만 그을 수 있고, 손가락 표시와 한 줄 설명이 나온다

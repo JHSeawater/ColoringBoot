@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ColoringBoot.Core;
 using TMPro;
 using UnityEngine;
@@ -19,6 +20,9 @@ namespace ColoringBoot.Game
         private const string NextText = "다음";
         private const string ListText = "목록";
         private const string CompleteText = "그림 완성!";
+        // 무한 모드 난이도(2026-10-07): 기록의 키(EndlessProgress · 퍼즐 id "Endless{키}{번호}") · 화면 이름 — _endlessPools와 같은 순서
+        private static readonly string[] EndlessKeys = { "Easy", "Normal", "Hard" };
+        private static readonly string[] EndlessNames = { "쉬움", "보통", "어려움" };
 
         [SerializeField] private Chapter _chapter;   // 지금 여는 챕터 — 제목 · 스테이지 목록 · 그림 (Phase 8 구조 정리, 2026-10-07)
         [SerializeField] private PuzzleController _puzzle;
@@ -46,6 +50,12 @@ namespace ColoringBoot.Game
         [SerializeField] private StageCatalog _labCatalog;
         [Header("따라 하기 (튜토리얼)")]
         [SerializeField] private StageCatalog _tutorialCatalog;   // 레슨 i = TutorialLessons의 i번째 (2026-10-07)
+        [Header("무한 모드 (2026-10-07)")]
+        [SerializeField] private TextAsset[] _endlessPools;    // 쉬움 · 보통 · 어려움 — Assets/Data/Endless/*.txt(한 줄에 스테이지 코드 하나)
+        [SerializeField] private EndlessView _endless;
+        [SerializeField] private Button _endlessButton;        // 타이틀 — 따라 하기를 본 뒤에 보인다
+        [SerializeField] private Button _selectEndlessButton;  // 스테이지 목록 아래 — 타이틀은 처음에만 보이므로
+        [SerializeField] private Button _skipButton;           // 보드 위쪽 가운데 — 무한 모드에서만
 
         private SaveData _data;
         private IAdService _ads;
@@ -58,6 +68,9 @@ namespace ColoringBoot.Game
         private bool _paintShown;    // 지금 판의 첫 클리어 연출을 이미 보여 줬는가
         private bool[] _painted;
         private string _paletteOverride;
+        private int _endlessTier = -1;      // 무한 모드 중이면 난이도
+        private bool _endlessFromTitle;     // 난이도 화면의 뒤로 → 타이틀(아니면 목록)
+        private Stage[][] _endlessStages;   // 난이도별 퍼즐 — 처음 쓸 때 읽는다
 
         private void Awake()
         {
@@ -93,12 +106,17 @@ namespace ColoringBoot.Game
 
         private void OnEnable()
         {
-            _backButton.onClick.AddListener(ShowSelect);
+            _backButton.onClick.AddListener(LeaveBoard);
             _boardOptionsButton.onClick.AddListener(ShowOptions);
             _selectOptionsButton.onClick.AddListener(ShowOptions);
             _nextButton.onClick.AddListener(Next);
             _chapterNextButton.onClick.AddListener(ContinueAfterPicture);
             _startButton.onClick.AddListener(StartGame);
+            _endlessButton.onClick.AddListener(ShowEndlessFromTitle);
+            _selectEndlessButton.onClick.AddListener(ShowEndlessFromSelect);
+            _skipButton.onClick.AddListener(SkipEndless);
+            _endless.TierChosen += OpenEndless;
+            _endless.Back += LeaveEndless;
             _select.StageChosen += OpenStage;
             _options.Changed += ApplySettings;
             _options.TutorialRequested += StartTutorial;
@@ -106,12 +124,17 @@ namespace ColoringBoot.Game
 
         private void OnDisable()
         {
-            _backButton.onClick.RemoveListener(ShowSelect);
+            _backButton.onClick.RemoveListener(LeaveBoard);
             _boardOptionsButton.onClick.RemoveListener(ShowOptions);
             _selectOptionsButton.onClick.RemoveListener(ShowOptions);
             _nextButton.onClick.RemoveListener(Next);
             _chapterNextButton.onClick.RemoveListener(ContinueAfterPicture);
             _startButton.onClick.RemoveListener(StartGame);
+            _endlessButton.onClick.RemoveListener(ShowEndlessFromTitle);
+            _selectEndlessButton.onClick.RemoveListener(ShowEndlessFromSelect);
+            _skipButton.onClick.RemoveListener(SkipEndless);
+            _endless.TierChosen -= OpenEndless;
+            _endless.Back -= LeaveEndless;
             _select.StageChosen -= OpenStage;
             _options.Changed -= ApplySettings;
             _options.TutorialRequested -= StartTutorial;
@@ -136,6 +159,8 @@ namespace ColoringBoot.Game
             _boardScreen.SetActive(true);
             _current = -1;
             _lesson = lesson;
+            _endlessTier = -1;
+            _skipButton.gameObject.SetActive(false);
             if (!_puzzle.OpenLesson(_tutorialCatalog.Stages[lesson], lesson, _data))
             {
                 ShowSelect();
@@ -167,9 +192,9 @@ namespace ColoringBoot.Game
             }
             if (start >= 0) OpenStage(start);
             else if (_lab) ShowSelect();
-            else _titleScreen.SetActive(true);
+            else ShowTitle();
 
-            if (qa && UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _tutorialCatalog, _data.Stats);
+            if (qa && UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _tutorialCatalog, _data, EndlessKeys, EndlessNames);
         }
 
         // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다. 시험 목록에는 그림이 없다
@@ -184,9 +209,12 @@ namespace ColoringBoot.Game
             int justPainted = !_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
             _puzzle.Close();
             _current = -1;
+            _endlessTier = -1;
             _titleScreen.SetActive(false);
             _boardScreen.SetActive(false);
             _chapterScreen.SetActive(false);
+            _endless.gameObject.SetActive(false);
+            _selectEndlessButton.gameObject.SetActive(!_lab && _data.TutorialSeen);
             _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : _chapter.Title, _lab ? null : _chapter.Subtitle, _lab);
             _selectPicture.gameObject.SetActive(!_lab);
             if (!_lab) _selectPicture.Show(_chapter.Art, UpdatePainted(), justPainted);
@@ -200,6 +228,8 @@ namespace ColoringBoot.Game
             _boardScreen.SetActive(true);
             _paintShown = false;
             _lesson = -1;
+            _endlessTier = -1;
+            _skipButton.gameObject.SetActive(false);
             if (!_puzzle.Open(_list.Stages[index], index + 1, _data, _paletteOverride))
             {
                 ShowSelect();
@@ -212,6 +242,13 @@ namespace ColoringBoot.Game
         // 클리어 띠의 "다음" — 처음 클리어했으면 그림 화면에서 그 단계를 칠한 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
         {
+            if (_endlessTier >= 0)
+            {
+                int tier = _endlessTier;
+                FinishEndless();
+                _ads.ShowBetweenStages(() => OpenEndless(tier));
+                return;
+            }
             if (_lesson >= 0)
             {
                 if (_lesson + 1 < _tutorialCatalog.Stages.Count) OpenLesson(_lesson + 1);
@@ -261,6 +298,118 @@ namespace ColoringBoot.Game
         }
 
         private void ShowOptions() => _options.Show(_data);
+
+        // 타이틀 — 무한 모드 버튼은 따라 하기를 본 뒤에 보인다
+        private void ShowTitle()
+        {
+            _select.gameObject.SetActive(false);
+            _boardScreen.SetActive(false);
+            _chapterScreen.SetActive(false);
+            _endless.gameObject.SetActive(false);
+            _endlessButton.gameObject.SetActive(_data.TutorialSeen);
+            _titleScreen.SetActive(true);
+        }
+
+        // 보드의 목록 버튼 — 무한 모드면 난이도 화면, 아니면 스테이지 목록
+        private void LeaveBoard()
+        {
+            if (_endlessTier < 0)
+            {
+                ShowSelect();
+                return;
+            }
+            FinishEndless();
+            ShowEndless();
+        }
+
+        private void ShowEndlessFromTitle()
+        {
+            _endlessFromTitle = true;
+            ShowEndless();
+        }
+
+        private void ShowEndlessFromSelect()
+        {
+            _endlessFromTitle = false;
+            ShowEndless();
+        }
+
+        private void LeaveEndless()
+        {
+            if (_endlessFromTitle) ShowTitle();
+            else ShowSelect();
+        }
+
+        // 무한 모드 난이도 화면 (GDD §5, 2026-10-07) — 난이도마다 이름 · 최소 수 범위 · 푼 수
+        private void ShowEndless()
+        {
+            _puzzle.Close();
+            _endlessTier = -1;
+            _current = -1;
+            _lesson = -1;
+            _titleScreen.SetActive(false);
+            _select.gameObject.SetActive(false);
+            _boardScreen.SetActive(false);
+            _chapterScreen.SetActive(false);
+            var labels = new string[EndlessKeys.Length];
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Stage[] pool = EndlessPool(i);
+                labels[i] = $"{EndlessNames[i]}\n{pool.Min(s => s.MinMoves ?? 0)}~{pool.Max(s => s.MinMoves ?? 0)}수 · 푼 {_data.Endless.Solved(EndlessKeys[i])}개";
+            }
+            _endless.Show(labels);
+        }
+
+        // 난이도의 지금 퍼즐을 연다 — 기록의 키는 퍼즐마다 따로("EndlessNormal0012")
+        private void OpenEndless(int tier)
+        {
+            Stage[] pool = EndlessPool(tier);
+            int index = _data.Endless.Current(EndlessKeys[tier]) % pool.Length;
+            _titleScreen.SetActive(false);
+            _endless.gameObject.SetActive(false);
+            _select.gameObject.SetActive(false);
+            _chapterScreen.SetActive(false);
+            _boardScreen.SetActive(true);
+            _endlessTier = tier;
+            _current = -1;
+            _lesson = -1;
+            _puzzle.Open(pool[index], $"Endless{EndlessKeys[tier]}{index:D4}", $"{EndlessNames[tier]} {index + 1}번", _data, _paletteOverride);
+            _nextLabel.text = NextText;
+            _skipButton.gameObject.SetActive(true);
+        }
+
+        // 풀린 판을 떠나면(다음 · 목록) 다음 퍼즐로 넘기고 푼 수를 센다
+        private void FinishEndless()
+        {
+            if (_endlessTier < 0 || !_puzzle.IsSolved) return;
+            _data.Endless.Solve(EndlessKeys[_endlessTier], EndlessPool(_endlessTier).Length);
+            _data.SaveEndless();
+        }
+
+        // 건너뛰기 — 안 풀린 판이면 건너뛴 수를 센다(풀린 판이면 푼 것으로)
+        private void SkipEndless()
+        {
+            if (_endlessTier < 0) return;
+            int tier = _endlessTier;
+            if (_puzzle.IsSolved)
+            {
+                FinishEndless();
+            }
+            else
+            {
+                _data.Endless.Skip(EndlessKeys[tier], EndlessPool(tier).Length);
+                _data.SaveEndless();
+            }
+            OpenEndless(tier);
+        }
+
+        private Stage[] EndlessPool(int tier)
+        {
+            if (_endlessStages == null) _endlessStages = new Stage[EndlessKeys.Length][];
+            if (_endlessStages[tier] == null)
+                _endlessStages[tier] = _endlessPools[tier].text.Split('\n').Where(line => line.Trim().Length > 0).Select(Stage.Parse).ToArray();
+            return _endlessStages[tier];
+        }
 
         private void ApplySettings()
         {
