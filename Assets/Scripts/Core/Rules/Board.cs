@@ -95,37 +95,38 @@ namespace ColoringBoot.Core
         // 붓질 (GDD §2.4): 칸이 속한 줄 전체를 dir의 반대편 끝에서 dir 끝까지 쓸고 지나간다. 색이 바뀐 칸이 있으면 true
         public bool Brush(PaintColor[] state, int cell, HexDirection dir)
         {
-            int[] line = _lines[_lineOf[cell, dir.Axis()]];
-            // 줄은 1·3·5시 쪽으로 정렬되어 있다 — 1·3·5시는 앞에서부터, 반대 방향(7·9·11시)은 뒤에서부터 쓴다
-            bool forward = (int)dir < HexDirectionExtensions.AxisCount;
-            PaintColor brush = PaintColor.Empty;
-            bool changed = false;
-            for (int k = 0; k < line.Length; k++)
-            {
-                int i = line[forward ? k : line.Length - 1 - k];
-                if (state[i] != PaintColor.Empty) brush |= state[i];
-                if (brush != PaintColor.Empty && state[i] != brush)
-                {
-                    state[i] = brush;
-                    changed = true;
-                }
-            }
+            Sweep(state, cell, dir, true, null, null, out bool changed);
             return changed;
         }
 
         // 붓 경로 (미리보기용): 쓸고 지나가는 칸 순서를 cells에, 그 칸을 지난 뒤의 붓 색을 brushes에 채우고 칸 수를 돌려준다.
         // state는 바꾸지 않는다. 배열은 CellCount 이상 — 호출 쪽이 한 번 만들어 재사용한다(매 프레임 할당 없음)
-        public int Trace(PaintColor[] state, int cell, HexDirection dir, int[] cells, PaintColor[] brushes)
+        public int Trace(PaintColor[] state, int cell, HexDirection dir, int[] cells, PaintColor[] brushes) =>
+            Sweep(state, cell, dir, false, cells, brushes, out _);
+
+        // 붓이 줄을 쓸고 지나가는 계산 — 붓질과 미리보기가 함께 쓴다(규칙을 바꾸면 여기 한 곳만, 2026-10-07 — 같은지는 ContentRegressionTests).
+        // apply면 state를 칠하고, cells · brushes가 있으면 지나간 칸 순서와 그 칸을 지난 뒤의 붓 색을 채운다. 줄의 칸 수를 돌려준다
+        private int Sweep(PaintColor[] state, int cell, HexDirection dir, bool apply, int[] cells, PaintColor[] brushes, out bool changed)
         {
             int[] line = _lines[_lineOf[cell, dir.Axis()]];
+            // 줄은 1·3·5시 쪽으로 정렬되어 있다 — 1·3·5시는 앞에서부터, 반대 방향(7·9·11시)은 뒤에서부터 쓴다
             bool forward = (int)dir < HexDirectionExtensions.AxisCount;
             PaintColor brush = PaintColor.Empty;
+            changed = false;
             for (int k = 0; k < line.Length; k++)
             {
                 int i = line[forward ? k : line.Length - 1 - k];
                 if (state[i] != PaintColor.Empty) brush |= state[i];
-                cells[k] = i;
-                brushes[k] = brush;
+                if (cells != null)
+                {
+                    cells[k] = i;
+                    brushes[k] = brush;
+                }
+                if (apply && brush != PaintColor.Empty && state[i] != brush)
+                {
+                    state[i] = brush;
+                    changed = true;
+                }
             }
             return line.Length;
         }

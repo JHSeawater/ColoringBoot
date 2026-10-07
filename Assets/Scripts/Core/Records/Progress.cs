@@ -39,6 +39,39 @@ namespace ColoringBoot.Core
             return -1;
         }
 
+        // 챕터 진행 (Phase 8 구조 정리, 2026-10-07) — 챕터 = 스테이지 순서 목록, 그림 단계 i ↔ i번째 스테이지(GDD §5)
+
+        // 클리어한 스테이지 수 = 그림에서 칠한 단계 수
+        public int ClearedCount(IReadOnlyList<string> order)
+        {
+            if (order == null) throw new ArgumentNullException(nameof(order));
+            int count = 0;
+            foreach (string stage in order)
+            {
+                if (IsCleared(stage)) count++;
+            }
+            return count;
+        }
+
+        // 챕터 완성(그림 완성): 모든 스테이지를 클리어했다
+        public bool IsComplete(IReadOnlyList<string> order) => ClearedCount(order) == order.Count;
+
+        // 칠한 단계: painted[i] = i번째 스테이지를 클리어했는가. 배열은 호출 쪽이 만들어 다시 쓴다(order 길이 이상)
+        public void FillPainted(IReadOnlyList<string> order, bool[] painted)
+        {
+            if (order == null) throw new ArgumentNullException(nameof(order));
+            if (painted == null || painted.Length < order.Count) throw new ArgumentException("배열이 스테이지 수보다 짧습니다", nameof(painted));
+            for (int i = 0; i < order.Count; i++) painted[i] = IsCleared(order[i]);
+        }
+
+        // 챕터 사이 해금 (2026-10-07 사용자 결정): 첫 챕터이거나 바로 앞 챕터를 완성했으면 열린다 — 스테이지 차례 해금과 같은 방식
+        public bool IsChapterUnlocked(IReadOnlyList<IReadOnlyList<string>> chapters, int index)
+        {
+            if (chapters == null) throw new ArgumentNullException(nameof(chapters));
+            if (index < 0 || index >= chapters.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            return index == 0 || IsComplete(chapters[index - 1]);
+        }
+
         // 클리어 기록. 처음 클리어했거나 더 적은 수로 풀었으면 true
         public bool RecordClear(string stage, int moves)
         {

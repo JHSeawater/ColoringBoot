@@ -11,7 +11,7 @@ public static class PaletteBuilder
     private const string Folder = "Assets/Data/Palettes";
     private const string DefaultPath = Folder + "/DefaultPalette.asset";
     private const string PastelPath = Folder + "/PastelPalette.asset";
-    private const string CatalogPath = "Assets/Data/PaletteCatalog.asset";
+    private const string CatalogPath = Folder + "/PaletteCatalog.asset";
 
     // 값 1~7 순서: 빨강 계열 · 노랑 계열 · 주황 계열 · 파랑 계열 · 보라 계열 · 초록 계열 · 검정 계열
     private static readonly string[] PastelColors = { "#F08BA8", "#EFD95A", "#F5A870", "#7DB6EC", "#B49AE0", "#98D07C", "#4A4643" };

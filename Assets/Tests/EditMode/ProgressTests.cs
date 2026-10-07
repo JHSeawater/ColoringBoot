@@ -73,6 +73,49 @@ namespace ColoringBoot.Core.Tests
         }
 
         [Test]
+        public void ChapterProgress_CountsPaintedStepsAndCompletion()
+        {
+            var progress = new Progress();
+            var painted = new bool[Order.Length];
+            Assert.AreEqual(0, progress.ClearedCount(Order));
+            Assert.IsFalse(progress.IsComplete(Order));
+
+            progress.RecordClear("TwoColors", 3);
+            progress.RecordClear("Grape", 6);   // 차례와 상관없이 기록된 클리어도 칠한 단계로 센다(?stage= QA)
+            progress.FillPainted(Order, painted);
+
+            CollectionAssert.AreEqual(new[] { true, false, true }, painted);
+            Assert.AreEqual(2, progress.ClearedCount(Order));
+            Assert.IsFalse(progress.IsComplete(Order));
+
+            progress.RecordClear("BrushChanges", 4);
+            Assert.IsTrue(progress.IsComplete(Order), "모두 클리어 = 그림 완성");
+            Assert.Throws<ArgumentException>(() => progress.FillPainted(Order, new bool[2]));
+        }
+
+        [Test]
+        public void IsChapterUnlocked_FirstChapterOrPreviousComplete()
+        {
+            string[][] chapters = { new[] { "A1", "A2" }, new[] { "B1", "B2" }, new[] { "C1" } };
+            var progress = new Progress();
+
+            Assert.IsTrue(progress.IsChapterUnlocked(chapters, 0), "첫 챕터는 처음부터 열림");
+            Assert.IsFalse(progress.IsChapterUnlocked(chapters, 1));
+
+            progress.RecordClear("A1", 3);
+            Assert.IsFalse(progress.IsChapterUnlocked(chapters, 1), "앞 챕터 일부만 클리어");
+
+            progress.RecordClear("A2", 3);
+            Assert.IsTrue(progress.IsChapterUnlocked(chapters, 1), "앞 챕터 완성");
+            Assert.IsFalse(progress.IsChapterUnlocked(chapters, 2), "바로 앞 챕터(B)가 아직");
+
+            progress.RecordClear("B1", 3);
+            progress.RecordClear("B2", 3);
+            Assert.IsTrue(progress.IsChapterUnlocked(chapters, 2));
+            Assert.Throws<ArgumentOutOfRangeException>(() => progress.IsChapterUnlocked(chapters, 3));
+        }
+
+        [Test]
         public void Serialize_RoundTrip()
         {
             var progress = new Progress();

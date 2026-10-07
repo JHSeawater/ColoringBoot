@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43bc86358f74e6d488376b51a95396d6, type: 3}
-  m_Name: Chapter1Art
+  m_Name: ChapterArt
   m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.ChapterArt
   _canvas: {x: 1080, y: 1350}
   _line:

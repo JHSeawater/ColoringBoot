@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83d82cbe350af374e8f93fa00066ff6f, type: 3}
+  m_Name: Chapter
+  m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.Chapter
+  _title: "\uCC55\uD130 1"
+  _subtitle: "\uD3EC\uB3C4\uBC2D \uC624\uD6C4"
+  _stages: {fileID: 11400000, guid: 6681e05b0b672f242a8442d93ad234c3, type: 2}
+  _art: {fileID: 11400000, guid: 3a54c07eeebafbc44a1736b56cc0e962, type: 2}

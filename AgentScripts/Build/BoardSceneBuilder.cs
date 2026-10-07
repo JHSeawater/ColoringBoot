@@ -20,14 +20,16 @@ public static class BoardSceneBuilder
     private const string OldScenePath = "Assets/Scenes/SampleScene.unity";
     private const string ScenePath = "Assets/Scenes/Board.unity";
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
-    private const string CatalogPath = "Assets/Data/StageCatalog.asset";
-    private const string LabCatalogPath = "Assets/Data/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
-    private const string TutorialCatalogPath = "Assets/Data/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
+    // 게임이 여는 챕터(지금은 챕터 1) — 데이터는 챕터마다 Assets/Data/Chapters/ChapterN/ (2026-10-07)
+    private const string ChapterFolder = "Assets/Data/Chapters/Chapter1";
+    private const string ChapterPath = ChapterFolder + "/Chapter.asset";        // 제목 · 부제 · 목록 · 그림 — AgentScripts/Setup/Phase8ChapterFolders.cs가 만듦
+    private const string CatalogPath = ChapterFolder + "/StageCatalog.asset";
+    private const string LabCatalogPath = "Assets/Data/Lab/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
+    private const string TutorialCatalogPath = "Assets/Data/Tutorial/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
+    private const string PaletteCatalogPath = "Assets/Data/Palettes/PaletteCatalog.asset";
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
-    private const string ChapterArtPath = "Assets/Data/Chapter1Art.asset";   // AgentScripts/Build/ChapterArtBuilder.cs 먼저
-    private const string ThemePath = "Assets/Data/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
-    private const string MotionPath = "Assets/Data/MotionSettings.asset";     // 보드 연출 값(Phase 7.4) — 없으면 기본값으로 만든다
-    private const string ChapterTitle = "포도밭 오후";                         // 챕터 제목(GDD §5 세계관 — 챕터 제목만 둔다)
+    private const string ThemePath = "Assets/Data/Settings/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
+    private const string MotionPath = "Assets/Data/Settings/MotionSettings.asset";     // 보드 연출 값(Phase 7.4) — 없으면 기본값으로 만든다
     private static readonly string[] PrototypeStages = { "Grape", "TwoColors", "BrushChanges", "Honeycomb", "Crossing", "Stain", "MakeBlack", "Hive", "LastStroke" };
 
     // 화면 색은 디자인 기준(UiTheme)에서 — 보드 칸 선택 링만 그대로
@@ -112,7 +114,7 @@ public static class BoardSceneBuilder
         int added = 0;
         foreach (string name in PrototypeStages)
         {
-            var stage = AssetDatabase.LoadAssetAtPath<TextAsset>($"Assets/Data/Stages/{name}.json")
+            var stage = AssetDatabase.LoadAssetAtPath<TextAsset>($"{ChapterFolder}/Stages/{name}.json")
                 ?? throw new System.InvalidOperationException($"{name}.json 없음 — AgentScripts/Tools/Refresh.cs 먼저 실행");
             if (catalog.Stages.Contains(stage)) continue;
             stages.arraySize++;
@@ -172,7 +174,7 @@ public static class BoardSceneBuilder
             ("_grid", grid),
             ("_recordTemplate", recordView),
             ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
-            ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/PaletteCatalog.asset")),
+            ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>(PaletteCatalogPath)),
             ("_gameFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath)));
 
         EditorSceneManager.SaveScene(scene, EditorScenePath);
@@ -301,7 +303,7 @@ public static class BoardSceneBuilder
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         var controller = puzzle.GetComponent<PuzzleController>();
         SetRefs(controller,
-            ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/PaletteCatalog.asset")),
+            ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>(PaletteCatalogPath)),
             ("_boardView", boardView),
             ("_targetView", targetView),
             ("_mixTable", mixTable),
@@ -321,7 +323,7 @@ public static class BoardSceneBuilder
 
         var game = new GameObject("Game", typeof(GameFlow));
         SetRefs(game.GetComponent<GameFlow>(),
-            ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
+            ("_chapter", AssetDatabase.LoadAssetAtPath<Chapter>(ChapterPath)),
             ("_puzzle", controller),
             ("_sound", sound.GetComponent<SoundController>()),
             ("_boardScreen", boardScreen),
@@ -333,7 +335,6 @@ public static class BoardSceneBuilder
             ("_selectOptionsButton", selectOptionsButton),
             ("_nextButton", nextButton),
             ("_nextLabel", nextButton.GetComponentInChildren<TMP_Text>()),
-            ("_art", AssetDatabase.LoadAssetAtPath<ChapterArt>(ChapterArtPath)),
             ("_selectPicture", selectPicture),
             ("_chapterScreen", chapterScreen),
             ("_chapterPicture", chapterPicture),
@@ -465,7 +466,6 @@ public static class BoardSceneBuilder
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
         TMP_Text subtitle = TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted);
-        subtitle.text = ChapterTitle;
         picture = Picture(screen, -210f, new Vector2(480f, 600f));
 
         var grid = NewUI("Grid", screen);
@@ -510,7 +510,7 @@ public static class BoardSceneBuilder
         template.SetActive(false);
 
         var view = screen.AddComponent<StageSelectView>();
-        SetRefs(view, ("_title", title), ("_subtitle", subtitle.gameObject), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
+        SetRefs(view, ("_title", title), ("_subtitle", subtitle), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
         SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_clearedFill", Strong), ("_openText", Strong), ("_clearedText", StrongInk));
         screen.SetActive(false);
         return view;

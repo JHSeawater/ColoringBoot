@@ -20,7 +20,7 @@ namespace ColoringBoot.Game
         private const string ListText = "목록";
         private const string CompleteText = "그림 완성!";
 
-        [SerializeField] private StageCatalog _catalog;
+        [SerializeField] private Chapter _chapter;   // 지금 여는 챕터 — 제목 · 스테이지 목록 · 그림 (Phase 8 구조 정리, 2026-10-07)
         [SerializeField] private PuzzleController _puzzle;
         [SerializeField] private SoundController _sound;
         [SerializeField] private GameObject _boardScreen;
@@ -33,7 +33,6 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _nextButton;
         [SerializeField] private TMP_Text _nextLabel;
         [Header("챕터 그림 (Phase 5)")]
-        [SerializeField] private ChapterArt _art;
         [SerializeField] private ChapterView _selectPicture;   // 선택 화면 위쪽(작게)
         [SerializeField] private GameObject _chapterScreen;    // 처음 클리어한 뒤 크게 칠하는 화면
         [SerializeField] private ChapterView _chapterPicture;
@@ -50,7 +49,7 @@ namespace ColoringBoot.Game
 
         private SaveData _data;
         private IAdService _ads;
-        private StageCatalog _list;  // 지금 여는 목록 — 챕터 1(_catalog) 또는 시험 목록(_labCatalog)
+        private StageCatalog _list;  // 지금 여는 목록 — 챕터(_chapter) 또는 시험 목록(_labCatalog)
         private bool _lab;
         private int _lesson = -1;    // 따라 하기 중이면 레슨 번호
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
@@ -65,9 +64,9 @@ namespace ColoringBoot.Game
             _data = new SaveData(new PlayerPrefsStore());
             _ads = new NoAdService();
             _puzzle.SetAds(_ads);
-            UseList(_catalog, false);
-            if (_art.Steps.Count != _stages.Length)
-                Debug.LogWarning($"챕터 그림 단계 {_art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
+            UseList(_chapter.Stages, false);
+            if (_chapter.Art.Steps.Count != _stages.Length)
+                Debug.LogWarning($"챕터 그림 단계 {_chapter.Art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
         }
 
         // 여는 목록을 정한다 — 스테이지 파일 이름(기록의 키)과 최소 수를 그 목록에서 읽는다. lab: 시험 목록(모두 열림 · 그림 없음)
@@ -186,9 +185,9 @@ namespace ColoringBoot.Game
             _titleScreen.SetActive(false);
             _boardScreen.SetActive(false);
             _chapterScreen.SetActive(false);
-            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : null, _lab);
+            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : _chapter.Title, _lab ? null : _chapter.Subtitle, _lab);
             _selectPicture.gameObject.SetActive(!_lab);
-            if (!_lab) _selectPicture.Show(_art, UpdatePainted(), justPainted);
+            if (!_lab) _selectPicture.Show(_chapter.Art, UpdatePainted(), justPainted);
         }
 
         private void OpenStage(int index)
@@ -233,12 +232,11 @@ namespace ColoringBoot.Game
             _boardScreen.SetActive(false);
             _chapterScreen.SetActive(true);
             bool[] painted = UpdatePainted();
-            int count = 0;
-            foreach (bool p in painted) if (p) count++;
-            bool complete = count == painted.Length;
+            int count = _data.Progress.ClearedCount(_stages);
+            bool complete = _data.Progress.IsComplete(_stages);
             _chapterCaption.text = complete ? CompleteText : $"색칠 {count} / {painted.Length}";
             _chapterNextLabel.text = step + 1 < _stages.Length ? NextText : ListText;
-            _chapterPicture.Show(_art, painted, step, complete);
+            _chapterPicture.Show(_chapter.Art, painted, step, complete);
         }
 
         // 다음 스테이지 — 스테이지 사이 광고 자리를 거친다. 마지막이면 목록
@@ -256,7 +254,7 @@ namespace ColoringBoot.Game
         // 단계 i = i번째 스테이지를 클리어했는가
         private bool[] UpdatePainted()
         {
-            for (int i = 0; i < _stages.Length; i++) _painted[i] = _data.Progress.IsCleared(_stages[i]);
+            _data.Progress.FillPainted(_stages, _painted);
             return _painted;
         }
 

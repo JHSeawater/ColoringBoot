@@ -62,9 +62,9 @@ public static class QaScene
         Expect(overlays.arraySize == 2 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
             && (overlays.GetArrayElementAtIndex(1).objectReferenceValue as GameObject)?.name == "StatsPanel", "PuzzleController._overlays = 옵션 · 기록 패널");
         var flow = Object.FindAnyObjectByType<GameFlow>();
-        CheckRefs(flow, Expect, "_catalog", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
+        CheckRefs(flow, Expect, "_chapter", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
-            "_art", "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
+            "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog");
         foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
@@ -73,7 +73,12 @@ public static class QaScene
         CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton", "_tutorialButton");
         CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
         Expect(Object.FindAnyObjectByType<SoundController>() != null, "SoundController 있음");
-        var catalog = (StageCatalog)new SerializedObject(flow).FindProperty("_catalog").objectReferenceValue;
+        // 챕터 에셋(2026-10-07): 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 · 그림이 연결됨
+        var chapter = (Chapter)new SerializedObject(flow).FindProperty("_chapter").objectReferenceValue;
+        Expect(!string.IsNullOrWhiteSpace(chapter.Title) && !string.IsNullOrWhiteSpace(chapter.Subtitle) && chapter.Stages != null && chapter.Art != null, $"챕터 '{chapter.Title}' · '{chapter.Subtitle}' 목록 · 그림 연결");
+        string chapterMissing = MissingGlyphs(font, new[] { chapter.Title, chapter.Subtitle });
+        Expect(chapterMissing.Length == 0, $"챕터 제목 · 부제 글자가 폰트에 없음 [{chapterMissing}]");
+        StageCatalog catalog = chapter.Stages;
         Expect(catalog.Stages.Count >= 9, "목록 9개 이상");
         for (int i = 0; i < catalog.Stages.Count; i++)
             Expect(catalog.Stages[i] != null && Stage.Parse(catalog.Stages[i].text).Cells.Count > 0, $"목록[{i}] 읽힘");
@@ -132,7 +137,7 @@ public static class QaScene
         Expect(!tutorial.Stages.Any(s => catalog.Stages.Concat(lab.Stages).Any(c => c.name == s.name)), "따라 하기 파일 이름이 다른 목록과 겹치지 않음");
 
         // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
-        var art = (ChapterArt)new SerializedObject(flow).FindProperty("_art").objectReferenceValue;
+        ChapterArt art = chapter.Art;
         Expect(art.Steps.Count == catalog.Stages.Count, $"그림 단계 {art.Steps.Count}개 = 스테이지 {catalog.Stages.Count}개");
         Expect(art.Line.Sprite != null && art.Steps.All(s => s.Sprite != null && s.Rect.width > 0 && s.Rect.height > 0), "그림 선화 · 단계 조각 모두 있음");
         Expect(art.Canvas.x * 5 == art.Canvas.y * 4, $"그림 캔버스 4:5 ({art.Canvas.x}×{art.Canvas.y})");
@@ -143,7 +148,7 @@ public static class QaScene
         Expect(AssetDatabase.LoadAssetAtPath<Button>("Assets/Prefabs/DirectionButton.prefab").targetGraphic != null, "방향 버튼 targetGraphic");
 
         // 팔레트 목록: 첫 칸 = 기본(default) · 이름이 비지 않고 겹치지 않음 · 팔레트마다 7색 · 알파 1
-        var palettes = AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/PaletteCatalog.asset");
+        var palettes = AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/Palettes/PaletteCatalog.asset");
         Expect(palettes != null && palettes.Palettes.Count >= 2 && palettes.Palettes.All(p => p != null), "팔레트 목록 2개 이상 · 빈 칸 없음");
         Expect(palettes.Default.Id == "default", "첫 팔레트 = default");
         Expect(palettes.Palettes.Select(p => p.Id).Distinct().Count() == palettes.Palettes.Count && palettes.Palettes.All(p => !string.IsNullOrWhiteSpace(p.Id)), "팔레트 이름 겹침 · 빈 이름 없음");

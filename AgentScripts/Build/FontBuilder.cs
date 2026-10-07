@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
 
 // 한글 폰트 에셋 생성 — Pretendard SemiBold, 쓰는 글자만 담은 고정(Static) 아틀라스 (Phase 2, 사용자 결정 2026-09-28)
-// 글자 출처: 씬 구성 스크립트 · Game 코드의 문자열 리터럴(주석 제외) + 스테이지 JSON의 name + ASCII.
+// 글자 출처: 씬 구성 스크립트 · Game 코드의 문자열 리터럴(주석 제외) + 스테이지 JSON의 name + 챕터 제목 · 부제(Chapter 에셋) + ASCII.
 // 문구나 스테이지 이름을 바꾸면 다시 실행한다 — run_script(file=AgentScripts/Build/FontBuilder.cs, entry=FontBuilder.Build)
 public static class FontBuilder
 {
@@ -21,9 +21,9 @@ public static class FontBuilder
     private const int AtlasSize = 1024;
 
     private static readonly string[] _sourceFiles = { "AgentScripts/Build/BoardSceneBuilder.cs" };
-    // 아래 두 폴더는 하위 폴더까지 읽는다(2026-10-05 — Game 스크립트를 하위 폴더로 나눔 · Phase 8 챕터별 스테이지 폴더 대비)
+    // 아래 두 폴더는 하위 폴더까지 읽는다(2026-10-05 — Game 스크립트를 하위 폴더로 나눔 · 2026-10-07 챕터 · 따라 하기 · 시험 목록 폴더)
     private const string GameCodeFolder = "Assets/Scripts/Game";
-    private const string StageFolder = "Assets/Data/Stages";
+    private const string StageFolder = "Assets/Data";
 
     // 읽기 전용 — 지금 코드 · 스테이지에서 모을 글자만 돌려준다(폰트 에셋은 그대로). 폴더를 옮기기 전후 비교용
     public static string Preview()
@@ -88,6 +88,11 @@ public static class FontBuilder
         var name = new Regex("\"name\"\\s*:\\s*\"([^\"]*)\"");
         foreach (string file in Directory.GetFiles(StageFolder, "*.json", SearchOption.AllDirectories))
             Add(set, name.Match(File.ReadAllText(file, Encoding.UTF8)).Groups[1].Value);
+        foreach (string guid in AssetDatabase.FindAssets("t:Chapter"))
+        {
+            var chapter = AssetDatabase.LoadAssetAtPath<ColoringBoot.Game.Chapter>(AssetDatabase.GUIDToAssetPath(guid));
+            Add(set, chapter.Title + chapter.Subtitle);
+        }
 
         return new string(set.ToArray());
     }

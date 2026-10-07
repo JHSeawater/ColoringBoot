@@ -47,14 +47,14 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `/Canvas` CanvasScaler: uiScaleMode = Scale With Screen Size · referenceResolution = 1080×1920 · screenMatchMode = Expand
 - `…/BoardScreen/BoardArea` Image: color.a = 0 · raycastTarget = true
 - `…/BoardScreen/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/BoardScreen/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
-- 연출 값(Phase 7.4): BoardArea BoardView `_motion` = `Assets/Data/MotionSettings.asset` · TargetView `_motion` = null(목표 썸네일은 연출 없음)
+- 연출 값(Phase 7.4): BoardArea BoardView `_motion` = `Assets/Data/Settings/MotionSettings.asset` · TargetView `_motion` = null(목표 썸네일은 연출 없음)
 - 안내 손가락 표시(2026-10-07): BoardArea BoardView `_guideSprite` null 아님 · TargetView `_guideSprite` = null
 - 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner` · `_hintButton` · `_guideBanner` · `_guideLabel` · `_overlays` = 옵션 · 기록 패널(열려 있으면 키보드 무시, 2026-10-05)
-- `/Game` GameFlow: `_catalog`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`) · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton` · `_labCatalog`(시험 목록 `?lab` — 모두 풀리고 `minMoves` 일치 · 이름 글자 · 파일 이름이 챕터 목록과 안 겹침, 2026-10-06) · `_tutorialCatalog`(따라 하기 — 레슨 수 = `TutorialLessons.Count` · 안내대로 그으면 풀림(= 최소 수 — 혼자 풀기 레슨은 솔버 최소 수) · 일부러 막히는 획은 막힘 · 문구 · 이름 글자 · 파일 이름 안 겹침, 2026-10-07)
-- `…/SelectScreen` StageSelectView: `_title` · `_subtitle`(챕터 제목 줄 — 시험 목록에서 숨김) · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
+- `/Game` GameFlow: `_chapter`(Chapter — 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 `Stages`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · 그림 `Art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`), 2026-10-07) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton` · `_labCatalog`(시험 목록 `?lab` — 모두 풀리고 `minMoves` 일치 · 이름 글자 · 파일 이름이 챕터 목록과 안 겹침, 2026-10-06) · `_tutorialCatalog`(따라 하기 — 레슨 수 = `TutorialLessons.Count` · 안내대로 그으면 풀림(= 최소 수 — 혼자 풀기 레슨은 솔버 최소 수) · 일부러 막히는 획은 막힘 · 문구 · 이름 글자 · 파일 이름 안 겹침, 2026-10-07)
+- `…/SelectScreen` StageSelectView: `_title` · `_subtitle`(챕터 부제 줄 — 글자는 실행 때 `Chapter`에서, 시험 목록에서 숨김) · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton` · `_tutorialButton`(규칙 다시 보기)
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
 - `…/MixTable` MixTableView: `_chipSprite`
@@ -63,7 +63,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 ## 4. 에셋
 - 목록의 JSON이 모두 `Stage.Parse`로 읽히고, 솔버로 풀리며 `minMoves`가 솔버 최소 수와 같은지
-- `Assets/Data/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
+- `Assets/Data/Palettes/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
 - 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
 - `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자 0 · 아틀라스 1장) · 씬 글자 · 스테이지 이름이 모두 폰트에 있음(`QaScene`이 점검, 2026-10-05)

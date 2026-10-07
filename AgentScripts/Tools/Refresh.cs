@@ -6,6 +6,6 @@ public static class Refresh
     public static string All()
     {
         AssetDatabase.Refresh();
-        return AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>("Assets/Data/Stages/Grape.json") != null ? "Grape.json 임포트됨" : "Grape.json 없음";
+        return AssetDatabase.LoadAssetAtPath<UnityEngine.TextAsset>("Assets/Data/Chapters/Chapter1/Stages/Grape.json") != null ? "Grape.json 임포트됨" : "Grape.json 없음";
     }
 }

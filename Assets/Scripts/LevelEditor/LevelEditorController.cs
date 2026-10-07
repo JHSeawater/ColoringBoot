@@ -18,7 +18,6 @@ namespace ColoringBoot.LevelEditor
     public sealed class LevelEditorController : MonoBehaviour
     {
         private const int MaxCells = 40;               // GDD §6 스테이지 최대 칸 수
-        private const string StageFolder = "Assets/Data/Stages";
         private const float GenerateSeconds = 4f;      // 생성기 한 번에 쓸 시간 (프로토타입과 같음)
         private const int SolveLimit = 600000;         // 풀이 검사 · 저장의 탐색 상한 (프로토타입 에디터의 풀이 검사와 같음)
         private const float ReferenceHeight = 1920f;   // IMGUI 배율 기준
@@ -329,7 +328,9 @@ namespace ColoringBoot.LevelEditor
                 _status = "파일 이름은 영문자로 시작하는 영문 · 숫자 · _ 만 써요 (예: Grape2).";
                 return;
             }
-            string path = $"{StageFolder}/{_fileName}.json";
+            // 목록 에셋과 같은 챕터 폴더의 Stages/에 저장한다(Assets/Data/Chapters/ChapterN/ — 2026-10-07)
+            string folder = Path.GetDirectoryName(AssetDatabase.GetAssetPath(_catalog)).Replace(Path.DirectorySeparatorChar, '/') + "/Stages";
+            string path = $"{folder}/{_fileName}.json";
             if (File.Exists(path) && _fileName != _loadedFile)
             {
                 _status = $"'{_fileName}.json'이 이미 있어요. 다른 파일 이름을 쓰거나, 그 스테이지를 불러온 뒤 저장하세요.";

@@ -7,19 +7,19 @@ using UnityEditor;
 using UnityEngine;
 
 // 챕터 그림 에셋 (Phase 5.3) — 먼저 python AgentScripts/Build/ChapterArtExport.py(원본 → 게임 크기 · 여백 자르기 · layout.json)
-// run_script(file=AgentScripts/Build/ChapterArtBuilder.cs, entry=ChapterArtBuilder.Build). 다시 실행하면 같은 결과로 덮어쓴다
+// run_script(file=AgentScripts/Build/ChapterArtBuilder.cs, entry=ChapterArtBuilder.Build, args=[챕터 번호]). 다시 실행하면 같은 결과로 덮어쓴다
+// 그림 조각은 Assets/Art/Chapters/ChapterN/, 에셋은 Assets/Data/Chapters/ChapterN/ChapterArt.asset (챕터 번호 인자 — 2026-10-07)
 public static class ChapterArtBuilder
 {
-    private const string Folder = "Assets/Art/Chapters/Chapter1";
-    private const string AssetPath = "Assets/Data/Chapter1Art.asset";
-
-    public static string Build()
+    public static string Build(int chapter)
     {
+        string folder = $"Assets/Art/Chapters/Chapter{chapter}";
+        string assetPath = $"Assets/Data/Chapters/Chapter{chapter}/ChapterArt.asset";
         AssetDatabase.Refresh();
-        Layout layout = Layout.Read(File.ReadAllText($"{Folder}/layout.json"));
+        Layout layout = Layout.Read(File.ReadAllText($"{folder}/layout.json"));
         foreach (Entry entry in layout.steps.Prepend(layout.line))
         {
-            var importer = (TextureImporter)AssetImporter.GetAtPath($"{Folder}/{entry.file}");
+            var importer = (TextureImporter)AssetImporter.GetAtPath($"{folder}/{entry.file}");
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.mipmapEnabled = false;
@@ -29,26 +29,26 @@ public static class ChapterArtBuilder
             importer.SaveAndReimport();
         }
 
-        var art = AssetDatabase.LoadAssetAtPath<ChapterArt>(AssetPath);
+        var art = AssetDatabase.LoadAssetAtPath<ChapterArt>(assetPath);
         if (art == null)
         {
             art = ScriptableObject.CreateInstance<ChapterArt>();
-            AssetDatabase.CreateAsset(art, AssetPath);
+            AssetDatabase.CreateAsset(art, assetPath);
         }
         var so = new SerializedObject(art);
         so.FindProperty("_canvas").vector2IntValue = new Vector2Int(layout.width, layout.height);
-        SetLayer(so.FindProperty("_line"), layout.line);
+        SetLayer(so.FindProperty("_line"), layout.line, folder);
         SerializedProperty steps = so.FindProperty("_steps");
         steps.arraySize = layout.steps.Length;
-        for (int i = 0; i < layout.steps.Length; i++) SetLayer(steps.GetArrayElementAtIndex(i), layout.steps[i]);
+        for (int i = 0; i < layout.steps.Length; i++) SetLayer(steps.GetArrayElementAtIndex(i), layout.steps[i], folder);
         so.ApplyModifiedPropertiesWithoutUndo();
         AssetDatabase.SaveAssets();
-        return $"{AssetPath}: 캔버스 {layout.width}×{layout.height} · 선화 + 단계 {layout.steps.Length}개";
+        return $"{assetPath}: 캔버스 {layout.width}×{layout.height} · 선화 + 단계 {layout.steps.Length}개";
     }
 
-    private static void SetLayer(SerializedProperty layer, Entry entry)
+    private static void SetLayer(SerializedProperty layer, Entry entry, string folder)
     {
-        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{Folder}/{entry.file}")
+        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{folder}/{entry.file}")
             ?? throw new InvalidOperationException($"{entry.file} 스프라이트 없음");
         layer.FindPropertyRelative("_sprite").objectReferenceValue = sprite;
         layer.FindPropertyRelative("_rect").rectIntValue = new RectInt(entry.x, entry.y, entry.w, entry.h);

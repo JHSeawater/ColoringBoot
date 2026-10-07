@@ -12,13 +12,12 @@ namespace ColoringBoot.Game
         private const string LockedNotice = "앞 스테이지를 먼저 풀어 주세요";
 
         [SerializeField] private TMP_Text _title;
-        [SerializeField] private GameObject _subtitle;      // 챕터 제목 줄 — 시험 목록(?lab)에서는 숨긴다
+        [SerializeField] private TMP_Text _subtitle;        // 챕터 부제 줄(장소와 계절) — 시험 목록(?lab)에서는 숨긴다
         [SerializeField] private RectTransform _grid;
         [SerializeField] private StageButtonView _buttonTemplate;
         [SerializeField] private GameObject _noticePanel;   // 안내 띠(바탕) — 글자는 _notice
         [SerializeField] private TMP_Text _notice;
         [SerializeField] private float _noticeSeconds = 2f;
-        [SerializeField] private string _chapterName = "챕터 1";
         [SerializeField] private Color _lockedFill = new Color32(0xB3, 0xBD, 0xB7, 0xFF);
         [SerializeField] private Color _openFill = new Color32(0xF6, 0xF7, 0xF3, 0xFF);
         [SerializeField] private Color _clearedFill = new Color32(0x1C, 0x22, 0x2C, 0xFF);
@@ -38,16 +37,17 @@ namespace ColoringBoot.Game
         public event Action<int> StageChosen;
 
         // stages: 스테이지 파일 이름(기록의 키), minMoves: 스테이지별 최소 수(완벽 판정).
-        // listName: 제목에 쓸 목록 이름(없으면 챕터 이름 · 챕터 제목 줄 표시), allOpen: 해금과 상관없이 모두 열림(시험 목록)
-        public void Show(IReadOnlyList<string> stages, IReadOnlyList<int?> minMoves, SaveData data, string listName = null, bool allOpen = false)
+        // title: 제목 줄의 목록 이름(챕터 제목 · "시험"), subtitle: 챕터 부제(없으면 그 줄을 숨김), allOpen: 해금과 상관없이 모두 열림(시험 목록)
+        public void Show(IReadOnlyList<string> stages, IReadOnlyList<int?> minMoves, SaveData data, string title, string subtitle, bool allOpen)
         {
             _stages = stages;
             _minMoves = minMoves;
             _data = data;
-            _listName = listName ?? _chapterName;
+            _listName = title;
             _allOpen = allOpen;
             gameObject.SetActive(true);
-            _subtitle.SetActive(listName == null);
+            _subtitle.gameObject.SetActive(subtitle != null);
+            if (subtitle != null) _subtitle.text = subtitle;
             _noticePanel.SetActive(false);
             while (_buttons.Count < stages.Count)
             {
