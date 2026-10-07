@@ -328,7 +328,8 @@ namespace ColoringBoot.Game
             string counter = _minMoves.HasValue ? $"{_session.MoveCount} / {_minMoves.Value}수" : $"{_session.MoveCount}수";
             _moveCounter.text = best.HasValue ? $"{counter} · 최고 {best.Value}" : counter;
             bool solved = _session.IsSolved;
-            _boardView.SetInteractable(!solved); // 클리어하면 보드 입력을 잠근다(되돌리면 풀린다)
+            // 클리어하거나 막히면 보드 입력을 잠근다(되돌리면 풀린다). 막힌 뒤에는 더 그어도 완성할 수 없다 — GDD §2.5 "헛수고를 막는다"(2026-10-08 사용자 결정)
+            _boardView.SetInteractable(!solved && !_session.IsDead);
             _clearBanner.SetActive(solved && !holdBanners);
             if (solved)
             {

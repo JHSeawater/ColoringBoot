@@ -139,7 +139,7 @@ MCP 안전 규칙:
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
 
 **색 (GDD §2.3):** 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
-* **막힘**: 어떤 칸이든 `(cell & ~target) != 0` → 목표에 없는 기본색이 들어갔다(색은 빠지지 않으므로 복구 불가). 즉시 표시한다.
+* **막힘**: 어떤 칸이든 `(cell & ~target) != 0` → 목표에 없는 기본색이 들어갔다(색은 빠지지 않으므로 복구 불가). 즉시 표시하고, 막힌 동안 보드 입력을 잠근다(되돌리기 · 처음부터 · 힌트만 — 2026-10-08 사용자 결정).
 * **성공**: 모든 칸이 `cell == target`.
 * **팔레트 (GDD §2.3)**: 색 값(0~7)은 규칙 전용이고, 화면에 보이는 색은 스테이지가 고른 팔레트(값 1~7 → 표시 색, `ScriptableObject`)가 정한다. 로직·솔버는 팔레트를 모른다. 표현 계층은 색을 코드에 넣지 않고 팔레트에서 읽는다. 접근성 기호(R · Y · B)는 색 값을 따른다. 구현(2026-09-30): `ColorPalette._id`(스테이지 JSON의 이름 — `default` · `pastel`) · `PaletteCatalog`(`Assets/Data/Palettes/PaletteCatalog.asset`, 첫 칸 = 기본). 이름이 없으면 기본, 모르는 이름이면 기본 + 경고. 기호 글자색은 칸 색의 밝기(`Color.grayscale` > 0.6이면 어두운 글자).
 
@@ -181,7 +181,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-10-04 기준)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔 · 스플래시 끔(Phase 4.1) · 전용 템플릿 `PROJECT:ColoringBoot` · 제품 이름 "컬러링붓" · Name Files As Hashes(Phase 7.6, `AgentScripts/Setup/Phase7WebTemplate.cs`). 텍스처 압축 형식은 정하지 않았다(기본값 — Phase 8에서 휴대폰 메모리와 함께 확인). 지금 배포본: 압축 후 **9,248,597바이트**(2026-10-08, 무한 모드 묶음 다시 만듦 — 난이도마다 다른 시드 · 거의 같은 퍼즐 거름. 빌드 뒤 `ProjectSettings` 되돌리기 불필요(입력 에셋 삭제). 따라 하기 레슨 5개 빌드 9,214,852는 사용자 확인 2026-10-07). Phase 7.6 빌드는 휴대폰 · PC 확인, 첫 로딩 이전과 거의 같음(2026-10-04 사용자 확인 — 숫자로 잰 마지막 값은 Phase 2의 약 3초). 크기는 바이트로 비교하고, 빌드마다 `Docs/BuildHistory.md` 표에 한 줄 더한다(Phase 0 기준선 이후 증감 · 그림 한 장 ≈ +686 KB 등은 그 표에).
+* **현황 (2026-10-04 기준)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔 · 스플래시 끔(Phase 4.1) · 전용 템플릿 `PROJECT:ColoringBoot` · 제품 이름 "컬러링붓" · Name Files As Hashes(Phase 7.6, `AgentScripts/Setup/Phase7WebTemplate.cs`). 텍스처 압축 형식은 정하지 않았다(기본값 — Phase 8에서 휴대폰 메모리와 함께 확인). 지금 배포본: 압축 후 **9,249,449바이트**(2026-10-08, 막히면 보드 입력 잠금 · 무한 모드 묶음 다시 만듦. 빌드 뒤 `ProjectSettings` 되돌리기 불필요(입력 에셋 삭제). 따라 하기 레슨 5개 빌드 9,214,852는 사용자 확인 2026-10-07). Phase 7.6 빌드는 휴대폰 · PC 확인, 첫 로딩 이전과 거의 같음(2026-10-04 사용자 확인 — 숫자로 잰 마지막 값은 Phase 2의 약 3초). 크기는 바이트로 비교하고, 빌드마다 `Docs/BuildHistory.md` 표에 한 줄 더한다(Phase 0 기준선 이후 증감 · 그림 한 장 ≈ +686 KB 등은 그 표에).
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---
