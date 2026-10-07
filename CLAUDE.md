@@ -120,7 +120,7 @@ MCP 안전 규칙:
 
 | 위치 | 내용 |
 |---|---|
-| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`). `Rules/`(좌표 · 색 · 보드 · 붓질 · 판정 · 세션 — 기믹 규칙도 여기) · `Stages/`(스테이지 코드 읽기 · 쓰기) · `Solver/`(솔버 · 생성기) · `Records/`(진행 · 플레이 기록) |
+| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`). `Rules/`(좌표 · 색 · 보드 · 붓질 · 판정 · 세션 — 기믹 규칙도 여기) · `Stages/`(스테이지 코드 읽기 · 쓰기) · `Solver/`(솔버 · 생성기 · 난이도 지표 `StageMetrics` · 그림 맵 시작 칸 찾기 `SeedSearch`) · `Records/`(진행 · 플레이 기록) |
 | `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층. `Board/`(한 판 — `PuzzleController` · `BoardView` · 칸 · 조합표) · `Screens/`(`GameFlow` · 화면 · 패널 · 전환) · `Data/`(ScriptableObject 타입) · `Platform/`(저장 · 광고 · 소리 · 주소 — 앱인토스 연동 때 바꿀 곳). `BoardView`는 partial 파일 4개: `BoardView.cs`(필드 · 칸 만들기 · 그리기 · 배치 · 선택 — 필드는 모두 여기) · `.Input`(끌기 · 탭 · 키보드) · `.Preview`(미리보기) · `.Motion`(연출) |
 | `Assets/Scripts/LevelEditor/` | `ColoringBoot.LevelEditor` — `defineConstraints: UNITY_EDITOR`(빌드에 안 들어가고 씬에는 붙음) + `Assets/Scenes/LevelEditor.unity`(빌드 목록 제외, 플레이해서 쓴다 · 조작 패널은 IMGUI) |
 | `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 프로토타입 스테이지 회귀 기준은 게임 데이터와 분리한 사본 `PrototypeStages/`(고치지 않는다) |

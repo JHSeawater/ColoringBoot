@@ -26,7 +26,7 @@ namespace ColoringBoot.LevelEditor
         private static readonly Color PanelText = new Color32(0x1C, 0x22, 0x2C, 0xFF); // 밝은 바탕 위 글자
 
         private static readonly string[] _paintNames = { "칸 없애기", "빈칸", "빨강", "노랑", "주황", "파랑", "보라", "초록", "검정" };
-        private static readonly string[] _shapeNames = { "작은 육각형", "큰 육각형", "마름모", "삼각형", "불규칙", "아무거나" };
+        private static readonly string[] _shapeNames = { "작은 육각형", "큰 육각형", "마름모", "삼각형", "불규칙", "아무거나", "그린 모양" };
         private static readonly string[] _genPaletteNames = { "원색만", "섞인 색 포함", "빨강 · 노랑만" };
         private static readonly PaintColor[][] _genPalettes =
         {
@@ -36,6 +36,11 @@ namespace ColoringBoot.LevelEditor
         };
         private static readonly string[] _orderNames = { "엄격", "보통", "상관없음" };
         private static readonly double[] _orderRatios = { 0.05, 0.2, 1.0 };
+        // 생성 조건 (GDD §8, 2026-10-07): 목표에 쓸 색(값 1~7) · 섞인 색 비율 하한 · 막힐 수 있는 칸 비율 하한
+        private static readonly string[] _colorShort = { "빨", "노", "주", "파", "보", "초", "검" };
+        private static readonly double[] _mixedSteps = { 0, 0.3, 0.5, 0.7 };
+        private static readonly double[] _trapSteps = { 0, 0.2, 0.4, 0.6 };
+        private const int MetricsLimit = 200000;      // 난이도 지표의 상태 수 상한(넘으면 "모름")
         private static readonly Regex _fileNamePattern = new Regex("^[A-Za-z][A-Za-z0-9_]*$");
 
         [SerializeField] private PaintGridView _grid;
@@ -62,7 +67,9 @@ namespace ColoringBoot.LevelEditor
         private int _genMoves = 5;
         private int _genPalette;
         private int _genOrder = 1;
-        private bool _genAllowBlack = true;
+        private readonly bool[] _genTargetColors = { true, true, true, true, true, true, true };
+        private int _genMixed;
+        private int _genTrap;
 
         private void OnEnable() => _grid.Painted += OnPainted;
         private void OnDisable() => _grid.Painted -= OnPainted;
@@ -146,8 +153,16 @@ namespace ColoringBoot.LevelEditor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button($"색: {_genPaletteNames[_genPalette]}")) _genPalette = (_genPalette + 1) % _genPalettes.Length;
             if (GUILayout.Button($"순서: {_orderNames[_genOrder]}")) _genOrder = (_genOrder + 1) % _orderNames.Length;
-            _genAllowBlack = GUILayout.Toggle(_genAllowBlack, "검정 허용");
+            if (GUILayout.Button($"섞인 색 {AtLeast(_mixedSteps[_genMixed])}")) _genMixed = (_genMixed + 1) % _mixedSteps.Length;
+            if (GUILayout.Button($"막힐 칸 {AtLeast(_trapSteps[_genTrap])}")) _genTrap = (_genTrap + 1) % _trapSteps.Length;
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("목표 색", GUILayout.Width(120f));
+            for (int c = 0; c < _colorShort.Length; c++) _genTargetColors[c] = GUILayout.Toggle(_genTargetColors[c], _colorShort[c], GUILayout.Width(90f));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("랜덤 생성")) Generate();
+            if (GUILayout.Button("그림 → 시작 칸 찾기")) FindSeeds();
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
@@ -236,9 +251,18 @@ namespace ColoringBoot.LevelEditor
                 Moves = _genMoves,
                 MinSolve = _genMoves,
                 Palette = _genPalettes[_genPalette],
-                AllowBlack = _genAllowBlack,
+                AllowBlack = _genTargetColors[(int)PaintColor.Black - 1],
                 MaxOrderRatio = _orderRatios[_genOrder],
+                Cells = (BoardShape)_genShape == BoardShape.Drawn ? _cells.Keys.ToList() : null,
+                TargetColors = _genTargetColors.All(on => on) ? null : Enumerable.Range(1, _genTargetColors.Length).Where(c => _genTargetColors[c - 1]).Select(c => (PaintColor)c).ToArray(),
+                MinMixedRatio = _mixedSteps[_genMixed],
+                MinTrapRatio = _trapSteps[_genTrap],
             };
+            if (options.Cells != null && options.Cells.Count < 2)
+            {
+                _status = "그린 모양으로 만들려면 먼저 칸을 두 개 이상 그리세요.";
+                return;
+            }
             uint seed = (uint)Environment.TickCount;
             var random = new SeededRandom(seed);
             float until = Time.realtimeSinceStartup + GenerateSeconds;
@@ -254,8 +278,56 @@ namespace ColoringBoot.LevelEditor
             _fileName = $"Random{seed}";
             _loadedFile = null;
             string order = generated.Order.HasValue ? $", 순서 {generated.Order.Value.Succeeded}/{generated.Order.Value.Total}" : "";
-            _status = $"생성: {_shapeNames[(int)generated.Shape]} {generated.Stage.Cells.Count}칸, 최소 {generated.Stage.MinMoves}수{order} (시드 {seed})";
+            _status = $"생성: {_shapeNames[(int)generated.Shape]} {generated.Stage.Cells.Count}칸, 최소 {generated.Stage.MinMoves}수{order} (시드 {seed}). {MetricsText(generated.Stage)}";
         }
+
+        // 그림 맵 (GDD §5 · §8): 지금 칠한 목표 그림은 두고, 시작 색 칸 배치를 시간 안에서 찾는다 — 시작 색 칸 수 · 목표 수(~ +2) · 순서 · 색(섞인 색 포함이면 시작 색도 섞인 색 허용) 조건
+        private void FindSeeds()
+        {
+            var options = new SeedSearchOptions
+            {
+                Seeds = _genSeeds,
+                MinMoves = _genMoves,
+                MaxMoves = _genMoves + 2,
+                MixedSeeds = _genPalette == 1,
+                MaxOrderRatio = _orderRatios[_genOrder],
+            };
+            Stage picture = BuildStage(null);
+            uint seed = (uint)Environment.TickCount;
+            var random = new SeededRandom(seed);
+            float until = Time.realtimeSinceStartup + GenerateSeconds;
+            GeneratedStage found = null;
+            try
+            {
+                while (found == null && Time.realtimeSinceStartup < until) found = SeedSearch.TryOnce(picture, options, random);
+            }
+            catch (ArgumentException)
+            {
+                _status = $"목표 그림에 칠할 칸이 시작 색 칸 수({_genSeeds})보다 적어요. 목표 칠하기로 그림을 먼저 그리세요.";
+                return;
+            }
+            if (found == null)
+            {
+                _status = $"{GenerateSeconds}초 안에 {options.MinMoves}~{options.MaxMoves}수로 풀리는 배치를 찾지 못했어요. 시작 색 칸을 늘리거나 목표 수 · 순서 조건을 완화해 보세요(다시 누르면 다른 배치를 찾아요).";
+                return;
+            }
+            SetStage(found.Stage);
+            string order = found.Order.HasValue ? $", 순서 {found.Order.Value.Succeeded}/{found.Order.Value.Total}" : "";
+            _status = $"시작 칸 {options.Seeds}개를 찾았어요: 최소 {found.Stage.MinMoves}수{order} (시드 {seed}). {MetricsText(found.Stage)}";
+        }
+
+        // 난이도 지표 한 줄 (GDD §5 · §8) — 상태 수가 상한을 넘으면 상태 지표는 "모름"
+        private static string MetricsText(Stage stage)
+        {
+            StageMetrics m = StageMetrics.Measure(new Board(stage), MetricsLimit);
+            string dead = m.DeadStrokeRatio.HasValue ? Percent(m.DeadStrokeRatio.Value) : "모름";
+            string silent = m.SilentRatio.HasValue ? Percent(m.SilentRatio.Value) : "모름";
+            return $"막힐 칸 {Percent(m.TrapRatio)} · 섞인 색 {Percent(m.MixedRatio)} · 막히는 획 {dead} · 조용한 막다른 길 {silent}";
+        }
+
+        private static string Percent(double ratio) => $"{Math.Round(ratio * 100)}%";
+
+        private static string AtLeast(double ratio) => ratio > 0 ? $"≥ {Percent(ratio)}" : "끔";
 
         private void Load(TextAsset asset)
         {
@@ -312,7 +384,7 @@ namespace ColoringBoot.LevelEditor
             var board = new Board(BuildStage(null));
             OrderSensitivity? order = Solver.MeasureOrder(board, board.CreateStartState(), result.Path);
             string orderText = order.HasValue ? $" 최적 풀이의 순서를 바꾸면 {order.Value.Total}가지 중 {order.Value.Succeeded}가지만 성공해요." : " (8수 이상은 순서 민감도를 계산하지 않아요)";
-            return $"풀 수 있어요. 최소 {result.Path.Count}수, 탐색한 상태 {result.Explored:N0}개.{orderText}";
+            return $"풀 수 있어요. 최소 {result.Path.Count}수, 탐색한 상태 {result.Explored:N0}개.{orderText} {MetricsText(BuildStage(null))}";
         }
 
         // 저장: 솔버가 minMoves를 채우고, JSON을 쓰고, 목록에 없으면 끝에 등록한다. 풀이를 확인하지 못하면(풀 수 없음 · 탐색 상한) 저장하지 않는다

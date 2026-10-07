@@ -55,6 +55,38 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(first, second);
         }
 
+        // 생성 조건 (2026-10-07): 직접 그린 모양 · 목표에 쓸 색 · 섞인 색 비율 · 막힐 수 있는 칸 비율
+        [Test]
+        public void Conditions_AreMet()
+        {
+            HexCoord[] drawn = Enumerable.Range(0, 4).SelectMany(q => Enumerable.Range(0, 3).Select(r => new HexCoord(q, r))).ToArray(); // 12칸 평행사변형
+            PaintColor[] allowed = { PaintColor.Red, PaintColor.Yellow, PaintColor.Orange };
+            var options = new GeneratorOptions
+            {
+                Cells = drawn,
+                Seeds = 3,
+                Moves = 3,
+                MinSolve = 3,
+                Palette = new[] { PaintColor.Red, PaintColor.Yellow },
+                MaxOrderRatio = 1.0,
+                TargetColors = allowed,
+                MinMixedRatio = 0.3,
+                MinTrapRatio = 0.3,
+            };
+
+            GeneratedStage generated = null;
+            var random = new SeededRandom(7);
+            for (int i = 0; i < 50 && generated == null; i++) generated = Generator.Generate(options, random, "조건");
+
+            Assert.IsNotNull(generated, "조건에 맞는 스테이지를 찾음");
+            Assert.AreEqual(BoardShape.Drawn, generated.Shape);
+            CollectionAssert.AreEquivalent(drawn, generated.Stage.Cells.Select(c => c.Coord), "그린 칸 그대로");
+            Assert.IsTrue(generated.Stage.Cells.All(c => c.Target == PaintColor.Empty || allowed.Contains(c.Target)), "목표 색");
+            StageMetrics metrics = StageMetrics.Measure(new Board(generated.Stage));
+            Assert.GreaterOrEqual(metrics.MixedRatio, 0.3, "섞인 색 비율");
+            Assert.GreaterOrEqual(metrics.TrapRatio, 0.3, "막힐 수 있는 칸 비율");
+        }
+
         private static string CellsText(Stage stage) =>
             string.Join(",", stage.Cells.Select(c => $"[{c.Coord.Q},{c.Coord.R},{(int)c.Start},{(int)c.Target}]"));
     }

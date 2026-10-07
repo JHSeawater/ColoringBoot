@@ -35,7 +35,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
 | `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) 등 |
-| `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 | `Paint` · `Record` · `Check` · `Save` 등 |
+| `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 · 생성 조건 · 그림 → 시작 칸 찾기 | `Paint` · `Record` · `Check` · `Save` · `GenerateWith` · `FindSeeds` 등 |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
 
 ## Tools/

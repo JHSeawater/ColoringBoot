@@ -86,6 +86,32 @@ public static class LevelEditorQa
         return State();
     }
 
+    // 생성 조건 (2026-10-07): shape = 모양 번호(6 = 그린 모양), mixed · trap = 단계 번호(0 = 끔), targetColors = "3,6"처럼 목표에 쓸 색(빈 문자열 = 모두)
+    public static string GenerateWith(int shape, int seeds, int moves, int mixed, int trap, string targetColors)
+    {
+        Set("_genShape", shape);
+        Set("_genSeeds", seeds);
+        Set("_genMoves", moves);
+        Set("_genMixed", mixed);
+        Set("_genTrap", trap);
+        bool[] colors = Field<bool[]>("_genTargetColors");
+        int[] picked = targetColors.Split(',').Where(s => s.Length > 0).Select(int.Parse).ToArray();
+        for (int c = 0; c < colors.Length; c++) colors[c] = picked.Length == 0 || picked.Contains(c + 1);
+        Call("Generate");
+        return State();
+    }
+
+    // 그림 → 시작 칸 찾기: 지금 칠한 목표 그림으로. palette = 색 옵션 번호(1 = 섞인 색 포함 → 시작 색도 섞인 색 허용), order = 순서 옵션 번호(0 엄격 · 1 보통 · 2 상관없음)
+    public static string FindSeeds(int seeds, int moves, int palette, int order)
+    {
+        Set("_genSeeds", seeds);
+        Set("_genMoves", moves);
+        Set("_genPalette", palette);
+        Set("_genOrder", order);
+        Call("FindSeeds");
+        return State();
+    }
+
     public static string State()
     {
         var cells = Field<Dictionary<HexCoord, (PaintColor start, PaintColor target)>>("_cells");

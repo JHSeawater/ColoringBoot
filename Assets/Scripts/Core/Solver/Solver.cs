@@ -123,8 +123,8 @@ namespace ColoringBoot.Core
             return path;
         }
 
-        // 칸당 3비트로 압축한 상태 (최대 42칸)
-        private readonly struct StateKey : IEquatable<StateKey>
+        // 칸당 3비트로 압축한 상태 (최대 42칸) — 난이도 지표(StageMetrics)도 쓴다
+        internal readonly struct StateKey : IEquatable<StateKey>
         {
             private readonly ulong _low;
             private readonly ulong _high;

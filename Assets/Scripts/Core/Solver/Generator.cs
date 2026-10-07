@@ -34,6 +34,7 @@ namespace ColoringBoot.Core
         Triangle,  // 삼각형 (15칸)
         Blob,      // 불규칙 (14~21칸)
         Random,    // 앞의 넷 중 하나(큰 육각형 제외 — 프로토타입과 같음)
+        Drawn,     // 직접 그린 모양 — GeneratorOptions.Cells (2026-10-07)
     }
 
     // 생성 조건 — 기본값은 프로토타입 generate와 같다
@@ -47,6 +48,11 @@ namespace ColoringBoot.Core
         public int MinSolve = 3;                 // 최소 수가 이보다 작으면 버림
         public double MaxOrderRatio = 0.34;      // 순서 민감도(성공 비율)가 이보다 크면 버림 — 1이면 조건 없음
         public double Fill = 0.5;                // 목표에서 칠해진 칸 비율 하한
+        // 아래는 2026-10-07 생성 조건(GDD §8) — 기본값은 모두 꺼짐(프로토타입과 같은 결과)
+        public IReadOnlyList<HexCoord> Cells;    // 직접 그린 모양 — 있으면 Shape 대신 이 칸들
+        public PaintColor[] TargetColors;        // 목표에 쓸 색(빈칸 말고) — null이면 제한 없음
+        public double MinMixedRatio;             // 칠해진 목표 칸 중 섞인 색 비율 하한
+        public double MinTrapRatio;              // 막힐 수 있는 칸 비율 하한 — 단색 채우기 거르기(StageMetrics)
     }
 
     public sealed class GeneratedStage
@@ -81,8 +87,9 @@ namespace ColoringBoot.Core
         {
             for (int attempt = 0; attempt < Attempts; attempt++)
             {
-                BoardShape shape = options.Shape == BoardShape.Random ? _randomShapes[random.Next(_randomShapes.Length)] : options.Shape;
-                List<HexCoord> coords = ShapeCells(shape, random);
+                BoardShape shape = options.Cells != null ? BoardShape.Drawn
+                    : options.Shape == BoardShape.Random ? _randomShapes[random.Next(_randomShapes.Length)] : options.Shape;
+                List<HexCoord> coords = options.Cells != null ? new List<HexCoord>(options.Cells) : ShapeCells(shape, random);
                 int count = coords.Count;
 
                 var start = new PaintColor[count];
@@ -110,6 +117,7 @@ namespace ColoringBoot.Core
                     if (c != PaintColor.Empty) painted++;
                 }
                 if ((double)painted / count < options.Fill) continue;
+                if (!MeetsConditions(options, start, state)) continue;
 
                 var stage = new Stage(name, Cells(coords, start, state));
                 var solvedBoard = new Board(stage);
@@ -121,6 +129,21 @@ namespace ColoringBoot.Core
                 return new GeneratedStage(new Stage(name, stage.Cells, null, result.Path.Count), order, shape);
             }
             return null;
+        }
+
+        // 목표에 쓸 색 · 섞인 색 비율 · 막힐 수 있는 칸 비율 (2026-10-07 — 꺼져 있으면 늘 통과)
+        private static bool MeetsConditions(GeneratorOptions options, PaintColor[] start, PaintColor[] target)
+        {
+            if (options.TargetColors != null)
+            {
+                foreach (PaintColor t in target)
+                {
+                    if (t != PaintColor.Empty && Array.IndexOf(options.TargetColors, t) < 0) return false;
+                }
+            }
+            int mixed = StageMetrics.CountMixedCells(target, out int painted);
+            if (options.MinMixedRatio > 0 && (painted == 0 || (double)mixed / painted < options.MinMixedRatio)) return false;
+            return options.MinTrapRatio <= 0 || (double)StageMetrics.CountTrapCells(start, target) / target.Length >= options.MinTrapRatio;
         }
 
         // 보드 모양의 칸 좌표 — 프로토타입 shapeCells와 같은 순서
