@@ -129,3 +129,14 @@ __pycache__/
 
 # 원본 그림 폴더 안의 개인 작업 도구 (그림 파일만 커밋)
 ArtSource/*/_tools/
+
+# Apps in Toss SDK - 자동 보호 패턴
+**/AITCredentials.asset
+**/AITCredentials.asset.meta
+ait-build/
+webgl/
+Assets/WebGLTemplates/
+Assets/StreamingAssets/build_info
+Assets/StreamingAssets/build_info.meta
+Assets/Resources/AITVersionInfo.json
+Assets/Resources/AITVersionInfo.json.meta
