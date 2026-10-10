@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <title>컬러링붓</title>
+    <link rel="icon" type="image/png" href="TemplateData/favicon.png">
+    <link rel="apple-touch-icon" href="TemplateData/apple-touch-icon.png">
+    <!-- CSS는 이 파일 안에 둔다: 따로 두면 브라우저가 옛 style.css를 캐시에서 쓰는 동안 새 HTML과 어긋난다(2026-10-03 PC 크롬에서 실제로 깨짐) -->
+    <style>
+      /* 컬러링붓 전용 템플릿 (Phase 7.6) — 색은 Assets/Data/UiTheme.asset과 같게(종이 바탕 · 갈색 선 · 잠김 색) */
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #E3DAC6; }
+      body { display: flex; align-items: center; justify-content: center; }
+
+      /* PC: 창 안에 들어가는 가장 큰 9:16 세로 영역 */
+      #game { position: relative; width: min(100vw, 100vh * 9 / 16); height: min(100vh, 100vw * 16 / 9); }
+      /* 휴대폰: 화면 전체 (게임의 Canvas Scaler가 비율 차이를 맡는다) */
+      body.mobile #game { position: fixed; inset: 0; width: 100%; height: 100%; }
+
+      #unity-canvas { position: absolute; inset: 0; width: 100%; height: 100%; background: #F1EBDD; outline: none; }
+
+      #loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2vh;
+        background: #F1EBDD; color: #382008; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+        transition: opacity 0.3s ease; }
+      #loading.done { opacity: 0; pointer-events: none; }
+      #loading .chips { width: 34%; max-width: 220px; }
+      #loading .chips polygon { stroke: #382008; stroke-width: 4; stroke-linejoin: round; }
+      #loading .title { font-size: clamp(32px, 7.5vh, 84px); font-weight: 700; letter-spacing: 0.02em; margin-bottom: 2vh; }
+      #loading .bar { width: 56%; max-width: 360px; height: 18px; border: 3px solid #382008; border-radius: 99px; background: #FFFDF6; overflow: hidden; }
+      #loading .fill { width: 0%; height: 100%; background: #382008; border-radius: 99px; transition: width 0.2s ease; }
+      #loading .status { font-size: 15px; color: #7B6650; font-variant-numeric: tabular-nums; min-height: 1.4em; text-align: center; padding: 0 16px; }
+      #loading.error .bar { display: none; }
+      #loading.error .status { color: #E0246A; font-size: 17px; }
+    </style>
+  </head>
+  <body>
+    <!-- 컬러링붓 전용 템플릿 (Phase 7.6) — 로딩 화면은 타이틀 화면과 같은 모습(UiTheme 색), 그림 파일 · 웹 글꼴 없이 HTML · CSS · SVG만.
+         휴대폰은 화면 전체, PC는 창 높이에 맞춘 9:16 세로 영역 + 양옆 여백(CLAUDE.md §4 레터박스) -->
+    <div id="game">
+      <canvas id="unity-canvas" width="540" height="960" tabindex="-1"></canvas>
+      <div id="loading">
+        <svg class="chips" viewBox="0 0 330 112" aria-hidden="true">
+          <polygon points="55,4 100,30 100,82 55,108 10,82 10,30" fill="#D8402F"/>
+          <polygon points="165,4 210,30 210,82 165,108 120,82 120,30" fill="#F1B928"/>
+          <polygon points="275,4 320,30 320,82 275,108 230,82 230,30" fill="#2D69CF"/>
+        </svg>
+        <div class="title">컬러링붓</div>
+        <div class="bar"><div class="fill" id="loading-fill"></div></div>
+        <div class="status" id="loading-status">불러오는 중</div>
+      </div>
+    </div>
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+      var loading = document.querySelector("#loading");
+      var fill = document.querySelector("#loading-fill");
+      var statusText = document.querySelector("#loading-status");
+
+      // 오류는 로딩 화면에 한국어로, 경고는 콘솔에만
+      function showError(message) {
+        loading.classList.remove("done");
+        loading.classList.add("error");
+        statusText.textContent = "불러오지 못했어요. 새로고침해 주세요.";
+        console.error(message);
+      }
+      function unityShowBanner(msg, type) {
+        if (type == "error") showError(msg);
+        else console.warn(msg);
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/1282bb97312bd6858be85650d8f2b666.loader.js";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/7ba395e6744b111284542493d7d6545b.data.unityweb",
+        frameworkUrl: buildUrl + "/2b3007ebe55b4a7ee0c4ed3b66612e91.framework.js.unityweb",
+        codeUrl: buildUrl + "/d709683654e1c7bea07b8c48fe309cbe.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "컬러링붓",
+        productVersion: "0.1.0",
+        showBanner: unityShowBanner,
+      };
+
+      // 휴대폰: 브라우저 화면 전체 (Unity 기본 템플릿과 같은 뷰포트 — Phase 2에서 안전영역 · 세로 화면 확인된 설정)
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        var meta = document.createElement("meta");
+        meta.name = "viewport";
+        meta.content = "width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes";
+        document.getElementsByTagName("head")[0].appendChild(meta);
+        document.body.className = "mobile";
+      }
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (progress) {
+          fill.style.width = (100 * progress) + "%";
+          statusText.textContent = "불러오는 중 " + Math.round(100 * progress) + "%";
+        }).then(function (unityInstance) {
+          // 첫 화면(타이틀)이 그려진 뒤 로딩 화면을 걷어 낸다
+          loading.classList.add("done");
+          setTimeout(function () { loading.style.display = "none"; }, 400);
+        }).catch(showError);
+      };
+      script.onerror = function () { showError("loader를 받지 못함: " + loaderUrl); };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
