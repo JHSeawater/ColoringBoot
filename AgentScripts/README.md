@@ -28,7 +28,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `EndlessPoolBuilder.cs` | 무한 모드 퍼즐 묶음 `Assets/Data/Endless/{Easy,Normal,Hard}.txt`(한 줄에 스테이지 코드, 같은 시드면 같은 묶음) — 난이도별 임시 기준은 파일 안. 난이도마다 다른 시드(쉬움 1 · 보통 2 · 어려움 3), 다른 묶음과 거의 같은 퍼즐(모양 같고 목표 80% 이상)은 거름 | 기준을 바꾸거나 개수를 늘릴 때 → 뒤에 `BuildScene`(묶음 연결은 그대로라 파일만 바뀌면 다시 안 돌려도 됨) | `Build`(args=["Easy", 300, 1] · ["Normal", 300, 2] · ["Hard", 300, 3] — 난이도 · 개수 · 시드, 이 순서로) |
 | `ArtCheck.py` | (읽기 전용) 그림 파일 규격 점검 — `ArtSpec.md` §6 | 그림을 받았을 때 | `python … [원본 폴더]`(없으면 `ArtSource/Chapter1`) |
 | `ChapterArtExport.py` | 점검 → 절반 크기 · 여백 자르기 → `Assets/Art/Chapters/Chapter1` + `layout.json` | 챕터 그림을 바꿀 때(다음 줄과 차례로) | `python … [원본 폴더] [출력 폴더]` |
-| `ChapterArtBuilder.cs` | 스프라이트 설정 · `Assets/Data/Chapters/ChapterN/ChapterArt.asset`(그림 조각은 `Assets/Art/Chapters/ChapterN/`) | `ChapterArtExport.py` 바로 뒤 | `Build`(args=[챕터 번호]) |
+| `ChapterArtBuilder.cs` | 스프라이트 설정(WebGL은 ASTC — 선화 4×4 · 단계 6×6, 2026-10-11) · `Assets/Data/Chapters/ChapterN/ChapterArt.asset`(그림 조각은 `Assets/Art/Chapters/ChapterN/`) | `ChapterArtExport.py` 바로 뒤 | `Build`(args=[챕터 번호]) |
 
 ## QA/ — 점검(읽기 전용이거나 에디터 플레이 중에만)
 
@@ -45,6 +45,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 |---|---|
 | `Refresh.cs` | 디스크에 직접 쓴 에셋을 임포트(`Refresh.All`) — 빌더가 참조하기 전에 |
 | `RemoveStage.cs` | 스테이지를 그 챕터 목록 · 파일에서 뺌(`RemoveStage.Remove`, args=`["파일 이름"]` — 챕터 폴더에서 찾음) → 뒤에 `FontBuilder.Build` → `BuildPrefabs` → `BuildEditorScene` → `BuildScene` |
+| `WebTemplate.cs` | gh-pages 웹 템플릿을 원본 `Setup/WebTemplate/ColoringBoot/`에서 `Assets/WebGLTemplates/ColoringBoot/`로 복사(`WebTemplate.Install`) — 앱인토스 SDK가 `Assets/WebGLTemplates/`를 git에서 빼므로(2026-10-11). 저장소를 새로 받았을 때 · 템플릿을 고친 뒤 · gh-pages 빌드 전 |
 | `GimmickLab.cs` | (읽기 전용) 기믹 시험 스테이지 후보 생성 — `GimmickLab.Generate`, args=`["wall"\|"water"\|"coated", 후보 수, 시드, 최소 수, 최대 수, 섞인 색 비율 하한, strict]`. 기믹을 빼면 그 풀이가 안 되고 풀이의 2획 이상이 기믹을 쓰는 것만 · strict면 기믹 없이는 아예 못 푸는 것만. 결과는 스테이지 코드 + 지표 + 글자 그림 — 고른 것을 `Assets/Data/Lab/Stages/`에 쓰고 `StageOrder.SetLabOrder` (2026-10-10 시험 목록 9~14번) |
 | `deploy-pages.sh` | `Builds/WebGL`을 gh-pages에 배포(`bash AgentScripts/Tools/deploy-pages.sh "메시지"`) — gh-pages는 커밋 하나만 두고 강제 push(`--force-with-lease`), 메시지에 빌드 바이트를 붙인다 |
 
@@ -59,6 +60,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `Phase1Assets.cs` | TMP Essential Resources 임포트(대화상자 없이) · 기본 팔레트 색(`CreatePalette` — 다시 실행하면 덮어씀) |
 | `Phase4BuildSize.cs` | 스플래시 끄기 · 안 쓰는 LiberationSans 삭제(2026-09-30) |
 | `Phase7WebTemplate.cs` | 전용 웹 템플릿 · 제품 이름 "컬러링붓" · 파일 이름 해시(2026-10-03) |
+| `WebTemplate/ColoringBoot/` | gh-pages 웹 템플릿 원본(index.html · 아이콘) — `Tools/WebTemplate.cs`가 `Assets/WebGLTemplates/`로 복사(2026-10-11) |
 | `Phase8ChapterFolders.cs` | 데이터를 챕터 단위 폴더로 옮김 · 챕터 1 `Chapter` 에셋 만듦(2026-10-07, `Preview` → `Apply`) |
 | `Phase8ProjectWideActions.cs` | 안 쓰는 프로젝트 전체 입력(`InputSystem_Actions`) 등록 해제 · 삭제(2026-10-07, `Preview` → `Apply`) |
 | `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용) |

@@ -26,6 +26,15 @@ public static class ChapterArtBuilder
             importer.alphaIsTransparency = true;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.maxTextureSize = 2048;
+            // WebGL은 ASTC(2026-10-11 사용자 결정): 휴대폰(앱인토스)이 그대로 써 메모리가 줄고 불러올 때 압축을 풀지 않는다 — PC 브라우저는 ASTC를 못 써 불러올 때 푼다.
+            // 선화는 선이 뭉개지지 않게 4×4, 색칠 단계는 6×6. UI 스프라이트(SpriteBuilder)는 압축하지 않는다
+            importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
+            {
+                name = "WebGL",
+                overridden = true,
+                maxTextureSize = 2048,
+                format = entry == layout.line ? TextureImporterFormat.ASTC_4x4 : TextureImporterFormat.ASTC_6x6,
+            });
             importer.SaveAndReimport();
         }
 

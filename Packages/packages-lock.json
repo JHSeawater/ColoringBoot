@@ -168,6 +168,15 @@
         "com.unity.modules.physics": "1.0.0"
       }
     },
+    "im.toss.apps-in-toss-unity-sdk": {
+      "version": "https://github.com/toss/apps-in-toss-unity-sdk.git#release/v3.5.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
+      },
+      "hash": "794273483d2b619345d826623265afccf6491df4"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

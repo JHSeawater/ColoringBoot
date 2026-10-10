@@ -140,3 +140,6 @@ Assets/StreamingAssets/build_info
 Assets/StreamingAssets/build_info.meta
 Assets/Resources/AITVersionInfo.json
 Assets/Resources/AITVersionInfo.json.meta
+
+# 앱인토스 SDK가 빌드 때 만드는 폴더 — 안에는 git이 무시하는 AITVersionInfo.json뿐(2026-10-11)
+Assets/Resources.meta

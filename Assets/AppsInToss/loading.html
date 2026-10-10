@@ -1,0 +1,68 @@
+<!--
+    컬러링붓 로딩 화면 — 앱인토스 SDK 빌드용(2026-10-11, SDK 시험 연동)
+    gh-pages 빌드의 템플릿(Assets/WebGLTemplates/ColoringBoot/index.html)과 같은 모습: 종이 바탕 · 기본색 세 칸 · 제목 · 둥근 갈색 진행 막대.
+    색은 Assets/Data/Settings/UiTheme.asset과 같게, 그림 파일 · 웹 글꼴 없이 HTML · CSS · SVG만.
+    SDK가 빌드 때 index.html에 그대로 넣는다(%AIT_LOADING_SCREEN%). AIT > Reset Loading Screen을 누르면 SDK 기본 화면으로 덮어써지니 누르지 않는다.
+    API: AITLoading.onProgress(0~1) · onComplete · onError · hide() — https://developers-apps-in-toss.toss.im/documentation/unity/build/loading-screen-customization
+-->
+
+<style>
+    .cb-loading {
+        position: fixed; inset: 0; z-index: 9998;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2vh;
+        background: #F1EBDD; color: #382008;
+        font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+        transition: opacity 0.3s ease;
+    }
+    .cb-loading.done { opacity: 0; pointer-events: none; }
+    .cb-loading .chips { width: 34%; max-width: 220px; }
+    .cb-loading .chips polygon { stroke: #382008; stroke-width: 4; stroke-linejoin: round; }
+    .cb-loading .title { font-size: clamp(32px, 7.5vh, 84px); font-weight: 700; letter-spacing: 0.02em; margin-bottom: 2vh; }
+    .cb-loading .bar { width: 56%; max-width: 360px; height: 18px; border: 3px solid #382008; border-radius: 99px; background: #FFFDF6; overflow: hidden; }
+    .cb-loading .fill { width: 0%; height: 100%; background: #382008; border-radius: 99px; transition: width 0.2s ease; }
+    .cb-loading .status { font-size: 15px; color: #7B6650; font-variant-numeric: tabular-nums; min-height: 1.4em; text-align: center; padding: 0 16px; }
+    .cb-loading.error .bar { display: none; }
+    .cb-loading.error .status { color: #E0246A; font-size: 17px; }
+</style>
+
+<div class="cb-loading" id="cb-loading">
+    <svg class="chips" viewBox="0 0 330 112" aria-hidden="true">
+        <polygon points="55,4 100,30 100,82 55,108 10,82 10,30" fill="#D8402F"/>
+        <polygon points="165,4 210,30 210,82 165,108 120,82 120,30" fill="#F1B928"/>
+        <polygon points="275,4 320,30 320,82 275,108 230,82 230,30" fill="#2D69CF"/>
+    </svg>
+    <div class="title">컬러링붓</div>
+    <div class="bar"><div class="fill" id="cb-loading-fill"></div></div>
+    <div class="status" id="cb-loading-status">불러오는 중</div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    var loading = document.getElementById('cb-loading');
+    var fill = document.getElementById('cb-loading-fill');
+    var statusText = document.getElementById('cb-loading-status');
+
+    // AITLoading은 이 화면보다 늦게 준비될 수 있어 기다렸다가 붙는다(SDK 기본 화면과 같은 방식)
+    var check = setInterval(function () {
+        if (!window.AITLoading) return;
+        clearInterval(check);
+        AITLoading.onProgress(function (progress) {
+            fill.style.width = (100 * progress) + '%';
+            statusText.textContent = '불러오는 중 ' + Math.round(100 * progress) + '%';
+        });
+        // 첫 화면(타이틀)이 그려진 뒤 흐려지며 걷힌다
+        AITLoading.onComplete(function () {
+            loading.classList.add('done');
+            setTimeout(function () { AITLoading.hide(); }, 400);
+        });
+        // 오류는 로딩 화면에 한국어로(gh-pages 템플릿과 같은 문구)
+        AITLoading.onError(function (error) {
+            loading.classList.remove('done');
+            loading.classList.add('error');
+            statusText.textContent = '불러오지 못했어요. 새로고침해 주세요.';
+            console.error(error && error.message);
+        });
+    }, 10);
+})();
+</script>

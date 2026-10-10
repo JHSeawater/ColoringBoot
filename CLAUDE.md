@@ -108,6 +108,12 @@ MCP 안전 규칙:
 * 테스트 배포: GitHub Pages — `bash AgentScripts/Tools/deploy-pages.sh "메시지"`로 `Builds/WebGL`을 `gh-pages` 브랜치(빌드 결과물 전용, main 기록과 분리)에 올린다. 작업 트리는 `Builds/gh-pages`이고, 빌드 결과물 외 파일이 섞이면 스크립트가 중단한다. 주소: https://jhseawater.github.io/ColoringBoot/
 * gh-pages는 **커밋 하나만** 둔다(2026-10-04 사용자 결정 — 배포 이력이 저장소 용량의 88%였음): 스크립트가 매번 부모 없는 커밋으로 바꿔 `--force-with-lease`로 강제 push한다. 그래서 확인한 빌드는 gh-pages 해시가 아니라 날짜 · 빌드 바이트로 `Docs/BuildHistory.md`에 기록한다. 강제 push라 자동 모드 안전 장치가 막을 수 있다 — 그때는 사용자에게 `! bash AgentScripts/Tools/deploy-pages.sh "메시지"`로 직접 실행해 달라고 한다.
 * 커밋은 사용자가 요청하거나 승인할 때만 한다. 커밋 전에 변경 파일 목록과 메시지를 제안한다. push·원격 설정 변경도 요청 시에만.
+
+앱인토스 SDK (2026-10-11 시험 연동 — 공식 Unity SDK `im.toss.apps-in-toss-unity-sdk` v3.5.0, `AIT` 메뉴):
+* **SDK 빌드**(`AIT/Local Debug/Start Server` · `AIT/Advanced/Build & Package` · `AIT/Deploy …`)는 빌드 때 템플릿(`AITTemplate`) · 압축 · 캐싱 등을 바꾸고 끝나면 메모리만 되돌린다 — 디스크의 `ProjectSettings/ProjectSettings.asset`에 SDK 값이 남으니 **`git checkout -- ProjectSettings/ProjectSettings.asset`으로 되돌린다**(커밋 금지). WebGL 그래픽 API는 메모리에도 고정으로 남아 `PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, true)`로 되돌린다. 개발 서버(vite, 5173 — LAN에도 열림)는 메뉴 Stop이 안 될 때가 있어 프로세스를 끈다. 산출물 `webgl/` · `ait-build/`는 git이 무시한다.
+* **GitGuard**(SDK)가 에디터를 켤 때마다 `Assets/WebGLTemplates/`가 git에 있는지 보고 빼자는 창을 띄운다(확인하면 자동 커밋) → gh-pages 템플릿 원본은 `AgentScripts/Setup/WebTemplate/ColoringBoot/`, 빌드 전에 `AgentScripts/Tools/WebTemplate.cs`(`WebTemplate.Install`)로 복사한다. 템플릿을 고칠 땐 원본을 고친다.
+* SDK 로딩 화면은 `Assets/AppsInToss/loading.html`(우리 디자인 — `AIT/Reset Loading Screen`을 누르면 덮어써짐). 배포 키 `AITCredentials.asset`은 git이 무시한다(공개 저장소 — 절대 커밋하지 않음).
+* SDK는 업데이트 · 경고 · GitGuard · 빌드 최적화 확인 창을 띄운다 — 뜨면 에디터 메인 스레드가 멈춰 MCP가 응답하지 않는다(`editor_status` 연결 실패). 창 제목은 PowerShell로 Unity 창 목록을 보면 알 수 있다 → 사용자에게 내용을 알리고 눌러 달라고 한다. 익명 에러 수집은 끔(이 PC 에디터 설정 `AIT_ErrorTracker_Enabled`, 2026-10-11 사용자).
 * 에셋은 `.meta`와 **항상 함께** 커밋한다(누락 시 GUID가 깨져 참조가 끊긴다).
 
 ---
@@ -182,7 +188,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
 * **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
 * **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-10-04 기준)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔 · 스플래시 끔(Phase 4.1) · 전용 템플릿 `PROJECT:ColoringBoot` · 제품 이름 "컬러링붓" · Name Files As Hashes(Phase 7.6, `AgentScripts/Setup/Phase7WebTemplate.cs`). 텍스처 압축 형식은 정하지 않았다(기본값 — Phase 8에서 휴대폰 메모리와 함께 확인). 지금 배포본: 압축 후 **9,264,179바이트**(2026-10-10, 기믹 시제품 3종 · 시험 목록 14개. 빌드 뒤 `ProjectSettings` 되돌리기 불필요(입력 에셋 삭제). 따라 하기 레슨 5개 빌드 9,214,852는 사용자 확인 2026-10-07). Phase 7.6 빌드는 휴대폰 · PC 확인, 첫 로딩 이전과 거의 같음(2026-10-04 사용자 확인 — 숫자로 잰 마지막 값은 Phase 2의 약 3초). 크기는 바이트로 비교하고, 빌드마다 `Docs/BuildHistory.md` 표에 한 줄 더한다(Phase 0 기준선 이후 증감 · 그림 한 장 ≈ +686 KB 등은 그 표에).
+* **현황 (2026-10-04 기준)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔 · 스플래시 끔(Phase 4.1) · 전용 템플릿 `PROJECT:ColoringBoot` · 제품 이름 "컬러링붓" · Name Files As Hashes(Phase 7.6, `AgentScripts/Setup/Phase7WebTemplate.cs`). 텍스처 압축: 챕터 그림만 ASTC(선화 4×4 · 색칠 단계 6×6, `ChapterArtBuilder`), UI 스프라이트는 압축하지 않음(2026-10-11 사용자 결정 — 휴대폰이 그대로 써 메모리가 줄고, PC 브라우저는 불러올 때 푼다). 지금 배포본: 압축 후 **9,264,179바이트**(2026-10-10, 기믹 시제품 3종 · 시험 목록 14개. 빌드 뒤 `ProjectSettings` 되돌리기 불필요(입력 에셋 삭제). 따라 하기 레슨 5개 빌드 9,214,852는 사용자 확인 2026-10-07). Phase 7.6 빌드는 휴대폰 · PC 확인, 첫 로딩 이전과 거의 같음(2026-10-04 사용자 확인 — 숫자로 잰 마지막 값은 Phase 2의 약 3초). 크기는 바이트로 비교하고, 빌드마다 `Docs/BuildHistory.md` 표에 한 줄 더한다(Phase 0 기준선 이후 증감 · 그림 한 장 ≈ +686 KB 등은 그 표에).
 * **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
 
 ---

@@ -8,6 +8,21 @@
 
 ---
 
+### 📅 [2026-10-11] 앱인토스 SDK 시험 연동(브랜치 `ait-sdk-spike`) · 챕터 그림 ASTC
+
+* **계기 · 범위(사용자)**: 완성까지의 순서 ②(Phase 9에서 앞당김). 사용자 질문 "Task.md에 계획된 작업인가" → 10-10에 앞당겨 넣은 항목이고 `Task.md` 트랙 규칙("출시 전용은 개발과 병행하지 않는다")과 어긋나 있었음을 알림 → "나중에 어차피 하고, 지금 하면 다시 안 해도 되는 일이면 이어가도 된다". 그 기준으로 남은 단계를 나눔: 로딩 화면 · gh-pages와 함께 쓰는 방법 · 텍스처 압축 결정은 지금, 크기는 SDK 몫만, 실기는 App ID가 생기면, 실제 연동(사용자 키 · 저장소 · 광고 · 종료 확인)은 Phase 9.
+* **설치**: `im.toss.apps-in-toss-unity-sdk` v3.5.0(git 태그, 10-06 공개 · Newtonsoft JSON 함께). 설치 직후 SDK 창이 에디터 메인 스레드를 멈춰 MCP가 응답하지 않음 — Unity 창 목록 · 창 캡처로 "익명 에러 데이터 수집" 고지임을 확인해 사용자에게 알림 → 사용자 확인. 이어진 GitGuard 창에서 SDK가 `.gitignore`에 보호 패턴(`Assets/WebGLTemplates/` · `webgl/` · `ait-build/` · `AITCredentials.asset` 등)을 넣고 우리 gh-pages 템플릿 `Assets/WebGLTemplates/ColoringBoot`를 git 추적에서 빼며 브랜치에 자동 커밋(`a0c85e8`, 파일은 그대로). SDK가 Node.js 24.13 · pnpm 11.6을 `%LOCALAPPDATA%\.ait-unity-sdk`에 설치, 처음 `pnpm install --frozen-lockfile`은 잠금 파일 불일치로 실패했으나 빌드 때 다시 성공.
+* **빠른 빌드**(`AIT/Local Debug/Start Server` — 빌드 전 최적화 검사 없음): 빌드 성공 → vite 개발 서버(`localhost:5173`, LAN에도 열림)에서 타이틀까지 정상 · 콘솔 오류 0 · SDK 모의 브릿지. 경고 1회: "IDBFS 마운트가 먼저 끝나 이번 세션은 PlayerPrefs 영속화를 건너뜀" — SDK가 PlayerPrefs를 토스 저장소로 옮겨 주는 기능(Phase 9 저장소 교체에 쓸 수 있음).
+* **SDK가 남기는 것**: 로그는 "PlayerSettings 스냅샷 복원 완료"지만 디스크의 `ProjectSettings.asset`에는 SDK 빌드 값(템플릿 `AITTemplate` · 압축 끔 · 캐싱 끔 · 메모리 1024 · 예외 전체 · 디버그 심볼)이 남고, 메모리에는 WebGL 그래픽 API 고정이 남음 → 그래픽 API를 자동으로 되돌리고 파일은 git으로 되돌림(두 번). 메뉴의 Stop Server가 비활성이라 vite 프로세스를 직접 끔.
+* **gh-pages와 함께 쓰기**: SDK를 넣은 일반 빌드(우리 템플릿) 9,259,290바이트(−4,889) · 성공 · 토스 밖 127.0.0.1에서 `?lab` 정상, SDK 관련 오류 없음(URP 후처리 셰이더가 빠졌다는 로그는 지금 배포본에서도 같은 무해한 로그). GitGuard는 에디터를 켤 때마다 `Assets/WebGLTemplates/`가 추적되면 빼자고 하므로 → 템플릿 원본 `AgentScripts/Setup/WebTemplate/ColoringBoot/`(지금 템플릿과 바이트까지 같음) + `AgentScripts/Tools/WebTemplate.cs`(`Install` — 복사, 확인함). SDK가 빌드 때 만드는 `Assets/Resources/`(안은 git이 무시하는 `AITVersionInfo.json`뿐)의 `.meta`는 `.gitignore`.
+* **로딩 화면**: `Assets/AppsInToss/loading.html`을 gh-pages 템플릿과 같은 모습으로(종이 바탕 · 기본색 세 칸 · "컬러링붓" · 갈색 진행 막대 · "불러오는 중 n%" · 한국어 오류) — `AITLoading.onProgress` · `onComplete`(흐려진 뒤 `hide`) · `onError`. SDK 빠른 빌드로 다시 확인: 로딩 52% 화면 → 타이틀, 콘솔 오류 0.
+* **텍스처 압축(사용자 결정 — 그림만 ASTC)**: 지금은 챕터 그림이 PC용 압축(DXT)이라 휴대폰은 불러올 때 풀어 쓴다(챕터 1 = 26.7 MiB). SDK의 정식 빌드 최적화는 모든 텍스처를 ASTC 6×6으로 바꾸자고 함 → UI 스프라이트 가장자리 품질 때문에 그림만: `ChapterArtBuilder`가 WebGL 설정 ASTC(선화 4×4 · 단계 6×6)를 넣음 → 휴대폰 메모리 약 3.8 MiB(계산), 빌드 9,313,616바이트(data +54,326). SDK 설정 `AITConfig.asset`의 빌드 최적화 검사는 끔(UI 스프라이트를 계속 지적해서). 에디터에서 GPU로 풀어 2배 확대 비교: 선화 4×4는 원본과 구분 안 됨, 나비 6×6은 가장자리가 아주 살짝 거침. 휴대폰 화질 확인은 Task.md.
+* **익명 에러 수집(사용자 결정 — 끔)**: SDK가 에디터의 SDK 관련 에러(메시지 · 스택 · 버전 · OS · 해시한 기기 ID — 스택에 프로젝트 경로가 섞일 수 있음)를 토스 Sentry로 보내는 기능. 이 PC 에디터 설정 `AIT_ErrorTracker_Enabled = false`(git에 안 남음).
+* **문서**: CLAUDE.md §2 "앱인토스 SDK"(SDK 빌드 뒤 설정 되돌리기 · GitGuard와 템플릿 원본 · 로딩 화면 · 배포 키 · 확인 창이 MCP를 멈춤) · §4 텍스처 압축, Task.md 트랙 규칙 예외 · 시험 연동 [x] · 토스 실기 [ ] · 그림 압축 결정 · 화질 확인 [ ], AgentScripts README(`WebTemplate`).
+* **해결된 이슈**: SDK 방식으로 우리 프로젝트가 빌드 · 실행되는지, gh-pages 테스트 빌드와 함께 쓸 수 있는지(설정 · 템플릿 · 런타임), 휴대폰 그림 메모리. 남은 것: 토스 앱 실기(App ID · 배포 키), 휴대폰 그림 화질.
+
+---
+
 ### 📅 [2026-10-10] 완성까지의 순서 · 기믹 시제품 3종(벽 · 물 · 코팅) — 시험 목록 9~14번
 
 * **계기(사용자)**: 소규모 플레이테스트 데이터가 쌓이려면 시간이 더 걸리니, 남은 시간(한 달 이상)에 거의 완성 단계까지 가야겠다. 정식 테스트 중이 아니라 배포본은 고쳐도 된다.
