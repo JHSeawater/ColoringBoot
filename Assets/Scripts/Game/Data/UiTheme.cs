@@ -18,6 +18,11 @@ namespace ColoringBoot.Game
         [SerializeField] private Color _next = new Color32(0x8C, 0x58, 0xA0, 0xFF);         // 다음에 풀 스테이지 테두리(그림의 포도색)
         [SerializeField] private Color _warn = new Color32(0xE0, 0x24, 0x6A, 0xFF);         // 막힘
         [SerializeField] private Color _star = new Color32(0xF1, 0xB9, 0x28, 0xFF);         // 완벽 별
+        // 기믹 칸 (2026-10-10 시제품) — 팔레트 색 · 빈칸과 헷갈리지 않게: 벽 = 돌 회갈색 + 밝은 줄눈, 물 = 옅은 물빛 + 물결
+        [SerializeField] private Color _wallFill = new Color32(0xA8, 0x97, 0x82, 0xFF);
+        [SerializeField] private Color _wallLine = new Color32(0xE3, 0xDA, 0xC6, 0xFF);
+        [SerializeField] private Color _waterFill = new Color32(0xDC, 0xEB, 0xEA, 0xFF);
+        [SerializeField] private Color _waterLine = new Color32(0x5F, 0x95, 0xA3, 0xFF);
 
         public Color Background => _background;
         public Color Ink => _ink;
@@ -29,5 +34,9 @@ namespace ColoringBoot.Game
         public Color Next => _next;
         public Color Warn => _warn;
         public Color Star => _star;
+        public Color WallFill => _wallFill;
+        public Color WallLine => _wallLine;
+        public Color WaterFill => _waterFill;
+        public Color WaterLine => _waterLine;
     }
 }

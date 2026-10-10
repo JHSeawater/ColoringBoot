@@ -19,7 +19,7 @@ namespace ColoringBoot.Game
             float bestScore = float.MinValue;
             for (int i = 0; i < _centers.Length; i++)
             {
-                if (i == current) continue;
+                if (i == current || _board.KindOf(i) == CellKind.Wall) continue;
                 Vector2 offset = _centers[i] - _centers[current];
                 float distance = offset.magnitude;
                 float dot = Vector2.Dot(offset, want) / distance;
@@ -123,12 +123,14 @@ namespace ColoringBoot.Game
             return false;
         }
 
+        // 누른 자리의 칸 — 벽은 어느 줄에도 없어 고를 수 없다(기믹, 2026-10-10)
         private int CellAt(Vector2 local)
         {
             int best = -1;
             float bestDistance = HitRadius * _radius;
             for (int i = 0; i < _centers.Length; i++)
             {
+                if (_board.KindOf(i) == CellKind.Wall) continue;
                 float distance = Vector2.Distance(_centers[i], local);
                 if (distance > bestDistance) continue;
                 bestDistance = distance;

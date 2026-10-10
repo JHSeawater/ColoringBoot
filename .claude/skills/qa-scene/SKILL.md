@@ -58,13 +58,13 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton` · `_tutorialButton`(규칙 다시 보기)
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`
 - `…/MixTable` MixTableView: `_chipSprite`
-- 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing` · `_ghost` · `_symbol`
+- 프리팹 `Assets/Prefabs/Cell.prefab` CellView: `_fill` · `_marker` · `_markerFill` · `_deadRing` · `_selectRing` · `_ghost` · `_symbol` · 기믹 칸 무늬 `_overlay` · `_wallSprite` · `_waterSprite` · `_coatSprite`(2026-10-10)
 - 프리팹 `Assets/Prefabs/DirectionButton.prefab` Button: targetGraphic
 
 ## 4. 에셋
 - 목록의 JSON이 모두 `Stage.Parse`로 읽히고, 솔버로 풀리며 `minMoves`가 솔버 최소 수와 같은지
 - `Assets/Data/Palettes/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 목록의 모든 스테이지 `palette`가 목록에 있음
-- 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양)(`get_import_settings`): textureType Sprite · spriteImportMode Single
+- 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양 · GimmickWall · GimmickWater · GimmickGloss — 기믹 칸 무늬, 2026-10-10)(`get_import_settings`): textureType Sprite · spriteImportMode Single
 - `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
 - `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자 0 · 아틀라스 1장) · 씬 글자 · 스테이지 이름이 모두 폰트에 있음(`QaScene`이 점검, 2026-10-05)
 

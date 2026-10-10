@@ -162,7 +162,8 @@ public static class QaScene
 
         CheckRefs(Object.FindAnyObjectByType<MixTableView>(FindObjectsInactive.Include), Expect, "_chipSprite");
         CheckRefs(AssetDatabase.LoadAssetAtPath<CellView>("Assets/Prefabs/Cell.prefab"), Expect,
-            "_fill", "_marker", "_markerFill", "_deadRing", "_selectRing", "_ghost", "_symbol");
+            "_fill", "_marker", "_markerFill", "_deadRing", "_selectRing", "_ghost", "_symbol",
+            "_overlay", "_wallSprite", "_waterSprite", "_coatSprite");   // 기믹 칸 무늬(2026-10-10)
         Expect(AssetDatabase.LoadAssetAtPath<Button>("Assets/Prefabs/DirectionButton.prefab").targetGraphic != null, "방향 버튼 targetGraphic");
 
         // 팔레트 목록: 첫 칸 = 기본(default) · 이름이 비지 않고 겹치지 않음 · 팔레트마다 7색 · 알파 1
@@ -177,7 +178,7 @@ public static class QaScene
         }
         foreach (TextAsset stage in catalog.Stages.Concat(lab.Stages).Concat(tutorial.Stages))
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
-        foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine" })
+        foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine", "GimmickWall", "GimmickWater", "GimmickGloss" })
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath($"Assets/Art/Sprites/{name}.png");
             Expect(importer.textureType == TextureImporterType.Sprite && importer.spriteImportMode == SpriteImportMode.Single, $"스프라이트 {name}");

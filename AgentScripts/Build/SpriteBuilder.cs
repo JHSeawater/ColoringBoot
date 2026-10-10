@@ -6,6 +6,7 @@ using UnityEngine;
 // 실행: run_script(file=AgentScripts/Build/SpriteBuilder.cs, entry=SpriteBuilder.Build) — 여러 번 실행해도 같은 결과(덮어씀)
 // Phase 4.3 아이콘 2종(자물쇠 · 별, 스테이지 선택 화면): entry=SpriteBuilder.BuildIcons — 작게(128px) 만든다
 // Phase 7.1 버튼 모양(디자인 시안 A): entry=SpriteBuilder.BuildRound — 둥근 사각형 바탕 · 외곽선(9-slice) · 얇은 육각 외곽선
+// 기믹 칸 무늬(2026-10-10): entry=SpriteBuilder.BuildGimmicks — 벽 · 물 · 코팅 광택
 public static class SpriteBuilder
 {
     private const string Folder = "Assets/Art/Sprites";
@@ -71,6 +72,44 @@ public static class SpriteBuilder
         Vector2[] inner = Hexagon(HexRadius * (1f - HexLineWidth));
         Save("HexLine", p => Inside(hex, p) && !Inside(inner, p));
         return $"버튼 모양 4종(RoundFill · RoundRing 반지름 {RoundRadius} · FrameRing 반지름 {FrameRadius} · 선 {RoundLine} · HexLine) → {Folder}";
+    }
+
+    // 기믹 칸 무늬(2026-10-10 시제품): 칸 채움 위에 겹친다 — 벽 = 벽돌 줄눈, 물 = 물결 세 줄, 코팅 = 안쪽 테두리 + 왼쪽 위 빛줄기
+    public static string BuildGimmicks()
+    {
+        Vector2[] wallClip = Hexagon(HexRadius * 0.92f);
+        const float rowHeight = 0.42f, brickWidth = 0.62f, mortar = 0.07f;
+        Save("GimmickWall", p =>
+        {
+            if (!Inside(wallClip, p)) return false;
+            float rows = (p.y + 1f) / rowHeight;
+            int row = Mathf.FloorToInt(rows);
+            if ((rows - row) * rowHeight < mortar) return true;                      // 가로 줄눈
+            return (p.x + 1f + (row % 2) * brickWidth * 0.5f) % brickWidth < mortar; // 세로 줄눈(줄마다 반 칸 어긋남)
+        });
+
+        Vector2[] waterClip = Hexagon(HexRadius * 0.8f);
+        Save("GimmickWater", p =>
+        {
+            if (!Inside(waterClip, p)) return false;
+            foreach (float center in new[] { -0.38f, 0f, 0.38f })
+            {
+                float wave = center + 0.09f * Mathf.Sin((p.x + 1f) * Mathf.PI * 2f);
+                if (Mathf.Abs(p.y - wave) < 0.055f) return true;
+            }
+            return false;
+        });
+
+        Vector2[] ring = Hexagon(HexRadius * 0.84f);
+        Vector2[] ringInner = Hexagon(HexRadius * 0.76f);
+        Vector2[] shine = Hexagon(HexRadius * 0.7f);
+        Save("GimmickGloss", p =>
+        {
+            if (Inside(ring, p) && !Inside(ringInner, p)) return true;
+            float d = p.x - p.y; // 왼쪽 위로 갈수록 작다
+            return Inside(shine, p) && ((d > -0.95f && d < -0.62f) || (d > -0.5f && d < -0.4f));
+        });
+        return $"기믹 무늬 3종(GimmickWall · GimmickWater · GimmickGloss) → {Folder}";
     }
 
     // line = 0이면 채운 둥근 사각형, 아니면 그 두께의 외곽선만

@@ -43,7 +43,7 @@ public static class BoardQa
         return $"Game 뷰 크기 {index}번 선택: {names.ElementAtOrDefault(index) ?? "Portrait 1080x1920(추가)"}";
     }
 
-    // 칸 (q, r)을 탭한다
+    // 칸 (q, r)을 탭한다 — 보드는 누르기 · 떼기로 탭을 판정한다(클릭 이벤트는 받지 않음, 2026-10-10 고침)
     public static string TapCell(int q, int r)
     {
         BoardView view = Board();
@@ -52,8 +52,9 @@ public static class BoardQa
         if (cell < 0) return $"({q},{r}) 칸 없음";
         Transform cellTransform = view.transform.GetChild(cell);
         Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, cellTransform.position);
-        var data = new PointerEventData(EventSystem.current) { position = screen };
-        ExecuteEvents.Execute(view.gameObject, data, ExecuteEvents.pointerClickHandler);
+        var data = new PointerEventData(EventSystem.current) { pointerId = 0, position = screen };
+        ExecuteEvents.Execute(view.gameObject, data, ExecuteEvents.pointerDownHandler);
+        ExecuteEvents.Execute(view.gameObject, data, ExecuteEvents.pointerUpHandler);
         return $"({q},{r}) 탭 @ {screen} → 보이는 방향 버튼: {string.Join(" ", VisibleButtons(view))}";
     }
 

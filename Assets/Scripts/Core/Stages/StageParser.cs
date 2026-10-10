@@ -7,7 +7,8 @@ namespace ColoringBoot.Core
 {
     // 스테이지 코드(JSON) 파서 — 이 형식만 읽는다 (GDD §3):
     // {"name": 문자열, "cells": [[q, r, 시작 색, 목표 색], ...], "palette": 문자열(선택), "minMoves": 정수(선택)}
-    // 순수 로직 계층이라 JsonUtility를 쓸 수 없고, JsonUtility는 중첩 배열도 읽지 못해서 직접 읽는다. 형식 오류는 FormatException
+    // 기믹 칸(선택, 2026-10-10): "walls" · "water": [[q, r], ...](cells에 없는 자리) · "coated": [[q, r], ...](cells의 칸 — 시작 색 = 목표 색).
+    // 칸 순서는 cells(코팅 포함) → 벽 → 물. 순수 로직 계층이라 JsonUtility를 쓸 수 없고, JsonUtility는 중첩 배열도 읽지 못해서 직접 읽는다. 형식 오류는 FormatException
     internal sealed class StageParser
     {
         private readonly string _json;
@@ -30,6 +31,7 @@ namespace ColoringBoot.Core
             List<StageCell> cells = null;
             string palette = null;
             int? minMoves = null;
+            List<HexCoord> walls = null, water = null, coated = null;
 
             Expect('{');
             do
@@ -42,6 +44,9 @@ namespace ColoringBoot.Core
                     case "cells": cells = ReadCells(); break;
                     case "palette": palette = ReadString(); break;
                     case "minMoves": minMoves = ReadInt(); break;
+                    case "walls": walls = ReadCoords(); break;
+                    case "water": water = ReadCoords(); break;
+                    case "coated": coated = ReadCoords(); break;
                     default: throw Error($"알 수 없는 키 '{key}'");
                 }
             } while (TryConsume(','));
@@ -51,6 +56,9 @@ namespace ColoringBoot.Core
 
             if (name == null) throw Error("name이 없습니다");
             if (cells == null) throw Error("cells가 없습니다");
+            if (coated != null) MarkCoated(cells, coated);
+            if (walls != null) foreach (HexCoord coord in walls) cells.Add(new StageCell(coord, PaintColor.Empty, PaintColor.Empty, CellKind.Wall));
+            if (water != null) foreach (HexCoord coord in water) cells.Add(new StageCell(coord, PaintColor.Empty, PaintColor.Empty, CellKind.Water));
             try
             {
                 return new Stage(name, cells, palette, minMoves);
@@ -81,6 +89,44 @@ namespace ColoringBoot.Core
             } while (TryConsume(','));
             Expect(']');
             return cells;
+        }
+
+        // [[q, r], ...]
+        private List<HexCoord> ReadCoords()
+        {
+            var coords = new List<HexCoord>();
+            Expect('[');
+            if (TryConsume(']')) return coords;
+            do
+            {
+                Expect('[');
+                int q = ReadInt();
+                Expect(',');
+                int r = ReadInt();
+                Expect(']');
+                coords.Add(new HexCoord(q, r));
+            } while (TryConsume(','));
+            Expect(']');
+            return coords;
+        }
+
+        // coated의 좌표마다 cells의 그 칸을 코팅 칸으로 바꾼다
+        private void MarkCoated(List<StageCell> cells, List<HexCoord> coated)
+        {
+            var marks = new HashSet<HexCoord>();
+            foreach (HexCoord coord in coated)
+            {
+                if (!marks.Add(coord)) throw Error($"코팅 칸 좌표가 중복됩니다: {coord}");
+            }
+            int found = 0;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                StageCell cell = cells[i];
+                if (!marks.Contains(cell.Coord)) continue;
+                cells[i] = new StageCell(cell.Coord, cell.Start, cell.Target, CellKind.Coated);
+                found++;
+            }
+            if (found != marks.Count) throw Error("코팅 칸 좌표가 cells에 없습니다");
         }
 
         private PaintColor ReadColor()

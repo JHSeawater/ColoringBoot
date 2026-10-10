@@ -73,6 +73,10 @@ public static class BoardSceneBuilder
         // 미리보기 결과: 칠해질 색을 작은 반투명 육각형으로(프로토타입 0.72배 · 불투명도 0.92)
         Image ghost = AddImage("Ghost", cell, "HexFill", new Color(1f, 1f, 1f, 0.92f), 0.14f, 0.86f);
         ghost.transform.SetSiblingIndex(fill.transform.GetSiblingIndex() + 1);
+        // 기믹 칸 무늬(2026-10-10 시제품): 채움 바로 위 — 스프라이트 · 색은 CellView.SetKind가 칸 종류에 맞춰 고른다
+        Image overlay = AddImage("Overlay", cell, "GimmickGloss", Color.white, 0.04f, 0.96f);
+        overlay.transform.SetSiblingIndex(fill.transform.GetSiblingIndex() + 1);
+        overlay.gameObject.SetActive(false);
         dead.SetActive(false);
         select.SetActive(false);
         ghost.gameObject.SetActive(false);
@@ -86,6 +90,8 @@ public static class BoardSceneBuilder
         symbol.fontSizeMax = 72f;
         symbol.gameObject.SetActive(false);
         SetRefs(view, ("_fill", fill), ("_marker", marker), ("_markerFill", markerFill), ("_deadRing", dead), ("_selectRing", select), ("_ghost", ghost), ("_symbol", symbol));
+        SetRefs(view, ("_overlay", overlay), ("_wallSprite", Sprite("GimmickWall")), ("_waterSprite", Sprite("GimmickWater")), ("_coatSprite", Sprite("GimmickGloss")));
+        SetValues(view, ("_wallFill", T.WallFill), ("_wallLine", T.WallLine), ("_waterFill", T.WaterFill), ("_waterLine", T.WaterLine));
         PrefabUtility.SaveAsPrefabAsset(cell, CellPrefabPath);
         Object.DestroyImmediate(cell);
 

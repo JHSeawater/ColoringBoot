@@ -21,7 +21,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 만드는 것 | 언제 다시 실행 | entry |
 |---|---|---|---|
 | `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` · `BuildCatalog`(프로토타입 9개 중 빠진 것만 목록에) |
-| `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) |
+| `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) · `BuildGimmicks`(기믹 칸 무늬 — 벽 · 물 · 코팅 광택, 2026-10-10 → 뒤에 `BuildPrefabs`) |
 | `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
 | `StageOrder.cs` | 챕터 N의 `StageCatalog` 순서 · 시험 목록 `LabCatalog`(`?lab`) · 따라 하기 `TutorialCatalog`(레슨 i ↔ `TutorialLessons`) — 시험 · 따라 하기 목록 에셋은 없으면 만듦 | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder`(args=[챕터 번호]) · `SetLabOrder` · `SetTutorialOrder` |
@@ -45,6 +45,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 |---|---|
 | `Refresh.cs` | 디스크에 직접 쓴 에셋을 임포트(`Refresh.All`) — 빌더가 참조하기 전에 |
 | `RemoveStage.cs` | 스테이지를 그 챕터 목록 · 파일에서 뺌(`RemoveStage.Remove`, args=`["파일 이름"]` — 챕터 폴더에서 찾음) → 뒤에 `FontBuilder.Build` → `BuildPrefabs` → `BuildEditorScene` → `BuildScene` |
+| `GimmickLab.cs` | (읽기 전용) 기믹 시험 스테이지 후보 생성 — `GimmickLab.Generate`, args=`["wall"\|"water"\|"coated", 후보 수, 시드, 최소 수, 최대 수, 섞인 색 비율 하한, strict]`. 기믹을 빼면 그 풀이가 안 되고 풀이의 2획 이상이 기믹을 쓰는 것만 · strict면 기믹 없이는 아예 못 푸는 것만. 결과는 스테이지 코드 + 지표 + 글자 그림 — 고른 것을 `Assets/Data/Lab/Stages/`에 쓰고 `StageOrder.SetLabOrder` (2026-10-10 시험 목록 9~14번) |
 | `deploy-pages.sh` | `Builds/WebGL`을 gh-pages에 배포(`bash AgentScripts/Tools/deploy-pages.sh "메시지"`) — gh-pages는 커밋 하나만 두고 강제 push(`--force-with-lease`), 메시지에 빌드 바이트를 붙인다 |
 
 ## Setup/ — 한 번 적용한 설정 기록

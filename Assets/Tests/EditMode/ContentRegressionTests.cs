@@ -34,7 +34,8 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(stage.MinMoves.Value, result.Path.Count, "minMoves = 솔버 최소 수");
         }
 
-        // 시작 상태와 풀이의 매 수 뒤 상태에서, 모든 칸 · 모든 방향의 미리보기 결과가 실제 붓질 결과와 같다
+        // 시작 상태와 풀이의 매 수 뒤 상태에서, 모든 칸 · 모든 방향의 미리보기 결과가 실제 붓질 결과와 같다.
+        // 미리보기는 일반 칸에만 결과 색을 보여 준다 — 물 · 코팅 칸은 색이 바뀌지 않는다(BoardView.ShowPreview와 같은 규칙, 2026-10-10)
         [TestCaseSource(nameof(StageFiles))]
         public void Trace_MatchesBrush(string file)
         {
@@ -55,7 +56,7 @@ namespace ColoringBoot.Core.Tests
                         var predicted = (PaintColor[])state.Clone();
                         for (int k = 0; k < count; k++)
                         {
-                            if (brushes[k] != PaintColor.Empty) predicted[cells[k]] = brushes[k];
+                            if (board.KindOf(cells[k]) == CellKind.Paint && brushes[k] != PaintColor.Empty) predicted[cells[k]] = brushes[k];
                         }
                         var brushed = (PaintColor[])state.Clone();
                         board.Brush(brushed, cell, (HexDirection)d);

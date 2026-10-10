@@ -20,13 +20,16 @@ namespace ColoringBoot.Core
     // 색 상태(칸별 PaintColor 배열)는 들고 있지 않고 인자로 받는다 — 플레이 세션과 솔버(Phase 3)가 같은 규칙을 쓴다
     public sealed class Board
     {
+        private const int NoLine = -1;
+
         private readonly HexCoord[] _coords;
         private readonly PaintColor[] _start;
         private readonly PaintColor[] _target;
+        private readonly CellKind[] _kinds;
         private readonly Dictionary<HexCoord, int> _indexOf;
-        // 줄마다 칸 인덱스를 축의 정방향(1·3·5시) 쪽으로 정렬해 둔다
+        // 줄마다 칸 인덱스를 축의 정방향(1·3·5시) 쪽으로 정렬해 둔다. 벽이 끊은 구간은 각각 하나의 줄이다
         private readonly List<int[]> _lines = new List<int[]>();
-        // [칸, 축] → 그 칸이 속한 줄의 _lines 인덱스
+        // [칸, 축] → 그 칸이 속한 줄의 _lines 인덱스. 벽은 어느 줄에도 없다(NoLine)
         private readonly int[,] _lineOf;
         // 둘 수 있는 수: 2칸 이상인 줄마다 정방향 · 반대 방향. 순서는 프로토타입 buildBoard와 같다 — 솔버가 같은 풀이를 찾게
         private readonly List<BoardMove> _moves = new List<BoardMove>();
@@ -39,6 +42,7 @@ namespace ColoringBoot.Core
             _coords = new HexCoord[count];
             _start = new PaintColor[count];
             _target = new PaintColor[count];
+            _kinds = new CellKind[count];
             _indexOf = new Dictionary<HexCoord, int>(count);
             for (int i = 0; i < count; i++)
             {
@@ -46,10 +50,12 @@ namespace ColoringBoot.Core
                 _coords[i] = cell.Coord;
                 _start[i] = cell.Start;
                 _target[i] = cell.Target;
+                _kinds[i] = cell.Kind;
                 _indexOf.Add(cell.Coord, i);
             }
 
-            // 줄 = 같은 직선 위의 모든 칸. 줄 중간의 빈자리는 건너간다 (GDD §2.2 — 2026-10-04 확정, 프로토타입 규칙)
+            // 줄 = 같은 직선 위의 모든 칸. 줄 중간의 빈자리는 건너간다 (GDD §2.2 — 2026-10-04 확정, 프로토타입 규칙).
+            // 벽은 줄을 구간으로 끊는다 — 구간마다 따로 된 줄 (기믹 시제품, 2026-10-10). 벽이 없으면 줄 · 수의 순서가 프로토타입과 같다
             _lineOf = new int[count, HexDirectionExtensions.AxisCount];
             for (int axis = 0; axis < HexDirectionExtensions.AxisCount; axis++)
             {
@@ -69,11 +75,19 @@ namespace ColoringBoot.Core
                 foreach (List<int> line in byKey.Values)
                 {
                     line.Sort((a, b) => _coords[a].Along(forward).CompareTo(_coords[b].Along(forward)));
-                    foreach (int i in line) _lineOf[i, axis] = _lines.Count;
-                    _lines.Add(line.ToArray());
-                    if (line.Count < 2) continue;
-                    _moves.Add(new BoardMove(line[0], forward));
-                    _moves.Add(new BoardMove(line[0], (HexDirection)(axis + HexDirectionExtensions.AxisCount)));
+                    var segment = new List<int>();
+                    foreach (int i in line)
+                    {
+                        if (_kinds[i] != CellKind.Wall)
+                        {
+                            segment.Add(i);
+                            continue;
+                        }
+                        _lineOf[i, axis] = NoLine;
+                        AddLine(segment, axis);
+                        segment.Clear();
+                    }
+                    AddLine(segment, axis);
                 }
             }
         }
@@ -82,12 +96,28 @@ namespace ColoringBoot.Core
         public IReadOnlyList<BoardMove> Moves => _moves;
         public HexCoord CoordOf(int cell) => _coords[cell];
         public PaintColor TargetOf(int cell) => _target[cell];
+        public CellKind KindOf(int cell) => _kinds[cell];
 
         // 좌표의 칸 인덱스. 보드에 없는 좌표면 -1
         public int IndexOf(HexCoord coord) => _indexOf.TryGetValue(coord, out int cell) ? cell : -1;
 
-        // 칸이 속한 dir 축 줄의 칸 수. 1이면 그 방향 붓질은 늘 아무것도 바꾸지 않는다
-        public int LineLength(int cell, HexDirection dir) => _lines[_lineOf[cell, dir.Axis()]].Length;
+        // 칸이 속한 dir 축 줄의 칸 수. 1이면 그 방향 붓질은 늘 아무것도 바꾸지 않는다. 벽은 0
+        public int LineLength(int cell, HexDirection dir)
+        {
+            int line = _lineOf[cell, dir.Axis()];
+            return line == NoLine ? 0 : _lines[line].Length;
+        }
+
+        // 줄(또는 벽이 끊은 구간) 하나를 등록하고, 2칸 이상이면 정방향 · 반대 방향 수를 더한다
+        private void AddLine(List<int> line, int axis)
+        {
+            if (line.Count == 0) return;
+            foreach (int i in line) _lineOf[i, axis] = _lines.Count;
+            _lines.Add(line.ToArray());
+            if (line.Count < 2) return;
+            _moves.Add(new BoardMove(line[0], (HexDirection)axis));
+            _moves.Add(new BoardMove(line[0], (HexDirection)(axis + HexDirectionExtensions.AxisCount)));
+        }
 
         // 시작 상태를 새 배열로 돌려준다
         public PaintColor[] CreateStartState() => (PaintColor[])_start.Clone();
@@ -105,24 +135,28 @@ namespace ColoringBoot.Core
             Sweep(state, cell, dir, false, cells, brushes, out _);
 
         // 붓이 줄을 쓸고 지나가는 계산 — 붓질과 미리보기가 함께 쓴다(규칙을 바꾸면 여기 한 곳만, 2026-10-07 — 같은지는 ContentRegressionTests).
-        // apply면 state를 칠하고, cells · brushes가 있으면 지나간 칸 순서와 그 칸을 지난 뒤의 붓 색을 채운다. 줄의 칸 수를 돌려준다
+        // apply면 state를 칠하고, cells · brushes가 있으면 지나간 칸 순서와 그 칸을 지난 뒤의 붓 색을 채운다. 줄의 칸 수를 돌려준다.
+        // 기믹(2026-10-10): 물 칸을 지나면 붓이 빈다 · 코팅 칸의 색은 붓에 묻지만 칸은 바뀌지 않는다 · 벽은 줄에 없다(구간 끝)
         private int Sweep(PaintColor[] state, int cell, HexDirection dir, bool apply, int[] cells, PaintColor[] brushes, out bool changed)
         {
-            int[] line = _lines[_lineOf[cell, dir.Axis()]];
+            changed = false;
+            int lineIndex = _lineOf[cell, dir.Axis()];
+            if (lineIndex == NoLine) return 0;
+            int[] line = _lines[lineIndex];
             // 줄은 1·3·5시 쪽으로 정렬되어 있다 — 1·3·5시는 앞에서부터, 반대 방향(7·9·11시)은 뒤에서부터 쓴다
             bool forward = (int)dir < HexDirectionExtensions.AxisCount;
             PaintColor brush = PaintColor.Empty;
-            changed = false;
             for (int k = 0; k < line.Length; k++)
             {
                 int i = line[forward ? k : line.Length - 1 - k];
-                if (state[i] != PaintColor.Empty) brush |= state[i];
+                if (_kinds[i] == CellKind.Water) brush = PaintColor.Empty;
+                else if (state[i] != PaintColor.Empty) brush |= state[i];
                 if (cells != null)
                 {
                     cells[k] = i;
                     brushes[k] = brush;
                 }
-                if (apply && brush != PaintColor.Empty && state[i] != brush)
+                if (apply && _kinds[i] == CellKind.Paint && brush != PaintColor.Empty && state[i] != brush)
                 {
                     state[i] = brush;
                     changed = true;

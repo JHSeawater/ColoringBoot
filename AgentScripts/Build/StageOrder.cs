@@ -46,6 +46,8 @@ public static class StageOrder
     private static readonly string[] LabOrder =
     {
         "LabBasket", "LabPath", "LabLeaf", "LabButterfly", "LabSun", "LabSkyHill", "LabBee", "LabGrape",
+        // 기믹 시제품(2026-10-10) — 기믹마다 입문 · 도전 (AgentScripts/Tools/GimmickLab.cs로 고름)
+        "LabWall1", "LabWall2", "LabWater1", "LabWater2", "LabCoat1", "LabCoat2",
     };
 
     // 시험 목록 에셋을 이 순서로 맞춘다(없으면 만든다) — run_script(file=AgentScripts/Build/StageOrder.cs, entry=StageOrder.SetLabOrder)

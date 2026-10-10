@@ -66,9 +66,18 @@ namespace ColoringBoot.Core
         {
             if (board.CellCount > Solver.MaxCells) throw new ArgumentException($"칸이 {Solver.MaxCells}개를 넘습니다: {board.CellCount}", nameof(board));
             PaintColor[] start = board.CreateStartState();
-            var target = new PaintColor[board.CellCount];
-            for (int i = 0; i < target.Length; i++) target[i] = board.TargetOf(i);
-            int trap = CountTrapCells(start, target);
+            // 칸 지표는 일반 칸만 센다 — 벽 · 물 · 코팅 칸은 색이 바뀌지 않는다(기믹, 2026-10-10). 코팅 칸의 색은 공급 색이라 막힐 칸 계산의 시작 색에는 넣는다
+            var paintStart = new List<PaintColor>();
+            var paintTarget = new List<PaintColor>();
+            for (int i = 0; i < board.CellCount; i++)
+            {
+                if (board.KindOf(i) == CellKind.Coated) paintStart.Add(start[i]);
+                if (board.KindOf(i) != CellKind.Paint) continue;
+                paintStart.Add(start[i]);
+                paintTarget.Add(board.TargetOf(i));
+            }
+            PaintColor[] target = paintTarget.ToArray();
+            int trap = CountTrapCells(paintStart.ToArray(), target);
             int mixed = CountMixedCells(target, out int painted);
             if (board.IsDead(start)) return new StageMetrics(target.Length, trap, painted, mixed, false, 0, 0, 0, 0);
 

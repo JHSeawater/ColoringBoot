@@ -74,11 +74,12 @@ namespace ColoringBoot.Game
                 previous = next;
             }
 
+            // 결과 색은 칠해지는 칸(일반 칸)에만 — 물 · 코팅 칸은 색이 바뀌지 않는다
             for (int k = 0; k < count; k++)
             {
                 int i = _traceCells[k];
                 PaintColor result = _traceBrushes[k];
-                if (result != PaintColor.Empty && result != _session.ColorAt(i)) _cells[i].SetGhost(true, ColorOf(result));
+                if (_board.KindOf(i) == CellKind.Paint && result != PaintColor.Empty && result != _session.ColorAt(i)) _cells[i].SetGhost(true, ColorOf(result));
             }
         }
 
