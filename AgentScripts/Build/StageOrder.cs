@@ -14,11 +14,14 @@ public static class StageOrder
     // 챕터 i+1의 순서 — 데이터는 Assets/Data/Chapters/ChapterN/(StageCatalog · Stages/, 2026-10-07)
     private static readonly string[][] ChapterOrders =
     {
-        // 챕터 1: 섞기 → 붓 색 바뀜 → 섞인 색으로 시작 → 세 기본색 → (파스텔 쉬어 가기) → 검정 → 큰 보드
+        // 챕터 1 (2026-10-11 다시 짝짓기 — 그림 단계 i의 소재 = i번째 스테이지): 톱니 모양(GDD §5 — 쉬운 판에서 시작, 어려운 판 뒤에 쉬어 가기)
+        // 난이도 = 막히지 않는 획만 무작위로 그어 풀릴 확률(같은 날 사용자 "언덕 · 하늘이 너무 쉽다" — 끝에 있던 둘을 앞으로):
+        // 바구니 100% · 잎 100 → 언덕 59 · 하늘 53 → 길 100(쉬어 가기) → 벌집 39 · 벌 33 → 해 100(쉬어 가기) → 나비 29 · 덩굴 16 · 포도 15
+        // 덩굴 · 언덕 · 하늘은 소재 맵(AgentScripts/Tools/SubjectLab.cs 후보), 포도는 시험 포도(기본색에서 시작)
         new[]
         {
-            "TwoColors", "BrushChanges", "Honeycomb", "Grape", "Stain", "VioletPath",
-            "MakeBlack", "Crossing", "BlackWing", "Hive", "LastStroke",
+            "Basket", "Leaf", "Field", "Sky", "Path", "Beehive",
+            "Bee", "Sun", "Butterfly", "Vine", "Grape",
         },
     };
 
@@ -45,7 +48,11 @@ public static class StageOrder
     // 시험 목록(주소 ?lab — 소재 맵 시험, 2026-10-06): 섞인 색 소재 → 무늬 → 테두리 · 색 하나 더 → 소재 묶기 → 검정 줄무늬 → 그림 맵
     private static readonly string[] LabOrder =
     {
-        "LabBasket", "LabPath", "LabLeaf", "LabButterfly", "LabSun", "LabSkyHill", "LabBee", "LabGrape",
+        // 소재 맵 시험(2026-10-06) 중 챕터 1에 들어가지 않은 것
+        "LabSkyHill", "LabGrape",
+        // 챕터 1 다시 짝짓기(2026-10-11)로 빠진 옛 챕터 스테이지 — 챕터 2 이후 재료
+        "LabTwoColors", "LabBrushChanges", "LabStain", "LabVioletPath", "LabMakeBlack", "LabBlackWing",
+        "LabCrossing", "LabHive", "LabLastStroke",   // 덩굴 · 언덕 · 하늘을 새 소재 맵으로 바꾸며 빠짐(같은 날)
         // 기믹 시제품(2026-10-10) — 기믹마다 입문 · 도전 (AgentScripts/Tools/GimmickLab.cs로 고름)
         "LabWall1", "LabWall2", "LabWater1", "LabWater2", "LabCoat1", "LabCoat2",
     };

@@ -20,7 +20,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 
 | 파일 | 만드는 것 | 언제 다시 실행 | entry |
 |---|---|---|---|
-| `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` · `BuildCatalog`(프로토타입 9개 중 빠진 것만 목록에) |
+| `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` (목록 순서는 `StageOrder` — 옛 `BuildCatalog`는 챕터 1 다시 짝짓기 때 지움, 2026-10-11) |
 | `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) · `BuildGimmicks`(기믹 칸 무늬 — 벽 · 물 · 코팅 광택, 2026-10-10 → 뒤에 `BuildPrefabs`) |
 | `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
@@ -46,7 +46,8 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `Refresh.cs` | 디스크에 직접 쓴 에셋을 임포트(`Refresh.All`) — 빌더가 참조하기 전에 |
 | `RemoveStage.cs` | 스테이지를 그 챕터 목록 · 파일에서 뺌(`RemoveStage.Remove`, args=`["파일 이름"]` — 챕터 폴더에서 찾음) → 뒤에 `FontBuilder.Build` → `BuildPrefabs` → `BuildEditorScene` → `BuildScene` |
 | `WebTemplate.cs` | gh-pages 웹 템플릿을 원본 `Setup/WebTemplate/ColoringBoot/`에서 `Assets/WebGLTemplates/ColoringBoot/`로 복사(`WebTemplate.Install`) — 앱인토스 SDK가 `Assets/WebGLTemplates/`를 git에서 빼므로(2026-10-11). 저장소를 새로 받았을 때 · 템플릿을 고친 뒤 · gh-pages 빌드 전 |
-| `GimmickLab.cs` | (읽기 전용) 기믹 시험 스테이지 후보 생성 — `GimmickLab.Generate`, args=`["wall"\|"water"\|"coated", 후보 수, 시드, 최소 수, 최대 수, 섞인 색 비율 하한, strict]`. 기믹을 빼면 그 풀이가 안 되고 풀이의 2획 이상이 기믹을 쓰는 것만 · strict면 기믹 없이는 아예 못 푸는 것만. 결과는 스테이지 코드 + 지표 + 글자 그림 — 고른 것을 `Assets/Data/Lab/Stages/`에 쓰고 `StageOrder.SetLabOrder` (2026-10-10 시험 목록 9~14번) |
+| `GimmickLab.cs` | (읽기 전용) 기믹 시험 스테이지 후보 생성 — `GimmickLab.Generate`, args=`["wall"\|"water"\|"coated", 후보 수, 시드, 최소 수, 최대 수, 섞인 색 비율 하한, strict]`. 기믹을 빼면 그 풀이가 안 되고 풀이의 2획 이상이 기믹을 쓰는 것만 · strict면 기믹 없이는 아예 못 푸는 것만. 결과는 스테이지 코드 + 지표 + 글자 그림 — 고른 것을 `Assets/Data/Lab/Stages/`에 쓰고 `StageOrder.SetLabOrder` (2026-10-10 시험 목록 9~14번 → 10-11부터 12~17번) |
+| `SubjectLab.cs` | (읽기 전용) 소재 맵 후보 생성 — `SubjectLab.Generate`, args=`["vine"\|"hill"\|"sky", 후보 수, 시드]`. 소재마다 맵 모양 · 시작 색 구성 · 목표 색 구성(소재 단서)을 정해 두고 무작위 획으로 목표를 만든 뒤 막힐 수 있는 칸 30% 이상 · 최소 수 · 순서 민감도로 거름. 결과는 `Builds/SubjectLab/<소재>.json`(git이 무시) — 고른 것을 챕터 `Stages/`에 쓴다(2026-10-11 챕터 1 덩굴 = vine 시드 1의 7번 · 언덕 = hill 시드 2의 4번 · 하늘 = sky 시드 2의 16번). 새 소재를 넣으려면 파일 안의 표에 더한다. 45초 동안 돌아 `run_script` 응답이 30초에 끊길 때가 있다 — 그래도 후보 파일은 끝까지 써진다(2026-10-11) |
 | `deploy-pages.sh` | `Builds/WebGL`을 gh-pages에 배포(`bash AgentScripts/Tools/deploy-pages.sh "메시지"`) — gh-pages는 커밋 하나만 두고 강제 push(`--force-with-lease`), 메시지에 빌드 바이트를 붙인다 |
 
 ## Setup/ — 한 번 적용한 설정 기록
@@ -63,6 +64,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `WebTemplate/ColoringBoot/` | gh-pages 웹 템플릿 원본(index.html · 아이콘) — `Tools/WebTemplate.cs`가 `Assets/WebGLTemplates/`로 복사(2026-10-11) |
 | `Phase8ChapterFolders.cs` | 데이터를 챕터 단위 폴더로 옮김 · 챕터 1 `Chapter` 에셋 만듦(2026-10-07, `Preview` → `Apply`) |
 | `Phase8ProjectWideActions.cs` | 안 쓰는 프로젝트 전체 입력(`InputSystem_Actions`) 등록 해제 · 삭제(2026-10-07, `Preview` → `Apply`) |
+| `Phase8Chapter1Pairing.cs` | 챕터 1 스테이지 ↔ 그림 소재 다시 짝짓기 — 스테이지 파일을 소재 이름으로 옮김(GUID 그대로) · 빠진 6개는 시험 목록으로(2026-10-11, `Preview` → `Apply` → `StageOrder`) |
 | `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용) |
 
 ## 옛 이름 (2026-10-04 정리 전에는 모두 `AgentScripts/` 바로 아래)

@@ -1,4 +1,3 @@
-using System.Linq;
 using ColoringBoot.Game;
 using ColoringBoot.LevelEditor;
 using TMPro;
@@ -32,7 +31,6 @@ public static class BoardSceneBuilder
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
     private const string ThemePath = "Assets/Data/Settings/UiTheme.asset";             // 디자인 기준(Phase 7.1) — 없으면 기본값으로 만든다
     private const string MotionPath = "Assets/Data/Settings/MotionSettings.asset";     // 보드 연출 값(Phase 7.4) — 없으면 기본값으로 만든다
-    private static readonly string[] PrototypeStages = { "Grape", "TwoColors", "BrushChanges", "Honeycomb", "Crossing", "Stain", "MakeBlack", "Hive", "LastStroke" };
 
     // 화면 색은 디자인 기준(UiTheme)에서 — 보드 칸 선택 링만 그대로
     private static UiTheme _theme;
@@ -106,32 +104,6 @@ public static class BoardSceneBuilder
         Object.DestroyImmediate(button);
 
         return $"프리팹 → {CellPrefabPath}, {ButtonPrefabPath}";
-    }
-
-    // 스테이지 목록: 프로토타입 스테이지 9개(프로토타입 순서) 중 빠진 것만 채운다 — 레벨 에디터가 추가한 스테이지는 지우지 않는다
-    public static string BuildCatalog()
-    {
-        var catalog = AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath);
-        if (catalog == null)
-        {
-            catalog = ScriptableObject.CreateInstance<StageCatalog>();
-            AssetDatabase.CreateAsset(catalog, CatalogPath);
-        }
-        var so = new SerializedObject(catalog);
-        SerializedProperty stages = so.FindProperty("_stages");
-        int added = 0;
-        foreach (string name in PrototypeStages)
-        {
-            var stage = AssetDatabase.LoadAssetAtPath<TextAsset>($"{ChapterFolder}/Stages/{name}.json")
-                ?? throw new System.InvalidOperationException($"{name}.json 없음 — AgentScripts/Tools/Refresh.cs 먼저 실행");
-            if (catalog.Stages.Contains(stage)) continue;
-            stages.arraySize++;
-            stages.GetArrayElementAtIndex(stages.arraySize - 1).objectReferenceValue = stage;
-            added++;
-        }
-        so.ApplyModifiedPropertiesWithoutUndo();
-        AssetDatabase.SaveAssets();
-        return $"목록 {catalog.Stages.Count}개(추가 {added}) → {CatalogPath}";
     }
 
     // 레벨 에디터 씬 (에디터 전용 — 빌드 씬 목록에 넣지 않는다). 다 만들면 보드 씬을 다시 연다

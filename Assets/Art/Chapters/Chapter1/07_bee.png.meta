@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 27a18df8bcf69ec4fa66efa700cad890
+guid: b5e8890c81aad674ea401ba0ef2d0d93
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5263220852982384498
-    second: 03_beehive_0
+      213: 8352858775784893122
+    second: 07_bee_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 03_beehive_0
+      name: 07_bee_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 240
-        height: 304
+        width: 292
+        height: 268
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e887e8b158845f6b0800000000000000
-      internalID: -5263220852982384498
+      spriteID: 2caa9ad1dc05be370800000000000000
+      internalID: 8352858775784893122
       vertices: []
       indices: 
       edges: []

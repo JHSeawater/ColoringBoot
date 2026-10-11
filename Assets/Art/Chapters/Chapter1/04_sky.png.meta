@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 2ced923d9f8ba1c458851be595f7bc10
+guid: 9468d0ad28c642645a6f563ede5d669c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 9100707396610069204
-    second: 08_leaf_0
+      213: -303149634912800146
+    second: 04_sky_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 08_leaf_0
+      name: 04_sky_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 888
-        height: 1096
+        width: 1084
+        height: 740
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4d296bbd8253c4e70800000000000000
-      internalID: 9100707396610069204
+      spriteID: e62bb31630ffacbf0800000000000000
+      internalID: -303149634912800146
       vertices: []
       indices: 
       edges: []

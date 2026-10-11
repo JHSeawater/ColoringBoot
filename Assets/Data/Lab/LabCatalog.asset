@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: LabCatalog
   m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.StageCatalog
   _stages:
-  - {fileID: 4900000, guid: dd5bc9b38f1b05149b85fd98bf7991ad, type: 3}
-  - {fileID: 4900000, guid: 6743d4e439d5dbe449adc5f9d6928221, type: 3}
-  - {fileID: 4900000, guid: e9a854f146ca8044e965f70058cadaad, type: 3}
-  - {fileID: 4900000, guid: f82f6034a41920c4ab1534f2b9765744, type: 3}
-  - {fileID: 4900000, guid: 3bfa31e349214ab43a4f97d892fb62ea, type: 3}
   - {fileID: 4900000, guid: 710a0476e23a12340b0e24d8e0afe3c9, type: 3}
-  - {fileID: 4900000, guid: 61083b58a8a6c284ea8637c9dcc95060, type: 3}
   - {fileID: 4900000, guid: d2af4bd6d0cff3246a018d3a002a41d3, type: 3}
+  - {fileID: 4900000, guid: e0a9a4c24d3a6cc4eba36eba9f79db43, type: 3}
+  - {fileID: 4900000, guid: 6fc7bb16a6217704ca536cd49e967e48, type: 3}
+  - {fileID: 4900000, guid: b028d5f720ac75e4caf05f8967db268f, type: 3}
+  - {fileID: 4900000, guid: 8e8f113851f4e4646a31eee604b4c20d, type: 3}
+  - {fileID: 4900000, guid: 9a397f5a0b399a243bc48cfb40cc29d6, type: 3}
+  - {fileID: 4900000, guid: a76118af216d4ac4d947e6be6b6e12e9, type: 3}
+  - {fileID: 4900000, guid: d2b6e0b5f016d9f44b2ce255229b17c0, type: 3}
+  - {fileID: 4900000, guid: 968d74b4ccae6894d85ddb5341aeec5e, type: 3}
+  - {fileID: 4900000, guid: 634de905811f7644e8809cc2db32c6f2, type: 3}
   - {fileID: 4900000, guid: 226da8b62ff26444ea57cd44caac04d8, type: 3}
   - {fileID: 4900000, guid: 4ac48147d4c34b845aa4ce728b981ff0, type: 3}
   - {fileID: 4900000, guid: a598af8b7c7865f4282f2fa55dc204f8, type: 3}

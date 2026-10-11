@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 8e79c26395f09614ea6f95d714156806
+guid: 4ca2c0415fd2e2f4cb1a2e0121aab377
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -780222134783314052
-    second: 01_butterfly_0
+      213: 3429971267318491797
+    second: 09_butterfly_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,7 +128,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 01_butterfly_0
+      name: 09_butterfly_0
       rect:
         serializedVersion: 2
         x: 0
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c77f75a2a181c25f0800000000000000
-      internalID: -780222134783314052
+      spriteID: 59aa052e1b4b99f20800000000000000
+      internalID: 3429971267318491797
       vertices: []
       indices: 
       edges: []
