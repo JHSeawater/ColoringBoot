@@ -9,10 +9,11 @@ namespace ColoringBoot.Core.Tests
         private const string Butterfly = @"{""name"":""나비"",""cells"":[[0,0,0,1],[1,0,0,1],[4,0,0,1],[5,0,1,1],[0,1,0,1],[1,1,0,1],[2,1,0,1],[3,1,0,1],[4,1,0,1],[0,2,0,5],[1,2,4,5],[2,2,0,5],[3,2,0,5],[-1,3,0,0],[0,3,0,1],[1,3,0,0],[2,3,1,1],[3,3,0,0],[-2,4,0,1],[-1,4,0,1],[2,4,0,1],[3,4,1,1]]}";
         private const string Bee = @"{""name"":""벌"",""cells"":[[0,0,2,2],[1,0,0,7],[2,0,0,2],[3,0,0,7],[4,0,0,2],[0,1,0,2],[1,1,0,7],[2,1,0,2],[3,1,5,7],[4,1,0,2],[0,2,0,2],[1,2,5,7],[2,2,2,2],[3,2,0,7],[4,2,0,2]]}";
 
-        [TestCase(TestStages.Grape, 10, 10, 10, 10, 74, 33, 620, 288)]
-        [TestCase(Butterfly, 22, 18, 19, 4, 1770, 645, 37326, 26296)]
-        [TestCase(Bee, 15, 9, 15, 6, 914, 144, 15088, 10111)]
-        public void Measure_MatchesReference(string code, int cells, int trap, int painted, int mixed, int states, int silent, int strokes, int dead)
+        // 대충 풀림은 2026-10-11 Python 계산(같은 상태 수 · 조용한 막다른 길 수가 나옴)
+        [TestCase(TestStages.Grape, 10, 10, 10, 10, 74, 33, 620, 288, 0.416)]
+        [TestCase(Butterfly, 22, 18, 19, 4, 1770, 645, 37326, 26296, 7.0 / 24)]
+        [TestCase(Bee, 15, 9, 15, 6, 914, 144, 15088, 10111, 1.0 / 3)]
+        public void Measure_MatchesReference(string code, int cells, int trap, int painted, int mixed, int states, int silent, int strokes, int dead, double chance)
         {
             StageMetrics m = StageMetrics.Measure(new Board(Stage.Parse(code)));
 
@@ -25,6 +26,7 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(silent, m.SilentStates, "조용한 막다른 길");
             Assert.AreEqual(strokes, m.Strokes, "획");
             Assert.AreEqual(dead, m.DeadStrokes, "막히는 획");
+            Assert.AreEqual(chance, m.SolveChance.Value, 1e-9, "대충 풀림");
         }
 
         [Test]
@@ -35,6 +37,7 @@ namespace ColoringBoot.Core.Tests
             Assert.IsFalse(m.Complete);
             Assert.IsNull(m.SilentRatio);
             Assert.IsNull(m.DeadStrokeRatio);
+            Assert.IsNull(m.SolveChance);
             Assert.AreEqual(9, m.TrapCells, "칸 지표는 상한과 상관없음");
         }
 

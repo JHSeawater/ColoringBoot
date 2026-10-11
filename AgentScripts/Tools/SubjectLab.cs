@@ -112,7 +112,8 @@ public static class SubjectLab
             stage = Make(subject, coords, start, state, result.Path.Count);
             StageMetrics m = StageMetrics.Measure(new Board(stage), MetricsLimit);
             string line = $"{result.Path.Count}수 · 순서 {(order.HasValue ? $"{order.Value.Succeeded}/{order.Value.Total}" : "-")}"
-                + $" · 막힐 칸 {Percent(m.TrapRatio)} · 섞인 색 {Percent(m.MixedRatio)} · 막히는 획 {Percent(m.DeadStrokeRatio)} · 조용한 막다른 길 {Percent(m.SilentRatio)}";
+                + $" · 막힐 칸 {Percent(m.TrapRatio)} · 섞인 색 {Percent(m.MixedRatio)} · 막히는 획 {Percent(m.DeadStrokeRatio)} · 조용한 막다른 길 {Percent(m.SilentRatio)}"
+                + $" · 대충 풀림 {Percent(m.SolveChance)}";
             found.Add($"{{\"metrics\":\"{line}\",\"stage\":{StageWriter.ToJson(stage)}}}");
             report.AppendLine($"#{found.Count} {line}");
         }

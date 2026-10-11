@@ -322,7 +322,8 @@ namespace ColoringBoot.LevelEditor
             StageMetrics m = StageMetrics.Measure(new Board(stage), MetricsLimit);
             string dead = m.DeadStrokeRatio.HasValue ? Percent(m.DeadStrokeRatio.Value) : "모름";
             string silent = m.SilentRatio.HasValue ? Percent(m.SilentRatio.Value) : "모름";
-            return $"막힐 칸 {Percent(m.TrapRatio)} · 섞인 색 {Percent(m.MixedRatio)} · 막히는 획 {dead} · 조용한 막다른 길 {silent}";
+            string chance = m.SolveChance.HasValue ? Percent(m.SolveChance.Value) : "모름";
+            return $"막힐 칸 {Percent(m.TrapRatio)} · 섞인 색 {Percent(m.MixedRatio)} · 막히는 획 {dead} · 조용한 막다른 길 {silent} · 대충 풀림 {chance}";
         }
 
         private static string Percent(double ratio) => $"{Math.Round(ratio * 100)}%";
