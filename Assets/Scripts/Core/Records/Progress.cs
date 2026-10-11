@@ -72,6 +72,18 @@ namespace ColoringBoot.Core
             return index == 0 || IsComplete(chapters[index - 1]);
         }
 
+        // 지금 챕터 (2026-10-11 사용자 결정 — 타이틀 [시작]이 여는 챕터): 아직 완성하지 않은 첫 챕터(앞 챕터가 모두 완성이라 열려 있다), 모두 완성했으면 마지막 챕터
+        public int CurrentChapter(IReadOnlyList<IReadOnlyList<string>> chapters)
+        {
+            if (chapters == null) throw new ArgumentNullException(nameof(chapters));
+            if (chapters.Count == 0) throw new ArgumentException("챕터가 없습니다", nameof(chapters));
+            for (int i = 0; i < chapters.Count; i++)
+            {
+                if (!IsComplete(chapters[i])) return i;
+            }
+            return chapters.Count - 1;
+        }
+
         // 클리어 기록. 처음 클리어했거나 더 적은 수로 풀었으면 true
         public bool RecordClear(string stage, int moves)
         {

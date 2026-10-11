@@ -23,6 +23,13 @@ public static class StageOrder
             "Basket", "Leaf", "Field", "Sky", "Path", "Beehive",
             "Bee", "Sun", "Butterfly", "Vine", "Grape",
         },
+        // 챕터 2 — 임시(2026-10-11, 여러 챕터 흐름 확인용 · 주소 ?chapters일 때만): 시험 목록의 옛 챕터 판 사본, 임시 도안 단계 순서
+        // (AgentScripts/Setup/Phase8TempChapter2.cs). 진짜 챕터 2를 만들면 바꾼다
+        new[]
+        {
+            "Temp01", "Temp02", "Temp03", "Temp04", "Temp05", "Temp06",
+            "Temp07", "Temp08", "Temp09", "Temp10", "Temp11",
+        },
     };
 
     public static string SetOrder(int chapter)

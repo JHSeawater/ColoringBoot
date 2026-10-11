@@ -16,15 +16,18 @@ namespace ColoringBoot.Game
         private const string PaletteQuery = "palette"; // ?palette=<이름> — 모든 스테이지를 그 팔레트로(QA · 휴대폰 색 확인)
         private const string ResetQuery = "reset";   // ?reset — 진행 · 기록 지우기 (휴대폰 하나로 여러 명이 테스트할 때)
         private const string LabQuery = "lab";       // ?lab — 시험 목록(소재 맵 시험, 2026-10-06): 모두 열림 · 그림 화면 없음
+        private const string ChaptersQuery = "chapters";   // ?chapters — 임시 챕터(_testChapters)를 뒤에 붙인다(2026-10-11, 여러 챕터 흐름 확인)
         private const string LabTitle = "시험";
         private const string NextText = "다음";
+        private const string NextChapterText = "다음 챕터";
         private const string ListText = "목록";
         private const string CompleteText = "그림 완성!";
         // 무한 모드 난이도(2026-10-07): 기록의 키(EndlessProgress · 퍼즐 id "Endless{키}{번호}") · 화면 이름 — _endlessPools와 같은 순서
         private static readonly string[] EndlessKeys = { "Easy", "Normal", "Hard" };
         private static readonly string[] EndlessNames = { "쉬움", "보통", "어려움" };
 
-        [SerializeField] private Chapter _chapter;   // 지금 여는 챕터 — 제목 · 스테이지 목록 · 그림 (Phase 8 구조 정리, 2026-10-07)
+        [SerializeField] private Chapter[] _chapters;       // 챕터 차례 — 앞 챕터를 완성하면 다음 챕터가 열린다(2026-10-07 결정 · 2026-10-11 여러 챕터)
+        [SerializeField] private Chapter[] _testChapters;   // 주소에 ?chapters가 있을 때만 뒤에 붙는 임시 챕터(진짜 챕터 2가 생기기 전 확인용)
         [SerializeField] private PuzzleController _puzzle;
         [SerializeField] private SoundController _sound;
         [SerializeField] private GameObject _boardScreen;
@@ -59,7 +62,11 @@ namespace ColoringBoot.Game
 
         private SaveData _data;
         private IAdService _ads;
-        private StageCatalog _list;  // 지금 여는 목록 — 챕터(_chapter) 또는 시험 목록(_labCatalog)
+        private Chapter[] _chapterList;      // 이번 실행의 챕터 — _chapters(+ ?chapters면 _testChapters)
+        private string[][] _chapterStages;   // 챕터마다 스테이지 파일 이름(챕터 해금 · 지금 챕터 계산)
+        private int _chapterIndex;
+        private bool _toNextChapter;         // 그림 화면 버튼 = 다음 챕터(이 챕터를 막 완성했고 다음 챕터가 있음)
+        private StageCatalog _list;  // 지금 여는 목록 — 지금 챕터 또는 시험 목록(_labCatalog)
         private bool _lab;
         private int _lesson = -1;    // 따라 하기 중이면 레슨 번호
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
@@ -77,9 +84,27 @@ namespace ColoringBoot.Game
             _data = new SaveData(new PlayerPrefsStore());
             _ads = new NoAdService();
             _puzzle.SetAds(_ads);
-            UseList(_chapter.Stages, false);
-            if (_chapter.Art.Steps.Count != _stages.Length)
-                Debug.LogWarning($"챕터 그림 단계 {_chapter.Art.Steps.Count}개 ≠ 스테이지 {_stages.Length}개 — 앞에서부터 짝짓습니다", this);
+            SetChapters(_chapters);
+            UseChapter(0);
+        }
+
+        private Chapter CurrentChapter => _chapterList[_chapterIndex];
+
+        private void SetChapters(Chapter[] chapters)
+        {
+            _chapterList = chapters;
+            _chapterStages = chapters.Select(c => c.Stages.Stages.Select(s => s.name).ToArray()).ToArray();
+            foreach (Chapter chapter in chapters)
+            {
+                if (chapter.Art.Steps.Count != chapter.Stages.Stages.Count)
+                    Debug.LogWarning($"{chapter.Title} 그림 단계 {chapter.Art.Steps.Count}개 ≠ 스테이지 {chapter.Stages.Stages.Count}개 — 앞에서부터 짝짓습니다", this);
+            }
+        }
+
+        private void UseChapter(int index)
+        {
+            _chapterIndex = index;
+            UseList(CurrentChapter.Stages, false);
         }
 
         // 여는 목록을 정한다 — 스테이지 파일 이름(기록의 키)과 최소 수를 그 목록에서 읽는다. lab: 시험 목록(모두 열림 · 그림 없음)
@@ -118,6 +143,7 @@ namespace ColoringBoot.Game
             _endless.TierChosen += OpenEndless;
             _endless.Back += LeaveEndless;
             _select.StageChosen += OpenStage;
+            _select.ChapterStepped += StepChapter;
             _options.Changed += ApplySettings;
             _options.TutorialRequested += StartTutorial;
         }
@@ -136,13 +162,15 @@ namespace ColoringBoot.Game
             _endless.TierChosen -= OpenEndless;
             _endless.Back -= LeaveEndless;
             _select.StageChosen -= OpenStage;
+            _select.ChapterStepped -= StepChapter;
             _options.Changed -= ApplySettings;
             _options.TutorialRequested -= StartTutorial;
         }
 
-        // 타이틀의 [시작] — 따라 하기를 아직 안 봤으면 그것부터, 봤으면 목록
+        // 타이틀의 [시작] — 따라 하기를 아직 안 봤으면 그것부터, 봤으면 목록. 여는 챕터는 아직 완성하지 않은 첫 챕터(2026-10-11 사용자 결정)
         private void StartGame()
         {
+            if (!_lab) UseChapter(_data.Progress.CurrentChapter(_chapterStages));
             if (_data.TutorialSeen) ShowSelect();
             else StartTutorial();
         }
@@ -182,11 +210,19 @@ namespace ColoringBoot.Game
             }
             ApplySettings();
             if (qa && UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
+            if (qa && UrlQuery.TryGet(url, ChaptersQuery, out _))
+            {
+                SetChapters(_chapters.Concat(_testChapters).ToArray());
+                UseChapter(_chapterIndex);
+            }
             if (qa && UrlQuery.TryGet(url, LabQuery, out _)) UseList(_labCatalog, true);
 
             int start = -1;
             if (qa && UrlQuery.TryGet(url, StageQuery, out string name))
             {
+                // 챕터 스테이지면 그 챕터를 연다
+                int chapter = _lab ? -1 : Array.FindIndex(_chapterStages, c => c.Any(s => string.Equals(s, name, StringComparison.OrdinalIgnoreCase)));
+                if (chapter >= 0) UseChapter(chapter);
                 start = Array.FindIndex(_stages, s => string.Equals(s, name, StringComparison.OrdinalIgnoreCase));
                 if (start < 0) Debug.LogWarning($"주소의 스테이지 '{name}'를 찾지 못해 타이틀을 엽니다", this);
             }
@@ -215,9 +251,20 @@ namespace ColoringBoot.Game
             _chapterScreen.SetActive(false);
             _endless.gameObject.SetActive(false);
             _selectEndlessButton.gameObject.SetActive(!_lab && _data.TutorialSeen);
-            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : _chapter.Title, _lab ? null : _chapter.Subtitle, _lab);
+            bool locked = !_lab && !_data.Progress.IsChapterUnlocked(_chapterStages, _chapterIndex);
+            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : CurrentChapter.Title, _lab ? null : CurrentChapter.Subtitle, _lab,
+                locked, !_lab && _chapterIndex > 0, !_lab && _chapterIndex + 1 < _chapterList.Length);
             _selectPicture.gameObject.SetActive(!_lab);
-            if (!_lab) _selectPicture.Show(_chapter.Art, UpdatePainted(), justPainted);
+            if (!_lab) _selectPicture.Show(CurrentChapter.Art, UpdatePainted(), justPainted);
+        }
+
+        // 목록의 ◀ ▶ — 앞 · 다음 챕터 목록 (잠긴 챕터도 보여 준다)
+        private void StepChapter(int step)
+        {
+            int index = _chapterIndex + step;
+            if (_lab || index < 0 || index >= _chapterList.Length) return;
+            UseChapter(index);
+            ShowSelect();
         }
 
         private void OpenStage(int index)
@@ -227,6 +274,7 @@ namespace ColoringBoot.Game
             _chapterScreen.SetActive(false);
             _boardScreen.SetActive(true);
             _paintShown = false;
+            _toNextChapter = false;
             _lesson = -1;
             _endlessTier = -1;
             _skipButton.gameObject.SetActive(false);
@@ -273,14 +321,22 @@ namespace ColoringBoot.Game
             bool[] painted = UpdatePainted();
             int count = _data.Progress.ClearedCount(_stages);
             bool complete = _data.Progress.IsComplete(_stages);
+            _toNextChapter = complete && _chapterIndex + 1 < _chapterList.Length;
             _chapterCaption.text = complete ? CompleteText : $"색칠 {count} / {painted.Length}";
-            _chapterNextLabel.text = step + 1 < _stages.Length ? NextText : ListText;
-            _chapterPicture.Show(_chapter.Art, painted, step, complete);
+            _chapterNextLabel.text = _toNextChapter ? NextChapterText : step + 1 < _stages.Length ? NextText : ListText;
+            _chapterPicture.Show(CurrentChapter.Art, painted, step, complete);
         }
 
-        // 다음 스테이지 — 스테이지 사이 광고 자리를 거친다. 마지막이면 목록
+        // 다음 스테이지 — 스테이지 사이 광고 자리를 거친다. 마지막이면 목록, 챕터를 막 완성했으면 다음 챕터 목록(2026-10-11 사용자 결정)
         private void ContinueAfterPicture()
         {
+            if (_toNextChapter)
+            {
+                _toNextChapter = false;
+                UseChapter(_chapterIndex + 1);
+                ShowSelect();
+                return;
+            }
             if (_current < 0 || _current + 1 >= _stages.Length)
             {
                 ShowSelect();

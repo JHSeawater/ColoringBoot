@@ -35,7 +35,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 하는 일 | entry |
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
-| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) 등 |
+| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) · `TestChapters`(주소 `?chapters`처럼 임시 챕터를 붙임 — 2026-10-11) 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 · 생성 조건 · 그림 → 시작 칸 찾기 | `Paint` · `Record` · `Check` · `Save` · `GenerateWith` · `FindSeeds` 등 |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
 
@@ -65,7 +65,8 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `Phase8ChapterFolders.cs` | 데이터를 챕터 단위 폴더로 옮김 · 챕터 1 `Chapter` 에셋 만듦(2026-10-07, `Preview` → `Apply`) |
 | `Phase8ProjectWideActions.cs` | 안 쓰는 프로젝트 전체 입력(`InputSystem_Actions`) 등록 해제 · 삭제(2026-10-07, `Preview` → `Apply`) |
 | `Phase8Chapter1Pairing.cs` | 챕터 1 스테이지 ↔ 그림 소재 다시 짝짓기 — 스테이지 파일을 소재 이름으로 옮김(GUID 그대로) · 빠진 6개는 시험 목록으로(2026-10-11, `Preview` → `Apply` → `StageOrder`) |
-| `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용) |
+| `Phase8TempChapter2.cs` | 임시 챕터 2 — 시험 목록의 옛 챕터 판을 `Chapters/Chapter2/Stages/Temp01~11`로 복사 · 목록 · `Chapter` 에셋(그림 = 임시 도안). 주소 `?chapters`일 때만 게임에 들어감(2026-10-11, 순서: `ChapterArtExport.py ArtSource/_archive/Chapter1-temp Assets/Art/Chapters/Chapter2` → `Apply` → `ChapterArtBuilder.Build(2)` → `Apply` → `StageOrder.SetOrder(2)`) |
+| `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용 · 2026-10-11부터 임시 챕터 2 그림) |
 
 ## 옛 이름 (2026-10-04 정리 전에는 모두 `AgentScripts/` 바로 아래)
 

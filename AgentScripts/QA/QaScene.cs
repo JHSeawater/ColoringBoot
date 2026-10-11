@@ -62,37 +62,55 @@ public static class QaScene
         Expect(overlays.arraySize == 2 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
             && (overlays.GetArrayElementAtIndex(1).objectReferenceValue as GameObject)?.name == "StatsPanel", "PuzzleController._overlays = 옵션 · 기록 패널");
         var flow = Object.FindAnyObjectByType<GameFlow>();
-        CheckRefs(flow, Expect, "_chapter", "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
+        CheckRefs(flow, Expect, "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
             "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
             "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
         foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
-        CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice");
+        CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice",
+            "_prevChapterButton", "_nextChapterButton");
         CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");
         CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton", "_tutorialButton");
         CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
         Expect(Object.FindAnyObjectByType<SoundController>() != null, "SoundController 있음");
-        // 챕터 에셋(2026-10-07): 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 · 그림이 연결됨
-        var chapter = (Chapter)new SerializedObject(flow).FindProperty("_chapter").objectReferenceValue;
-        Expect(!string.IsNullOrWhiteSpace(chapter.Title) && !string.IsNullOrWhiteSpace(chapter.Subtitle) && chapter.Stages != null && chapter.Art != null, $"챕터 '{chapter.Title}' · '{chapter.Subtitle}' 목록 · 그림 연결");
-        string chapterMissing = MissingGlyphs(font, new[] { chapter.Title, chapter.Subtitle });
-        Expect(chapterMissing.Length == 0, $"챕터 제목 · 부제 글자가 폰트에 없음 [{chapterMissing}]");
-        StageCatalog catalog = chapter.Stages;
-        Expect(catalog.Stages.Count >= 9, "목록 9개 이상");
-        for (int i = 0; i < catalog.Stages.Count; i++)
-            Expect(catalog.Stages[i] != null && Stage.Parse(catalog.Stages[i].text).Cells.Count > 0, $"목록[{i}] 읽힘");
-        // 목록의 모든 스테이지가 솔버로 풀리고 저장된 최소 수와 같다 (스테이지를 바꿀 때마다 걸러진다, Phase 4.5)
-        foreach (TextAsset asset in catalog.Stages)
+        // 챕터 에셋(2026-10-07 · 여러 챕터 2026-10-11): 챕터 목록 1개 이상 + 임시 챕터(?chapters). 챕터마다 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 · 그림이 연결됨
+        var flowSo = new SerializedObject(flow);
+        Chapter[] mainChapters = Enumerable.Range(0, flowSo.FindProperty("_chapters").arraySize)
+            .Select(i => flowSo.FindProperty("_chapters").GetArrayElementAtIndex(i).objectReferenceValue as Chapter).ToArray();
+        Chapter[] testChapters = Enumerable.Range(0, flowSo.FindProperty("_testChapters").arraySize)
+            .Select(i => flowSo.FindProperty("_testChapters").GetArrayElementAtIndex(i).objectReferenceValue as Chapter).ToArray();
+        Expect(mainChapters.Length >= 1 && mainChapters.Concat(testChapters).All(c => c != null), $"GameFlow 챕터 {mainChapters.Length}개 · 임시 {testChapters.Length}개 · 빈 칸 없음");
+        Chapter[] chapters = mainChapters.Concat(testChapters).Where(c => c != null).ToArray();
+        foreach (Chapter chapter in chapters)
         {
-            Stage stage = Stage.Parse(asset.text);
-            var board = new Board(stage);
-            SolveResult solved = Solver.Solve(board, board.CreateStartState());
-            Expect(solved.Solved && stage.MinMoves == solved.Path.Count, $"스테이지 {asset.name} 풀림 · minMoves {stage.MinMoves} = 솔버 {(solved.Solved ? solved.Path.Count : -1)}");
+            Expect(!string.IsNullOrWhiteSpace(chapter.Title) && !string.IsNullOrWhiteSpace(chapter.Subtitle) && chapter.Stages != null && chapter.Art != null, $"챕터 '{chapter.Title}' · '{chapter.Subtitle}' 목록 · 그림 연결");
+            string chapterMissing = MissingGlyphs(font, new[] { chapter.Title, chapter.Subtitle });
+            Expect(chapterMissing.Length == 0, $"{chapter.Title} 제목 · 부제 글자가 폰트에 없음 [{chapterMissing}]");
+            StageCatalog catalog = chapter.Stages;
+            Expect(catalog.Stages.Count >= 9, $"{chapter.Title} 목록 9개 이상");
+            for (int i = 0; i < catalog.Stages.Count; i++)
+                Expect(catalog.Stages[i] != null && Stage.Parse(catalog.Stages[i].text).Cells.Count > 0, $"{chapter.Title} 목록[{i}] 읽힘");
+            // 목록의 모든 스테이지가 솔버로 풀리고 저장된 최소 수와 같다 (스테이지를 바꿀 때마다 걸러진다, Phase 4.5)
+            foreach (TextAsset asset in catalog.Stages)
+            {
+                Stage stage = Stage.Parse(asset.text);
+                var board = new Board(stage);
+                SolveResult solved = Solver.Solve(board, board.CreateStartState());
+                Expect(solved.Solved && stage.MinMoves == solved.Path.Count, $"스테이지 {asset.name} 풀림 · minMoves {stage.MinMoves} = 솔버 {(solved.Solved ? solved.Path.Count : -1)}");
+            }
+            string nameMissing = MissingGlyphs(font, catalog.Stages.Select(s => Stage.Parse(s.text).Name));
+            Expect(nameMissing.Length == 0, $"{chapter.Title} 스테이지 이름 글자가 폰트에 없음 [{nameMissing}]");
+
+            // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
+            ChapterArt art = chapter.Art;
+            Expect(art.Steps.Count == catalog.Stages.Count, $"{chapter.Title} 그림 단계 {art.Steps.Count}개 = 스테이지 {catalog.Stages.Count}개");
+            Expect(art.Line.Sprite != null && art.Steps.All(s => s.Sprite != null && s.Rect.width > 0 && s.Rect.height > 0), $"{chapter.Title} 그림 선화 · 단계 조각 모두 있음");
+            Expect(art.Canvas.x * 5 == art.Canvas.y * 4, $"{chapter.Title} 그림 캔버스 4:5 ({art.Canvas.x}×{art.Canvas.y})");
         }
-        string nameMissing = MissingGlyphs(font, catalog.Stages.Select(s => Stage.Parse(s.text).Name));
-        Expect(nameMissing.Length == 0, $"스테이지 이름 글자가 폰트에 없음 [{nameMissing}]");
+        List<TextAsset> chapterStages = chapters.SelectMany(c => c.Stages.Stages).ToList();
+        Expect(chapterStages.Select(s => s.name).Distinct().Count() == chapterStages.Count, "챕터 스테이지 파일 이름(기록의 키)이 챕터끼리 겹치지 않음");
 
         // 시험 목록(주소 ?lab, 2026-10-06): 읽힘 · 풀림 · minMoves 일치 · 이름 글자 · 파일 이름(기록의 키)이 챕터 목록과 겹치지 않음
         var lab = (StageCatalog)new SerializedObject(flow).FindProperty("_labCatalog").objectReferenceValue;
@@ -106,7 +124,7 @@ public static class QaScene
         }
         string labMissing = MissingGlyphs(font, lab.Stages.Select(s => Stage.Parse(s.text).Name));
         Expect(labMissing.Length == 0, $"시험 목록 이름 글자가 폰트에 없음 [{labMissing}]");
-        Expect(!lab.Stages.Any(s => catalog.Stages.Any(c => c.name == s.name)), "시험 목록 파일 이름이 챕터 목록과 겹치지 않음");
+        Expect(!lab.Stages.Any(s => chapterStages.Any(c => c.name == s.name)), "시험 목록 파일 이름이 챕터 목록과 겹치지 않음");
 
         // 따라 하기(2026-10-07): 레슨 수 = 목록 수 · 안내한 획대로 그으면 풀림(= 최소 수) · 일부러 막히는 획은 막힘 · 문구 글자 · 파일 이름이 다른 목록과 안 겹침
         var tutorial = (StageCatalog)new SerializedObject(flow).FindProperty("_tutorialCatalog").objectReferenceValue;
@@ -135,7 +153,7 @@ public static class QaScene
         }
         string lessonMissing = MissingGlyphs(font, TutorialLessons.Texts().Concat(tutorial.Stages.Select(s => Stage.Parse(s.text).Name)));
         Expect(lessonMissing.Length == 0, $"따라 하기 문구 · 이름 글자가 폰트에 없음 [{lessonMissing}]");
-        Expect(!tutorial.Stages.Any(s => catalog.Stages.Concat(lab.Stages).Any(c => c.name == s.name)), "따라 하기 파일 이름이 다른 목록과 겹치지 않음");
+        Expect(!tutorial.Stages.Any(s => chapterStages.Concat(lab.Stages).Any(c => c.name == s.name)), "따라 하기 파일 이름이 다른 목록과 겹치지 않음");
 
         // 무한 모드(2026-10-07): 묶음 3개(쉬움 · 보통 · 어려움)가 연결되고 퍼즐이 있음 · 첫 줄이 읽힘 · 난이도 화면 배선 · 난이도 이름과 버튼 글자가 폰트에 있음
         SerializedProperty pools = new SerializedObject(flow).FindProperty("_endlessPools");
@@ -154,12 +172,6 @@ public static class QaScene
         string endlessMissing = MissingGlyphs(font, endlessNames.Concat(new[] { "0123456789~수 · 푼 개 번" }));
         Expect(endlessMissing.Length == 0, $"무한 모드 글자가 폰트에 없음 [{endlessMissing}]");
 
-        // 챕터 그림 (Phase 5): 단계 수 = 스테이지 수(단계 i ↔ 스테이지 i) · 조각이 모두 있음 · 캔버스 4:5
-        ChapterArt art = chapter.Art;
-        Expect(art.Steps.Count == catalog.Stages.Count, $"그림 단계 {art.Steps.Count}개 = 스테이지 {catalog.Stages.Count}개");
-        Expect(art.Line.Sprite != null && art.Steps.All(s => s.Sprite != null && s.Rect.width > 0 && s.Rect.height > 0), "그림 선화 · 단계 조각 모두 있음");
-        Expect(art.Canvas.x * 5 == art.Canvas.y * 4, $"그림 캔버스 4:5 ({art.Canvas.x}×{art.Canvas.y})");
-
         CheckRefs(Object.FindAnyObjectByType<MixTableView>(FindObjectsInactive.Include), Expect, "_chipSprite");
         CheckRefs(AssetDatabase.LoadAssetAtPath<CellView>("Assets/Prefabs/Cell.prefab"), Expect,
             "_fill", "_marker", "_markerFill", "_deadRing", "_selectRing", "_ghost", "_symbol",
@@ -176,7 +188,7 @@ public static class QaScene
             var colors = new SerializedObject(each).FindProperty("_colors");
             Expect(colors.arraySize == 7 && Enumerable.Range(0, 7).All(i => colors.GetArrayElementAtIndex(i).colorValue.a == 1f), $"팔레트 {each.Id} 7색 · 알파 1");
         }
-        foreach (TextAsset stage in catalog.Stages.Concat(lab.Stages).Concat(tutorial.Stages))
+        foreach (TextAsset stage in chapterStages.Concat(lab.Stages).Concat(tutorial.Stages))
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
         foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine", "GimmickWall", "GimmickWater", "GimmickGloss" })
         {

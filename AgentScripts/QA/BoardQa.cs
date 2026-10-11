@@ -12,6 +12,7 @@ using UnityEngine.UI;
 // 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 시험 목록(?lab): Lab() → 선택 화면(모두 열림) → 같은 방식
+// 여러 챕터(?chapters, 2026-10-11): TestChapters() → Press("SelectScreen/NextChapterButton") · PrevChapterButton
 // 따라 하기: 저장 키가 없으면 타이틀 [시작]이 레슨 1을 연다 → Drag로 안내한 획 → Press("BoardScreen/ClearBanner/NextButton"). 힌트: Press("BoardScreen/HintButton")
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
@@ -156,6 +157,8 @@ public static class BoardQa
             text += $" | {screen.Find("Caption").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(screen.Find("Picture"))} [{screen.Find("NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
         }
         if (select) text += $" | 작은 그림 칠한 단계 {Painted(safe.Find("SelectScreen/Picture"))}";
+        // 챕터 넘기기(2026-10-11): 보이는 화살표
+        if (select) text += $" | 넘기기 {(safe.Find("SelectScreen/PrevChapterButton").gameObject.activeSelf ? "◀" : "-")}{(safe.Find("SelectScreen/NextChapterButton").gameObject.activeSelf ? "▶" : "-")}";
         if (select)
         {
             Transform grid = safe.Find("SelectScreen/Grid");
@@ -189,6 +192,19 @@ public static class BoardQa
         const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
         object lab = typeof(GameFlow).GetField("_labCatalog", Private).GetValue(flow);
         typeof(GameFlow).GetMethod("UseList", Private).Invoke(flow, new[] { lab, true });
+        typeof(GameFlow).GetMethod("ShowSelect", Private).Invoke(flow, null);
+        return Flow();
+    }
+
+    // 주소 ?chapters와 같게 임시 챕터를 뒤에 붙이고 지금 챕터의 선택 화면을 연다 — 에디터에는 주소가 없어 GameFlow의 SetChapters를 직접 부른다 (2026-10-11)
+    public static string TestChapters()
+    {
+        var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
+        const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
+        var chapters = (Chapter[])typeof(GameFlow).GetField("_chapters", Private).GetValue(flow);
+        var tests = (Chapter[])typeof(GameFlow).GetField("_testChapters", Private).GetValue(flow);
+        typeof(GameFlow).GetMethod("SetChapters", Private).Invoke(flow, new object[] { chapters.Concat(tests).ToArray() });
+        typeof(GameFlow).GetMethod("UseChapter", Private).Invoke(flow, new object[] { typeof(GameFlow).GetField("_chapterIndex", Private).GetValue(flow) });
         typeof(GameFlow).GetMethod("ShowSelect", Private).Invoke(flow, null);
         return Flow();
     }

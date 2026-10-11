@@ -22,6 +22,8 @@ public static class BoardSceneBuilder
     // 게임이 여는 챕터(지금은 챕터 1) — 데이터는 챕터마다 Assets/Data/Chapters/ChapterN/ (2026-10-07)
     private const string ChapterFolder = "Assets/Data/Chapters/Chapter1";
     private const string ChapterPath = ChapterFolder + "/Chapter.asset";        // 제목 · 부제 · 목록 · 그림 — AgentScripts/Setup/Phase8ChapterFolders.cs가 만듦
+    // 임시 챕터 — 주소에 ?chapters가 있을 때만 게임에 들어감(2026-10-11, AgentScripts/Setup/Phase8TempChapter2.cs). 진짜 챕터 2가 생기면 위 챕터 목록으로
+    private const string TestChapterPath = "Assets/Data/Chapters/Chapter2/Chapter.asset";
     private const string CatalogPath = ChapterFolder + "/StageCatalog.asset";
     private const string LabCatalogPath = "Assets/Data/Lab/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
     private const string TutorialCatalogPath = "Assets/Data/Tutorial/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
@@ -310,8 +312,9 @@ public static class BoardSceneBuilder
         SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject);
 
         var game = new GameObject("Game", typeof(GameFlow));
+        SetArray(game.GetComponent<GameFlow>(), "_chapters", Asset<Chapter>(ChapterPath));
+        SetArray(game.GetComponent<GameFlow>(), "_testChapters", Asset<Chapter>(TestChapterPath));
         SetRefs(game.GetComponent<GameFlow>(),
-            ("_chapter", AssetDatabase.LoadAssetAtPath<Chapter>(ChapterPath)),
             ("_puzzle", controller),
             ("_sound", sound.GetComponent<SoundController>()),
             ("_boardScreen", boardScreen),
@@ -495,6 +498,9 @@ public static class BoardSceneBuilder
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
         TMP_Text subtitle = TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted);
         picture = Picture(screen, -210f, new Vector2(480f, 600f));
+        // 챕터 넘기기 (2026-10-11): 작은 그림 양옆 — 넘길 챕터가 없으면 StageSelectView가 숨긴다
+        Button prevChapter = ChapterArrow(screen, "PrevChapterButton", -1);
+        Button nextChapter = ChapterArrow(screen, "NextChapterButton", 1);
 
         var grid = NewUI("Grid", screen);
         var gridRect = (RectTransform)grid.transform;
@@ -545,10 +551,26 @@ public static class BoardSceneBuilder
         template.SetActive(false);
 
         var view = screen.AddComponent<StageSelectView>();
-        SetRefs(view, ("_title", title), ("_subtitle", subtitle), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText));
+        SetRefs(view, ("_title", title), ("_subtitle", subtitle), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText),
+            ("_prevChapterButton", prevChapter), ("_nextChapterButton", nextChapter));
         SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_clearedFill", Strong), ("_openText", Strong), ("_clearedText", StrongInk));
         screen.SetActive(false);
         return view;
+    }
+
+    // 챕터 넘기기 버튼 — 작은 그림(가운데 480 × 600, 위 -210) 세로 가운데 양옆, 외곽선 버튼 + 화살표(side -1 = 왼쪽, 화살표를 뒤집음)
+    private static Button ChapterArrow(GameObject parent, string name, int side)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = new Vector2(side * 360f, -440f);
+        rect.sizeDelta = new Vector2(140f, 140f);
+        Button button = OutlinedButton(go, "", 44f);
+        Image arrow = AddImage("Arrow", go, "Arrow", Strong, 0.22f, 0.78f);
+        if (side < 0) arrow.rectTransform.localEulerAngles = new Vector3(0f, 0f, 180f);
+        go.SetActive(false);
+        return button;
     }
 
     // 옵션 패널: 어두운 바탕(아래 입력을 막음) · 제목 · 기호 · 소리 켜고 끄기 · 닫기
@@ -761,6 +783,10 @@ public static class BoardSceneBuilder
     }
 
     private static Sprite Sprite(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(SpriteFolder + name + ".png");
+
+    // 에셋 — 없으면 멈춘다(SetArray는 빈 값을 막지 않으므로)
+    private static TAsset Asset<TAsset>(string path) where TAsset : Object =>
+        AssetDatabase.LoadAssetAtPath<TAsset>(path) ?? throw new System.ArgumentException($"{path} 없음 — AgentScripts/Tools/Refresh.cs 먼저 실행");
 
     private static Color Hex(string html)
     {

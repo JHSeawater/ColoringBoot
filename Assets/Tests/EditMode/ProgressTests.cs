@@ -116,6 +116,23 @@ namespace ColoringBoot.Core.Tests
         }
 
         [Test]
+        public void CurrentChapter_FirstIncompleteOrLast()
+        {
+            string[][] chapters = { new[] { "A1", "A2" }, new[] { "B1" }, new[] { "C1" } };
+            var progress = new Progress();
+
+            Assert.AreEqual(0, progress.CurrentChapter(chapters), "처음");
+            progress.RecordClear("A1", 3);
+            Assert.AreEqual(0, progress.CurrentChapter(chapters), "첫 챕터 일부만 클리어");
+            progress.RecordClear("A2", 3);
+            Assert.AreEqual(1, progress.CurrentChapter(chapters), "첫 챕터 완성 → 다음 챕터");
+            progress.RecordClear("B1", 3);
+            progress.RecordClear("C1", 3);
+            Assert.AreEqual(2, progress.CurrentChapter(chapters), "모두 완성 → 마지막 챕터");
+            Assert.Throws<ArgumentException>(() => progress.CurrentChapter(new string[0][]));
+        }
+
+        [Test]
         public void Serialize_RoundTrip()
         {
             var progress = new Progress();
