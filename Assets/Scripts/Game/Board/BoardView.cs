@@ -136,11 +136,7 @@ namespace ColoringBoot.Game
             _traceBrushes = new PaintColor[count];
             _waveCells = new int[count];
             _waveBefore = new PaintColor[count];
-            for (int i = 0; i < count; i++)
-            {
-                _cells[i] = Instantiate(_cellPrefab, transform);
-                _cells[i].SetKind(_board.KindOf(i));
-            }
+            for (int i = 0; i < count; i++) _cells[i] = Instantiate(_cellPrefab, transform);
 
             // 미리보기 선: 줄 칸 수 + 1 구간이 최대 — 칸 위, 방향 버튼 아래에 그린다
             _trail = new Image[count + 1];

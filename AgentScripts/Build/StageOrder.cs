@@ -60,8 +60,6 @@ public static class StageOrder
         // 챕터 1 다시 짝짓기(2026-10-11)로 빠진 옛 챕터 스테이지 — 챕터 2 이후 재료
         "LabTwoColors", "LabBrushChanges", "LabStain", "LabVioletPath", "LabMakeBlack", "LabBlackWing",
         "LabCrossing", "LabHive", "LabLastStroke",   // 덩굴 · 언덕 · 하늘을 새 소재 맵으로 바꾸며 빠짐(같은 날)
-        // 기믹 시제품(2026-10-10) — 기믹마다 입문 · 도전 (AgentScripts/Tools/GimmickLab.cs로 고름)
-        "LabWall1", "LabWall2", "LabWater1", "LabWater2", "LabCoat1", "LabCoat2",
     };
 
     // 시험 목록 에셋을 이 순서로 맞춘다(없으면 만든다) — run_script(file=AgentScripts/Build/StageOrder.cs, entry=StageOrder.SetLabOrder)
