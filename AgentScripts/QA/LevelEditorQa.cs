@@ -112,6 +112,77 @@ public static class LevelEditorQa
         return State();
     }
 
+    // 붙여넣기 (2026-10-13): code를 클립보드에 넣고 [붙여넣기]를 누른 것과 같다
+    public static string Paste(string code)
+    {
+        GUIUtility.systemCopyBuffer = code;
+        Call("Paste");
+        return State();
+    }
+
+    // 시험 플레이 (2026-10-13) — 열기 · 끌기는 다른 run_script 호출로 나눈다(같은 프레임엔 칸 배치 전)
+    public static string Play()
+    {
+        Call("StartPlay");
+        return PlayState();
+    }
+
+    // 지금 상태에서 솔버 풀이를 실제 끌기로 (Drag와 같은 경로)
+    public static string PlaySolve()
+    {
+        var session = Field<PuzzleSession>("_record");
+        SolveResult result = Solver.Solve(session.Board, CurrentState(session), 600000);
+        if (!result.Solved) return "지금 상태로는 풀 수 없음 · " + PlayState();
+        foreach (BoardMove move in result.Path)
+        {
+            HexCoord coord = session.Board.CoordOf(move.Cell);
+            Drag(coord.Q, coord.R, (int)move.Direction);
+        }
+        return PlayState();
+    }
+
+    // 지금 상태에서 막히는 첫 획을 실제 끌기로 (막힘 표시 · 입력 잠금 확인용)
+    public static string PlayDeadMove()
+    {
+        var session = Field<PuzzleSession>("_record");
+        for (int cell = 0; cell < session.Board.CellCount; cell++)
+            for (int dir = 0; dir < 6; dir++)
+            {
+                PaintColor[] next = CurrentState(session);
+                if (!session.Board.Brush(next, cell, (HexDirection)dir) || !session.Board.IsDead(next)) continue;
+                HexCoord coord = session.Board.CoordOf(cell);
+                Drag(coord.Q, coord.R, dir);
+                return $"({coord.Q},{coord.R}) 방향 {dir} · " + PlayState();
+            }
+        return "막히는 획 없음 · " + PlayState();
+    }
+
+    // 시험 플레이의 되돌리기 · 처음부터 버튼과 같은 동작
+    public static string PlayUndo()
+    {
+        Field<PuzzleSession>("_record").Undo();
+        Call("RenderBoard");
+        return PlayState();
+    }
+
+    public static string PlayRestart()
+    {
+        Field<PuzzleSession>("_record").Restart();
+        Call("RenderBoard");
+        return PlayState();
+    }
+
+    public static string PlayState()
+    {
+        var session = Field<PuzzleSession>("_record");
+        if (session == null) return "보드 없음 · " + State();
+        var view = Field<BoardView>("_recordView");
+        bool interactable = (bool)typeof(BoardView).GetField("_interactable", Private).GetValue(view);
+        return $"시험 플레이 {Field<bool>("_playing")} · {session.MoveCount}수 / 최소 {Field<int>("_playMinMoves")} · 풀림 {session.IsSolved} · 막힘 {session.IsDead} · 입력 {interactable} · 상태: {Field<string>("_status")}";
+    }
+
+    private static PaintColor[] CurrentState(PuzzleSession session) => Enumerable.Range(0, session.Board.CellCount).Select(session.ColorAt).ToArray();
+
     public static string State()
     {
         var cells = Field<Dictionary<HexCoord, (PaintColor start, PaintColor target)>>("_cells");

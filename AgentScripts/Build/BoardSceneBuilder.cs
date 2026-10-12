@@ -145,10 +145,19 @@ public static class BoardSceneBuilder
         SetValues(recordView, ("_showJudgement", false));
         recordArea.SetActive(false);
 
+        // 시험 플레이용 게임 보드 원본 — 획 기록용과 같고 목표 마커 · 막힘 표시만 켜져 있다(2026-10-13)
+        var playArea = NewUI("PlayBoardTemplate", canvasObject);
+        Stretch(playArea, new Vector2(40f, 940f), new Vector2(-40f, -40f));
+        playArea.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+        var playView = playArea.AddComponent<BoardView>();
+        SetRefs(playView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
+        playArea.SetActive(false);
+
         var editor = new GameObject("LevelEditor", typeof(LevelEditorController));
         SetRefs(editor.GetComponent<LevelEditorController>(),
             ("_grid", grid),
             ("_recordTemplate", recordView),
+            ("_playTemplate", playView),
             ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
             ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>(PaletteCatalogPath)),
             ("_gameFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath)));

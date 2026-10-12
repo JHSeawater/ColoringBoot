@@ -14,6 +14,7 @@ namespace ColoringBoot.LevelEditor
 {
     // 레벨 에디터 (GDD §8, 에디터 전용 씬 LevelEditor.unity를 플레이해서 쓴다 — 빌드에 들어가지 않음).
     // 칠하기(시작 · 목표 층) → 획 기록(게임 보드 그대로) → 목표 저장 → 풀이 검사 → 저장(minMoves는 솔버가 채움, 목록에 등록).
+    // 시험 플레이(목표 · 판정이 있는 게임 보드로 직접 풀기 — 저장 안 함) · 붙여넣기(클립보드의 스테이지 코드 열기) — 2026-10-13.
     // 조작 패널은 IMGUI(OnGUI) — 에디터 도구라 게임 UI 폰트 아틀라스와 무관하게 한글이 나온다
     public sealed class LevelEditorController : MonoBehaviour
     {
@@ -45,6 +46,7 @@ namespace ColoringBoot.LevelEditor
 
         [SerializeField] private PaintGridView _grid;
         [SerializeField] private BoardView _recordTemplate;
+        [SerializeField] private BoardView _playTemplate;
         [SerializeField] private StageCatalog _catalog;
         [SerializeField] private PaletteCatalog _palettes;
         [SerializeField] private TMP_FontAsset _gameFont;
@@ -59,8 +61,11 @@ namespace ColoringBoot.LevelEditor
         private int _catalogIndex;
         private string _status = "";
 
+        // 획 기록 · 시험 플레이 공용 게임 보드
         private PuzzleSession _record;
         private BoardView _recordView;
+        private bool _playing;      // true = 시험 플레이, false = 획 기록
+        private int _playMinMoves;
 
         private int _genShape;
         private int _genSeeds = 3;
@@ -116,8 +121,9 @@ namespace ColoringBoot.LevelEditor
             GUI.skin.label.normal.textColor = GUI.skin.toggle.normal.textColor = GUI.skin.toggle.onNormal.textColor = PanelText;
 
             GUILayout.BeginArea(new Rect(20f, PanelTop, Screen.width / scale - 40f, ReferenceHeight - PanelTop - 20f));
-            if (_record != null) RecordPanel();
-            else EditPanel();
+            if (_record == null) EditPanel();
+            else if (_playing) PlayPanel();
+            else RecordPanel();
             GUILayout.Label(_status);
             GUILayout.EndArea();
         }
@@ -137,6 +143,7 @@ namespace ColoringBoot.LevelEditor
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("획 긋기 시작")) StartRecording();
+            if (GUILayout.Button("시험 플레이")) StartPlay();
             if (GUILayout.Button("풀이 검사")) _status = Describe(Solve(BuildStage(null)));
             if (GUILayout.Button("모두 지우기"))
             {
@@ -184,6 +191,7 @@ namespace ColoringBoot.LevelEditor
             GUILayout.Label($"{_catalogIndex + 1}/{count} {_catalog.Stages[_catalogIndex].name}", GUILayout.Width(360f));
             if (GUILayout.Button("▶", GUILayout.Width(80f))) _catalogIndex = (_catalogIndex + 1) % count;
             if (GUILayout.Button("불러오기")) Load(_catalog.Stages[_catalogIndex]);
+            if (GUILayout.Button("붙여넣기")) Paste();
             if (GUILayout.Button("저장")) Save();
             GUILayout.EndHorizontal();
         }
@@ -198,6 +206,20 @@ namespace ColoringBoot.LevelEditor
             GUILayout.EndHorizontal();
         }
 
+        private void PlayPanel()
+        {
+            GUILayout.Label($"시험 플레이 — {_record.MoveCount}수 / 최소 {_playMinMoves}수 (게임과 같은 드래그 · 방향 버튼, 저장하지 않음)");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("되돌리기") && _record.Undo()) RenderBoard();
+            if (GUILayout.Button("처음부터"))
+            {
+                _record.Restart();
+                RenderBoard();
+            }
+            if (GUILayout.Button("닫기")) StopRecording(false);
+            GUILayout.EndHorizontal();
+        }
+
         // 획 기록: 지금 시작 상태로 게임 보드를 띄운다(목표 없음 — 마커 · 막힘 표시 끔)
         private void StartRecording()
         {
@@ -207,8 +229,34 @@ namespace ColoringBoot.LevelEditor
                 return;
             }
             var stage = new Stage(_name, _cells.Select(c => new StageCell(c.Key, c.Value.start, PaintColor.Empty)).ToArray());
+            OpenBoard(stage, _recordTemplate, false);
+        }
+
+        // 시험 플레이: 지금 칠한 시작 · 목표 그대로 게임 보드를 띄운다(목표 마커 · 막힘 표시). 풀 수 없으면 열지 않는다
+        private void StartPlay()
+        {
+            if (_cells.Count < 2)
+            {
+                _status = "칸이 두 개 이상 필요해요.";
+                return;
+            }
+            Stage stage = BuildStage(null);
+            SolveResult result = Solve(stage);
+            if (!result.Solved || result.Path.Count == 0)
+            {
+                _status = "시험 플레이를 열지 않았어요 — " + Describe(result);
+                return;
+            }
+            _playMinMoves = result.Path.Count;
+            OpenBoard(stage, _playTemplate, true);
+        }
+
+        // 칠하기 격자 대신 게임 보드 원본을 복제해 띄운다 (획 기록 · 시험 플레이 공용)
+        private void OpenBoard(Stage stage, BoardView template, bool playing)
+        {
+            _playing = playing;
             _record = new PuzzleSession(new Board(stage));
-            _recordView = Instantiate(_recordTemplate, _recordTemplate.transform.parent);
+            _recordView = Instantiate(template, template.transform.parent);
             _recordView.gameObject.SetActive(true);
             _recordView.Build(_record, Palette);
             _recordView.BrushRequested += OnRecordBrush;
@@ -219,7 +267,18 @@ namespace ColoringBoot.LevelEditor
 
         private void OnRecordBrush(int cell, HexDirection dir)
         {
-            if (_record.Brush(cell, dir)) _recordView.Render();
+            if (_record.Brush(cell, dir)) RenderBoard();
+        }
+
+        // 시험 플레이는 게임처럼 풀리거나 막히면 보드 입력을 잠그고(되돌리기 · 처음부터만) 상태 줄에 알린다
+        private void RenderBoard()
+        {
+            _recordView.Render();
+            if (!_playing) return;
+            _recordView.SetInteractable(!_record.IsSolved && !_record.IsDead);
+            _status = _record.IsSolved ? $"풀었어요! {_record.MoveCount}수 (최소 {_playMinMoves}수)"
+                : _record.IsDead ? "막혔어요 — 목표에 없는 색이 들어간 칸이 있어요. 되돌리기나 처음부터로 다시 해 보세요."
+                : "";
         }
 
         private void StopRecording(bool keep)
@@ -332,20 +391,35 @@ namespace ColoringBoot.LevelEditor
 
         private void Load(TextAsset asset)
         {
+            if (!Open(asset.text, asset.name)) return;
+            _fileName = asset.name;
+            _loadedFile = asset.name;
+        }
+
+        // 클립보드의 스테이지 코드를 연다(프로토타입 · 후보 코드를 파일 없이). 파일과 무관하므로 저장할 때 기존 파일을 덮어쓰지 않는다
+        private void Paste()
+        {
+            if (Open(GUIUtility.systemCopyBuffer.Trim(), null)) _loadedFile = null;
+        }
+
+        // 스테이지 코드를 칠하기 화면에 연다. 형식이 틀리면 상태 줄에 알리고 false (label 없으면 스테이지 이름)
+        private bool Open(string code, string label)
+        {
             try
             {
-                Stage stage = Stage.Parse(asset.text);
+                Stage stage = Stage.Parse(code);
                 int palette = _palettes.IndexOf(stage.Palette);
                 _paletteIndex = Math.Max(palette, 0);
                 SetStage(stage);
                 _name = stage.Name;
-                _fileName = asset.name;
-                _loadedFile = asset.name;
-                _status = palette >= 0 ? $"'{asset.name}'을(를) 불러왔어요." : $"'{asset.name}'을(를) 불러왔어요 — 팔레트 '{stage.Palette}'가 목록에 없어 기본으로 바꿨어요.";
+                label ??= stage.Name;
+                _status = palette >= 0 ? $"'{label}'을(를) 불러왔어요." : $"'{label}'을(를) 불러왔어요 — 팔레트 '{stage.Palette}'가 목록에 없어 기본으로 바꿨어요.";
+                return true;
             }
             catch (FormatException e)
             {
                 _status = e.Message;
+                return false;
             }
         }
 
