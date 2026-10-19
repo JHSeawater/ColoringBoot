@@ -442,7 +442,7 @@ namespace ColoringBoot.Game
             _data.SaveEndless();
         }
 
-        // 건너뛰기 — 안 풀린 판이면 건너뛴 수를 센다(풀린 판이면 푼 것으로)
+        // 건너뛰기 — 안 풀린 판이면 힌트처럼 보상형 광고 자리를 거친 뒤 건너뛴 수를 센다(2026-10-17 사용자 결정), 풀린 판이면 푼 것으로 바로
         private void SkipEndless()
         {
             if (_endlessTier < 0) return;
@@ -450,13 +450,15 @@ namespace ColoringBoot.Game
             if (_puzzle.IsSolved)
             {
                 FinishEndless();
+                OpenEndless(tier);
+                return;
             }
-            else
+            _ads.ShowRewarded(() =>
             {
                 _data.Endless.Skip(EndlessKeys[tier], EndlessPool(tier).Length);
                 _data.SaveEndless();
-            }
-            OpenEndless(tier);
+                OpenEndless(tier);
+            });
         }
 
         private Stage[] EndlessPool(int tier)
