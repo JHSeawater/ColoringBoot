@@ -18,10 +18,12 @@ public static class StageOrder
         // 난이도 = 막히지 않는 획만 무작위로 그어 풀릴 확률(같은 날 사용자 "언덕 · 하늘이 너무 쉽다" — 끝에 있던 둘을 앞으로):
         // 바구니 100% · 잎 100 → 언덕 59 · 하늘 53 → 길 100(쉬어 가기) → 벌집 39 · 벌 33 → 해 100(쉬어 가기) → 나비 29 · 덩굴 16 · 포도 15
         // 덩굴 · 언덕 · 하늘은 소재 맵(AgentScripts/Tools/SubjectLab.cs 후보), 포도는 시험 포도(기본색에서 시작)
+        // 2026-10-19 언덕 · 하늘을 "배경 + 미리 칠한 소재 칸"으로(AgentScripts/Tools/PrepaintLab.cs — 하늘 + 벌 3마리 38% · 언덕 + 바구니 28%) → 다시 톱니:
+        // 바구니 100 · 잎 100 → 벌집 39 · 하늘 38 → 길 100(쉬어 가기) → 벌 33 · 언덕 28 → 해 100(쉬어 가기) → 나비 29 · 덩굴 16 · 포도 15
         new[]
         {
-            "Basket", "Leaf", "Field", "Sky", "Path", "Beehive",
-            "Bee", "Sun", "Butterfly", "Vine", "Grape",
+            "Basket", "Leaf", "Beehive", "Sky", "Path", "Bee",
+            "Field", "Sun", "Butterfly", "Vine", "Grape",
         },
         // 챕터 2 — 임시(2026-10-11, 여러 챕터 흐름 확인용 · 주소 ?chapters일 때만): 시험 목록의 옛 챕터 판 사본, 임시 도안 단계 순서
         // (AgentScripts/Setup/Phase8TempChapter2.cs). 진짜 챕터 2를 만들면 바꾼다

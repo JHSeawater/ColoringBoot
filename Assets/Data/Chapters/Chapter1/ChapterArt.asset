@@ -33,12 +33,12 @@ MonoBehaviour:
       y: -2
       width: 888
       height: 1096
-  - _sprite: {fileID: 21300000, guid: ece384ca008118b4d82708b8edcc37b0, type: 3}
+  - _sprite: {fileID: 21300000, guid: 3505eaf746f39f444970c212adccdfeb, type: 3}
     _rect:
-      x: -2
-      y: 600
-      width: 1084
-      height: 752
+      x: 812
+      y: 267
+      width: 240
+      height: 304
   - _sprite: {fileID: 21300000, guid: 9468d0ad28c642645a6f563ede5d669c, type: 3}
     _rect:
       x: -2
@@ -51,18 +51,18 @@ MonoBehaviour:
       y: 822
       width: 996
       height: 532
-  - _sprite: {fileID: 21300000, guid: 4c33c2dfbe6e1574ab5e72c275a42b68, type: 3}
-    _rect:
-      x: 812
-      y: 267
-      width: 240
-      height: 304
-  - _sprite: {fileID: 21300000, guid: b5e8890c81aad674ea401ba0ef2d0d93, type: 3}
+  - _sprite: {fileID: 21300000, guid: 6cd7388ca6c24024d80a666a8eb71b3f, type: 3}
     _rect:
       x: 415
       y: 426
       width: 292
       height: 268
+  - _sprite: {fileID: 21300000, guid: 2f536d9786afa1949aa5c193117d89b1, type: 3}
+    _rect:
+      x: -2
+      y: 600
+      width: 1084
+      height: 752
   - _sprite: {fileID: 21300000, guid: e8af5aa2561f0a34ba0d4f0b9e75b893, type: 3}
     _rect:
       x: 827
