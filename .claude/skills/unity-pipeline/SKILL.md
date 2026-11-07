@@ -5,6 +5,7 @@ description: Drive a running Unity Editor or development Player from the command
 
 > **ColoringBoot 사본** — `com.unity.pipeline` 0.7.0-exp.1 패키지 동봉 스킬을 복사함(2026-09-24). 패키지를 업데이트하면 `Library/PackageCache/com.unity.pipeline@*/.claude/skills/unity-pipeline/`에서 다시 복사할 것.
 > 이 프로젝트는 같은 명령을 MCP 도구로 호출한다: `unity command <명령>` = `mcp__unity-editor-mcp__<명령>`. CLI(Bash)는 MCP가 끊겼을 때의 대안이다.
+> 연결 구조: MCP 서버 `unity-editor-mcp` = Unity CLI의 `unity mcp` → 에디터에 설치된 `com.unity.pipeline` 패키지의 로컬 HTTP 서버(포트 파일 `Library/Pipeline/.unity-pipeline-port`). 프로젝트 규칙 · 주의사항은 `CLAUDE.md` §3. 다시 복사할 때 이 머리 주석은 남긴다.
 
 # Unity Pipeline (agent control)
 

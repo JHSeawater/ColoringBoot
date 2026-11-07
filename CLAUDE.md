@@ -1,158 +1,124 @@
-# CLAUDE.md — ColoringBoot (육각 붓 퍼즐, 가제)
-
-> Claude Code가 매 세션 자동으로 읽는 이 프로젝트의 작업 규칙 문서. 문서별 역할은 §0을 따른다.
+# CLAUDE.md — ColoringBoot (컬러링붓 · 육각 붓 퍼즐)
 
 **Engine**: Unity 6.6 (6000.6.2f1) · URP 17.6 | **Target**: WebGL — 모바일 웹 세로 화면 우선 + PC 브라우저, 기준 플랫폼 앱인토스
-**Input**: New Input System (터치·마우스 드래그 공통) | **Test**: Unity Test Framework 1.8 (EditMode 중심) | **VCS**: Git (`main`) → GitHub `JHSeawater/ColoringBoot`
+**Input**: New Input System | **VCS**: Git `main` → GitHub `JHSeawater/ColoringBoot`(공개 저장소)
+**테스트**: MCP `run_tests`(mode=editor) · CLI `unity command run_tests --mode editor --json` | **빌드**: `unity command build --target WebGL --outputPath Builds/WebGL --confirm true`(전후 절차 §4) | **배포**: `bash AgentScripts/Tools/deploy-pages.sh "메시지"`
 **역할(Role)**: 너는 10년+ 경력의 시니어 Unity 개발자로서, Unity WebGL 최적화와 퍼즐 로직(육각 좌표계·탐색 솔버)에 정통한 관점으로 이 프로젝트를 다룬다.
 
----
+## 0. 문서 지도 — 세부가 필요하면 추측하지 말고 해당 문서를 읽는다
 
-## 0. 문서 참조 맵 (Document Map)
+* `GDD.md` — 기획(무엇 · 왜)이자 게임 규칙의 정본. 기획자(사용자) 문서라 수정은 제안 → 승인 후에만.
+* 웹 프로토타입 — 규칙 엔진 · 솔버 · 생성기 · 에디터의 참조 구현, 스테이지 코드 9개. `https://claude.ai/artifact/W8SJpnCtw75KM9eNfLpb3p`(Artifact `read`) · 로컬 사본 `Prototype/Prototype.html`. 규칙이 애매하면 GDD 다음으로 이 코드와 대조한다.
+* `TDD.md` — 기술 스펙(구현 지도): 코드 구조 세부 · 화면과 기능 · 팔레트 · 스테이지 데이터 · 저장 · WebGL 설정 · 폰트. 기능 코드를 고치기 전에 해당 절을 읽는다.
+* `DECISIONS.md` — 결정과 이유(2026-11-07부터, 최신이 위). 그 전 결정은 GDD §5 "정한 사항"과 `DevelopLog.md`.
+* `Task.md` — 지금 상태 · Phase · 작업 목록 · 완료 기준(DoD) · 태그 규칙.
+* `DevelopLog.md` — 작업 · 버그 수정 경위(최상단에 추가).
+* `ArtSpec.md` — 챕터 그림 전달 규격. 그림 빌더 · 임시 도안 · `QaScene` 그림 점검이 따른다. 아트 담당 공유 페이지(`https://claude.ai/artifact/NFJon5GaAfKKjKQutvY9oG`)는 이 파일 그대로 — 고치면 페이지도 다시 게시.
+* `AgentScripts/README.md` — 빌더 · QA · 도구 목록과 규칙. 스크립트를 쓰거나 에셋을 옮기기 전에 읽는다.
+* `Docs/BuildHistory.md` — WebGL 빌드 크기 · 첫 로딩 · 배포 이력. `Docs/plans/` — `/plan`이 쓰는 계획 파일.
+* `Docs/Archive/` — 지난 기록(Task Phase 0~6 · Phase 7~9 완료 항목 근거 · DevelopLog 2026-10-10 이전). 위 문서에 없는 옛 근거를 찾을 때.
+* `.claude/rules/game-code.md` — `Assets/Scripts/Game` · `Assets/Scripts/LevelEditor` · `Assets/Data`를 다룰 때 읽히는 규칙(코딩 · UI · 입력 · 폰트).
+* 검토 · 점검 보고서는 할 일 목록으로 쓰지 않는다. 조치할 항목은 `Task.md`로, 처리 경위는 `DevelopLog.md`로, 하지 않기로 한 이유는 `DECISIONS.md`로 옮긴다. 보고서 원문은 작성 시점의 스냅샷이다.
 
-세부 내용이 필요하면 추측하지 말고 해당 문서를 직접 읽어라.
+## 1. 작업 원칙
 
-* **`GDD.md`** — 기획(무엇/왜)이자 **게임 규칙의 정본**: 규칙 §2 · 예시 스테이지(포도) §3 · 진행 구조 §5 · 조작과 UI §6 · 기믹 후보 §7 · 레벨 제작 도구 §8 · 검증 현황 §9 · 개발 기준 §10 · 출시 §11 · 개발 계획 §13(Task.md Phase의 근거) · 미정 사항 §14. 기획자(사용자) 문서이므로 수정은 제안 → 승인 후에만.
-* **웹 프로토타입** (GDD §9, `https://claude.ai/artifact/W8SJpnCtw75KM9eNfLpb3p`) — 규칙 엔진(`buildBoard` · `applyMove` · `isDead` · `isWin`) · BFS 솔버 · 순서 민감도 · 랜덤 생성기 · 에디터의 **참조 구현**이고, 스테이지 코드 9개(포도 + 8개)가 들어 있다. Artifact 도구의 `read`로 열람한다(사용자 소유). 로컬 사본은 `Prototype/Prototype.html`(단일 HTML, 브라우저로 바로 열림)이고, 같은 폴더의 `Screenshot_1~3.png`는 플레이 화면(포도 · 얼룩 · 마지막 한 획 — 목표 그림 · 목표 색 마커 · 수 카운터 · 순서 민감도 표시)이다. 규칙이 애매하면 GDD 다음으로 이 코드와 대조한다.
-* **`ArtSpec.md`** — 챕터 그림 전달 규격(Phase 5.1, 아트 담당 · AI용): 선화 + 색칠 단계 투명 PNG, 2160 × 2700, 파일 이름 · 레이어 규칙 · 검수 체크리스트 · AI 제작 방법. 그림 빌더 · 임시 도안 · `QaScene` 그림 점검은 이 규격을 따른다. 아트 담당용 공유 페이지(`https://claude.ai/artifact/NFJon5GaAfKKjKQutvY9oG`)는 이 파일을 그대로 넣어 만든다 — 고치면 페이지도 다시 게시.
-* **`Task.md`** — 현재 Phase · 작업 목록 · 완료 기준(DoD)과 태그 규칙. 작업 완료 시 체크박스 갱신.
-* **`DevelopLog.md`** — 작업·버그 수정 기록(최상단에 추가). 과거 결정의 근거를 찾을 때.
-* **`AgentScripts/README.md`** — 빌더 · QA · 도구 목록(무엇을 만드나 · 언제 다시 실행 · 실행 방법 · 옛 이름)과 빌더 규칙. 스크립트를 쓰거나 에셋을 옮기기 전에 읽는다.
-* **`Docs/BuildHistory.md`** — WebGL 빌드 크기 · 첫 로딩 · 배포 이력(빌드마다 한 줄).
-* **`Docs/Archive/`** — 옮겨 둔 지난 기록(2026-10-07): `Task-Phase0-6.md`(Phase 0~6 항목 · 근거) · `DevelopLog-2026-09-24_10-02.md`(그 기간 작업 기록). Task.md · DevelopLog에 없는 옛 결정의 근거를 찾을 때.
-* **검토 · 점검 보고서** — 할 일 목록으로 쓰지 않는다. 조치할 항목은 `Task.md`로 옮기고, 처리 결과와 하지 않기로 한 이유는 `DevelopLog.md`에 남긴다. 보고서 원문(공유 페이지 등)은 작성 시점의 스냅샷이다(2026-09-29 사용자 결정).
-* **TDD 없음 (의도적)** — 기술 스펙은 GDD §2·§3·§10과 이 문서 §3·§4가 담당한다. 솔버/에디터 설계·저장 구조처럼 스펙이 커지면 `TDD.md` 신설을 제안한다.
+* **모든 출력은 한국어로 한다.** 보고 · 질문(선택지 포함) · 진행 중 짧은 안내 · 표 · 체크리스트 · 커밋 제안 설명 모두. 코드 식별자 · 경로 · 명령 · 로그와 에러 원문 · 정해진 커밋 메시지 형식만 그대로 둔다. 대화가 요약된 뒤에도 같다.
+* **결정은 먼저 묻는다.** 기획 · 범위 · 도구 셋업처럼 사용자의 의사가 필요한 사항은 작업 전에 묻는다. 요구사항이 모호하면 가정을 밝히거나 묻는다.
+* 사용자의 최신 지시가 이 파일보다 우선한다. 충돌하면 지시를 따르고 충돌한 규칙을 알린다.
+* 사용자가 직접 고친 파일(그림 · 설정 · 수치)은 덮어쓰지 않는다. 바꿔야 하면 먼저 묻는다.
+* **추측하지 말고, 혼란을 숨기지 말고, 트레이드오프를 드러낸다.** 구현 전 가정을 밝힌다. 해석이 여러 개면 임의로 고르지 말고 제시한다. 더 단순한 방법이 있으면 말하고, 근거가 있으면 밀어붙인다.
+* **최소 코드.** 요청 범위를 넘는 기능 · 단발성 코드의 추상화 · 요청 안 한 유연성 · 설정 옵션 금지. 기준: "시니어가 보면 과하다고 할까?" → 그렇다면 단순화.
+* **외과적 변경.** 고쳐야 할 곳만 만지고 기존 스타일에 맞춘다. 내 변경으로 생긴 미사용 코드만 정리하고, 기존 데드코드는 알리되 지우지 않는다. 변경된 모든 줄이 요청으로 추적되어야 한다.
+* **목표 주도 실행.** 작업을 검증 가능한 성공 기준으로 바꾼 뒤 통과할 때까지 반복한다(예: "붓질 버그 수정" → 재현 EditMode 테스트를 만든 뒤 통과시킨다).
+* 확인하지 않은 것을 사실처럼 말하지 않는다. 보고는 셋으로 나눈다: 코드 · 테스트로 확인한 것 / 에디터 · WebGL 화면으로 본 것 / 확인 못 한 것. 자동 검사 통과는 재미 · 미술 승인이 아니다.
+* 핵심 기능이 실패했을 때 기본값 · 더미 데이터로 성공처럼 처리하지 않는다. 대체 동작이 필요하면 이유와 조건을 먼저 말하고 로그나 상태값으로 드러나게 한다. 대체 동작이 돌았다고 원래 기능을 성공으로 보고하지 않는다.
 
----
+## 2. 실행 방식
 
-## 1. 작업 원칙 (Working Principles)
+작업을 시작할 때 `[Direct]` / `[Inline Plan]` / `[Full Plan]` 중 무엇인지와 이유를 한 줄로 먼저 말한다.
+* 기준: 변경 범위 · 단계와 의존성 · 구조 영향 · 요구사항 명확성 · 회귀 · 데이터 위험 · 검증과 복구 난이도. 줄 수나 파일 수로 고르지 않는다.
+* **Direct** — 명확하고 국소적이며 되돌리기 쉬움: 확인 → 구현 → 검증 → 보고.
+* **Inline Plan** — 여러 단계지만 기존 구조 안: 3~5줄 계획(단계 → 검증 방법) → 구현 → 검증 → 보고.
+* **Full Plan** — 구조 · 저장 형식 · 핵심 규칙(붓질 · 판정 · 솔버) · 플랫폼 SDK · 광고 연동: `/plan` → 새 세션에서 `/review-plan <계획 파일>` → 사용자 승인 → 구현(승인된 계획 범위만, 단계마다 검증) → 새 세션에서 `/code-review`. 승인 전에는 구현하지 않는다. 계획 검수는 1라운드, 되돌리기 어려우면(저장 형식 · 핵심 규칙 · 광고 · 결제) 최대 2라운드 — '높음' 지적이 없거나 앞 라운드를 뒤집으면 멈추고 남은 쟁점은 사용자에게 넘긴다.
+* 애매하고 높은 위험이 없으면 Inline Plan. 사용자가 방식을 정하면 따른다. 작업 중 위험이 커지면 멈추고 이유와 현재 상태를 알린 뒤 방식을 올린다.
+* 검증은 위험에 맞춘다: 국소 변경은 직접 확인, 기능 추가는 정상 · 경계 · 기존 기능, 구조 · 데이터 변경은 실패 · 호환 · 복구까지.
+* 씬 · 오브젝트 · 인스펙터 배선은 MCP와 빌더로 직접 한다. MCP로 할 수 없는 일(Unity Hub 모듈 설치, 휴대폰 · 브라우저 실기, 시각적 판단 등)만 `- [ ]` 체크리스트로 사용자에게 안내한다.
 
-**모든 출력은 한국어로 한다 (2026-10-11 사용자 — 영어로 답하는 일이 반복됨).** 사용자에게 보이는 글은 전부 한국어다: 보고 · 질문(선택지 포함) · 진행 중 짧은 안내 · 표 · 체크리스트 · 커밋 제안 설명. 코드 식별자 · 파일 경로 · 명령 · 로그와 에러 원문 · 커밋 메시지에 이미 정한 형식만 그대로 둔다. 대화가 요약된 뒤 이어서 할 때도 같다.
+## 3. Unity 에디터 작업 (MCP)
 
-**결정은 먼저 묻는다.** 기획·범위·도구 셋업처럼 사용자의 의사가 필요한 사항은 작업 전에 질문하고, 답을 들은 뒤 진행한다.
+MCP 서버는 `unity-editor-mcp`(Unity CLI `unity mcp` → 에디터의 `com.unity.pipeline`)만 쓴다(사용자 결정). 도구 이름 = Pipeline 명령 이름(`mcp__unity-editor-mcp__<명령>`). 끊기면 Bash `unity command <명령> --인자 값`. 상세는 `unity-pipeline` 스킬.
 
-**추측하지 말고, 혼란을 숨기지 말고, 트레이드오프를 드러내라.**
-* 구현 전 가정을 명시한다. 불확실하면 묻는다.
-* 해석이 여러 개면 임의로 하나를 고르지 말고 제시한다.
-* 더 단순한 방법이 있으면 말한다. 근거가 있으면 밀어붙인다.
-
-**최소 코드 (Simplicity First).**
-* 요청 범위를 넘는 기능 / 단발성 코드의 추상화 / 요청 안 한 유연성·설정성 금지.
-* 200줄이 50줄로 가능하면 다시 쓴다. 기준: "시니어가 보면 과하다고 할까?" → 그렇다면 단순화.
-
-**외과적 변경 (Surgical Changes).**
-* 고쳐야 할 곳만 만진다. 멀쩡한 인접 코드/주석/포맷을 "개선"하지 않는다.
-* 기존 스타일에 맞춘다. 내 변경으로 생긴 미사용 import/변수만 정리하고, 기존 데드코드는 발견 시 알리되 지우지 않는다.
-* 기준: 변경된 모든 줄이 사용자의 요청으로 직접 추적되어야 한다.
-
-**목표 주도 실행 (Goal-Driven).**
-* 작업을 "검증 가능한 성공 기준"으로 바꾼 뒤 통과할 때까지 루프한다. (예: "붓질 버그 수정" → "재현 EditMode 테스트를 만든 뒤 통과시킨다")
-* 멀티스텝 작업은 간단한 계획(단계 → 검증 방법)을 먼저 제시한다.
-
----
-
-## 2. AI 워크플로 (Unity CLI 공식 MCP 연결됨)
-
-**연결 구조**: MCP 서버 `unity-editor-mcp` = Unity CLI의 `unity mcp` → 에디터에 설치된 `com.unity.pipeline` 패키지의 로컬 HTTP 서버(포트 파일 `Library/Pipeline/.unity-pipeline-port`). 도구 이름 = Pipeline 명령 이름(`mcp__unity-editor-mcp__<명령>`). MCP가 끊기면 Bash로 `unity command <명령> --인자 값`을 실행해 같은 명령을 쓸 수 있다.
-
-* 씬 구조·컴포넌트·콘솔 상태를 추측하지 말고 도구로 **직접 확인**하라: `editor_status` · `get_scene_hierarchy` · `find_gameobjects` · `get_component_properties` / `get_serialized_fields` · `console` / `console_status`. 도구로 확인할 수 없는 것만 사용자에게 묻는다.
-* 세션 첫 조회 때 `editor_status`의 `projectPath`가 이 프로젝트인지 확인한다(에디터를 여러 개 띄운 경우 대비).
-* **Unity 에디터를 다루는 MCP는 `unity-editor-mcp`만 쓴다** (2026-09-24 사용자 결정). 다른 Unity MCP는 쓰지 않는다 — 특히 `coplay-mcp`(사용자 레벨에 등록돼 있지만 이 프로젝트엔 Coplay 패키지가 없고, 응답에 120초 이상 걸림) · `UnityMCP`(`manage_scene` 등, Labyrinth 전용). WebGL 배포본을 실제 브라우저로 여는 확인(콘솔 · 네트워크 읽기)은 Claude in Chrome을 쓴다(2026-10-03 버그 조사부터 · 2026-10-04 사용자 승인 — 헤드리스 Chrome은 이 PC에서 WebGL을 끝까지 못 돌림, §8).
-
-작업 절차:
-1. **확인(Context Check)**: 씬/컴포넌트/콘솔 상태를 MCP 도구로 먼저 조회한다.
-2. **계획 우선(Plan First)**: 코드·씬 작업 전 구현 계획(단계 → 검증 방법)을 요약 제시한다.
-3. **승인 대기(Seek Approval)**: 계획 제시 후 사용자 승인을 기다린다.
-4. **실행 및 가이드(Execute & Guide)**: 승인 후 실행한다. 씬·오브젝트·인스펙터 배선은 MCP로 직접 하고, MCP로 할 수 없는 일(Unity Hub 모듈 설치, 휴대폰·브라우저 실기 확인, 시각적 판단 등)만 **마크다운 체크리스트(`- [ ]`)**로 사용자에게 안내한다.
-5. **저장(Save)**: MCP로 씬을 수정했으면 `save_scene`으로 저장하고 보고한다. 사용자에게 에디터 수동 셋업을 맡겼다면 "모든 설정을 마친 후 Scene을 저장(Ctrl+S)해 주세요" 문구를 포함한다.
-6. **기록(Log)**: 주요 Task 완료 시 선제적으로 `Task.md` 체크박스를 `[x]`로 갱신하고(완료 기준은 Task.md 규칙 — 실측·테스트·플레이로 확인된 것만), `DevelopLog.md` 최상단에 오늘 날짜 작업 요약을 추가한다. (포맷: 날짜(YYYY-MM-DD) · 제목 · 작업 내용 · 해결된 이슈) Phase 종료는 `/phase-close`.
+* 씬 구조 · 컴포넌트 · 콘솔 상태는 추측하지 말고 도구로 확인한다: `editor_status` · `get_scene_hierarchy` · `find_gameobjects` · `get_component_properties` / `get_serialized_fields` · `console` / `console_status`. 세션 첫 조회 때 `editor_status`의 `projectPath`가 이 프로젝트인지 본다. 에디터가 재시작되었거나 사용자가 에디터를 만졌으면 이전 조회 결과는 낡았다 — 상태를 문서에 적기 전에 다시 조회한다.
 
 코드 수정 → 검증 루프:
-1. `.cs` 파일을 Edit/Write로 수정한다(논리 단위로 묶어서).
-2. `recompile` → `recompile_status`가 `completed`/`up_to_date`가 될 때까지 폴링한다. 도메인 리로드 중의 연결 오류는 정상이다. `completed` 직후에도 도메인 리로드가 이어질 수 있으니 `run_tests` 전에 `editor_status`가 `ready`인지 본다(2026-09-28: 바로 부른 `run_tests`가 연결 오류).
-3. `console_status`의 `compilationFailed`를 확인하고, 실패면 `console`(level=error)로 에러를 읽어 고친다.
-4. `run_tests`(mode=editor, `filter`로 범위를 좁혀서)로 검증한다. 실패 상세가 불투명하면 filter를 더 좁혀 재실행한다.
-* 새 MonoBehaviour는 컴파일이 끝난 뒤 `attach_script`로 붙인다(`create_script` 직후에는 타입이 아직 없다).
-* 런타임 확인: `editor_play` → 상태 조회 · `capture_game_view`(source=screen) → `editor_stop`.
-  * 에디터가 비활성 창이면 Play Mode 프레임이 멈춘다(`Application.runInBackground`가 꺼져 있어서 — `set_autotick`으로도 안 풀림). 플레이 직후 `eval`로 `Application.runInBackground = true`(그 플레이 세션만, 설정 파일은 안 바뀜)를 켜고 `Time.frameCount`가 느는지 본다(2026-09-28: 프레임 2에서 멈춰 탭 결과가 화면에 안 그려짐).
-  * 캡처가 하늘색 사각형이면 비동기 셰이더 컴파일의 대체 셰이더다 — `ShaderUtil.allowAsyncCompilation = false` 후 다시 그리게 한다(2026-09-28, uGUI 첫 플레이).
-  * `capture_game_view`의 기본 크기(1280×720)는 Game 뷰 비율과 상관없이 늘려 찍는다 → 세로 Game 뷰(1080×1920)는 `width`/`height`를 세로 비율로 준다.
-  * QA 스크립트: `AgentScripts/QA/BoardQa.cs`(칸 탭 · 드래그 · 방향 버튼 · 되돌리기 · 처음부터 · 상태 — 실제 포인터 이벤트 경로를 탄다 / 화면 흐름: `Flow`(지금 화면 · 선택 화면 버튼 상태) · `ChooseStage` · `Press`(버튼 경로) — 첫 화면은 타이틀(Phase 7.3)이라 `Press("TitleScreen/StartButton")` → 선택 화면(저장 키가 없으면 따라 하기 1이 열린다 — `Press("BoardScreen/BackButton")`으로 나가면 목록 · 봤음으로 저장, 2026-10-07), 보드 QA 전에 `ChooseStage(1)` / 연속 플레이: `SolveByDrag`(솔버 풀이를 실제 끌기로) → `Press("BoardScreen/ClearBanner/NextButton")` 반복(`run_script` 한 번에 한 스테이지씩 확인). 시험 목록(`?lab`)은 에디터에 주소가 없어 `Lab()`으로 연다. 클리어 · 막힘 띠는 붓질 연출 뒤(약 1초) 켜진다(Phase 7.4) — 풀고 1.5초 기다린 뒤 다음 호출에서 누른다. **스테이지를 여는 호출(`ChooseStage` · 그림 화면 "다음")과 끌기(`SolveByDrag` · `Drag`)는 다른 `run_script` 호출로 나눈다** — 같은 프레임에 끌면 칸 배치 전이라 엉뚱한 칸에 그어져 막힌다(2026-10-03). 끝나면 에디터 저장 키(`ColoringBoot.*`)를 지운다).
-  * 키보드는 에디터 플레이로 확인할 수 없다: 에디터가 비활성 창이면 Input System이 장치 입력을 게임에 넘기지 않는다(`backgroundBehavior` = ResetAndDisableNonBackgroundDevices — 프로젝트 설정 에셋이라 QA용으로 바꾸지 않는다). `QueueStateEvent`로 흉내 낸 Ctrl+Z도 무시됨(2026-09-28) → 키보드는 WebGL 빌드 PC 확인으로.
+1. `.cs`를 Edit/Write로 수정한다(논리 단위로 묶어서).
+2. `recompile` → `recompile_status`가 `completed`/`up_to_date`가 될 때까지 폴링한다(도메인 리로드 중 연결 오류는 정상). 그 직후에도 리로드가 이어질 수 있으니 `run_tests` 전에 `editor_status`가 `ready`인지 본다.
+3. `console_status`의 `compilationFailed`를 보고, 실패면 `console`(level=error)로 읽어 고친다.
+4. `run_tests`(mode=editor, `filter`로 범위를 좁혀서). 새 MonoBehaviour는 컴파일이 끝난 뒤 `attach_script`로 붙인다.
+
+에디터 플레이 확인:
+* `editor_play` → 상태 조회 · `capture_game_view` → `editor_stop`. 플레이 직후 `eval`로 `Application.runInBackground = true`를 켜고 `Time.frameCount`가 느는지 본다(비활성 창이면 프레임이 멈춘다). 캡처가 하늘색 사각형이면 `ShaderUtil.allowAsyncCompilation = false` 후 다시 그리게 한다.
+* `capture_game_view`는 Play Mode에서 `source=screen`(기본 camera는 Overlay UI를 빠뜨린다), 세로 Game 뷰는 `width`/`height`를 세로 비율로 준다. `save_path`는 쓰지 않는다(`Assets/` 기준이라 에셋으로 임포트됨) — 사용자에게 보여 줄 이미지는 git이 무시하는 `Builds/` 아래에 만든다.
+* 보드 QA는 `AgentScripts/QA/BoardQa.cs`(함수와 첫 화면 순서는 `AgentScripts/README.md`). 스테이지를 여는 호출과 끌기는 다른 `run_script` 호출로 나눈다(같은 프레임에 끌면 칸 배치 전이라 엉뚱한 칸에 그어진다). 클리어 · 막힘 띠는 연출 뒤(약 1초) 켜진다. 끝나면 에디터 저장 키(`ColoringBoot.*`)를 지운다.
+* 키보드는 에디터 플레이로 확인할 수 없다(비활성 창이면 Input System이 장치 입력을 넘기지 않는다 — `backgroundBehavior`는 QA용으로 바꾸지 않는다) → WebGL 빌드 PC에서 확인한다.
+* Play Mode에서 바꾼 씬 값은 멈추면 되돌아간다 — 씬 수정 · 저장은 `editor_stop` 뒤에. `editor_stop` 직후 다른 씬을 열면 플레이를 시작한 씬이 도로 열릴 수 있다 → 활성 씬을 다시 확인한다.
+* EditMode `run_tests`가 도는 동안은 테스트 러너의 임시 씬이 열려 있다 — 테스트와 씬 조회를 동시에 하지 않는다.
 
 MCP 안전 규칙:
-* **비동기 명령은 트리거 응답을 완료로 보지 않는다** — 상태를 폴링한다: `recompile`→`recompile_status`, `run_tests`(async)→`test_status`, `build`→`build_status`, `switch_build_target`→`switch_build_target_status`, `package_add`/`package_remove`→`package_status`, `audit`→`audit_status`.
-* **`confirm=true`가 필요한 명령**(삭제·덮어쓰기·설정 변경)은 먼저 `dry_run=true` 결과를 보여주고 승인받은 뒤 실행한다. ProjectSettings·패키지·에셋 쓰기는 **Ctrl+Z로 되돌릴 수 없다**(씬/오브젝트 수정은 Undo 가능).
-* 여러 씬 조작은 `batch`로 묶는다(하나의 Undo 단계, 실패 시 전체 롤백).
-* `set_component_properties`의 열거형 값은 인스펙터 표시 이름을 쓴다(예: `Solid Color`, `SolidColor` 아님). 값 하나가 틀리면 그 호출 전체가 적용되지 않는다.
-* `set_serialized_field`로 오브젝트 참조를 비울(null) 수 없다 — 값이 문자열로 전달되어 "null"이라는 경로로 해석된다. 참조 해제는 `run_script`에서 `SerializedObject`로 한다.
-* 명령이 오래 걸리면 `editor_status`를 본다. `blocked_by_dialog`면 재시도를 멈추고 대화상자 내용(title/message/buttons)을 사용자에게 알린다(MCP로 클릭할 수 없다). 에디터가 비활성 창이라 멈춘 것이면 `set_autotick`(enable=true).
-* CLI `--json` 출력은 명령 결과를 `data.result`에 **이스케이프된 JSON 문자열**로 담는다. 폴링 스크립트는 원문을 grep하지 말고 파싱해서 판정한다(2026-09-24: 빌드는 6분 만에 끝났는데 완료를 못 잡아 30분 대기). Git Bash에서 `unity command … --json | python`으로 바로 넘기면 빈 입력이 될 때가 있다(2026-10-05) → 파일로 받거나 Python `subprocess`로 부른다. `build_status` 응답은 전체 빌드 리포트라 수십만 자다 — 필요한 필드(`status` · `result` · `totalErrors` · `warnings`)만 뽑는다.
-* 에디터를 재시작한 직후 첫 MCP 호출이 60초 시간 초과로 실패할 수 있다(2026-09-24 실측 — `editor_status`는 정상, 재시도하자 즉시 응답). 같은 명령을 한 번 재시도하고, 계속 실패하면 CLI(`unity command`)로 확인한다.
-* C# 실행: 여러 줄 코드는 `eval`에 문자열로 넣지 말고 파일로 써서 `run_script`로 실행한다(빌더 스크립트는 `Assets/` 밖 `AgentScripts/`에 — 임포트·도메인 리로드 방지. 한 파일씩 컴파일되므로 스크립트끼리 서로 참조할 수 없다. 목록 · 규칙은 `AgentScripts/README.md`). `eval`은 한 줄짜리 조회용.
-* Write로 `Assets/`에 직접 쓴 에셋(JSON 등)은 Unity가 임포트하기 전까지 `LoadAssetAtPath`가 null을 준다 — 빌더에서 참조하기 전에 `run_script`(file=`AgentScripts/Tools/Refresh.cs`)로 임포트시킨다(2026-09-28: 씬 참조가 조용히 비었음).
-* 패키지 임포트(`AssetPackage.Package.Import`, TMP Essential Resources)는 메인 스레드를 1분 넘게 잡아 `run_script`와 다음 명령이 시간 초과한다. 결과 폴더가 생길 때까지 기다린 뒤 확인한다(2026-09-28 — 에디터는 스스로 회복).
-* 상세 사용법·주의사항은 `unity-pipeline` 스킬.
+* 비동기 명령은 트리거 응답을 완료로 보지 않고 상태를 폴링한다: `recompile`→`recompile_status` · `run_tests`(async)→`test_status` · `build`→`build_status` · `switch_build_target`→`switch_build_target_status` · `package_add`/`package_remove`→`package_status` · `audit`→`audit_status`.
+* `confirm=true`가 필요한 명령(삭제 · 덮어쓰기 · 설정 변경)은 먼저 `dry_run=true` 결과를 보여 주고 승인받는다. ProjectSettings · 패키지 · 에셋 쓰기는 Ctrl+Z로 되돌릴 수 없다. 여러 씬 조작은 `batch`로 묶는다(하나의 Undo 단계, 실패 시 전체 롤백).
+* `set_component_properties`의 열거형 값은 인스펙터 표시 이름(`Solid Color`)이고, 값 하나가 틀리면 호출 전체가 적용되지 않는다. `set_serialized_field`로 참조를 null로 비울 수 없다 → `run_script`에서 `SerializedObject`로.
+* 명령이 오래 걸리면 `editor_status`를 본다. `blocked_by_dialog`면 재시도를 멈추고 대화상자 내용(title/message/buttons)을 사용자에게 알린다(MCP로 클릭 못 함). 앱인토스 SDK 창(업데이트 · 경고 · GitGuard · 빌드 최적화)도 에디터를 멈춘다 — 창 제목은 PowerShell로 Unity 창 목록을 보면 안다. 비활성 창이라 멈춘 것이면 `set_autotick`(enable=true).
+* 에디터 재시작 직후 첫 MCP 호출이 60초 시간 초과로 실패할 수 있다 → 한 번 재시도하고, 계속되면 CLI로 확인한다.
+* CLI `--json`은 결과를 `data.result`에 이스케이프된 JSON 문자열로 담는다 → grep하지 말고 파싱해서 판정한다. Git Bash에서 `| python`으로 바로 넘기면 빈 입력이 될 때가 있다 → 파일로 받거나 Python `subprocess`로. `build_status` 응답은 수십만 자 — `status` · `result` · `totalErrors` · `warnings`만 뽑는다.
+* C# 실행: 여러 줄 코드는 파일로 써서 `run_script`로(빌더 · QA는 `Assets/` 밖 `AgentScripts/` — 규칙은 `AgentScripts/README.md`). `eval`은 한 줄짜리 조회용.
+* Write로 `Assets/`에 직접 쓴 에셋은 임포트 전에는 `LoadAssetAtPath`가 null이다 → 참조하기 전에 `run_script`(file=`AgentScripts/Tools/Refresh.cs`, entry=`Refresh.All`).
+* 패키지 임포트(TMP Essential Resources 등)는 메인 스레드를 1분 넘게 잡아 다음 명령이 시간 초과한다 → 결과 폴더가 생길 때까지 기다린다. 패키지를 지운 뒤 에러가 쏟아지면 `Library/ScriptAssemblies`가 정상인지 보고 에디터 재시작을 먼저 안내하고, 솔루션(`.slnx`)이 참조하지 않는 루트 `.csproj`를 지운다.
 
 블라인드 디버깅 가드:
-* 에러/버그 피드백을 받으면 원인을 함부로 추측해 코드를 던지지 마라.
-* 먼저 `console`(level=error)로 **Unity Console을 직접 읽어** 에러와 StackTrace를 확인한다. 불가하면 "Console의 붉은 에러 메시지 전체를 붙여넣어 주세요"라고 요청한다.
-* `console` 버퍼는 도메인 리로드 중의 항목을 놓칠 수 있다. `console_status`의 `groundTruth.consoleErrors`와 버퍼 수가 다르면 `run_script`(file=`AgentScripts/QA/ConsoleDump.cs`, entry=`ConsoleDump.Errors`)로 콘솔 창을 직접 읽는다. 에디터 로그 파일은 프로젝트의 `Logs/Editor.log`다(사용자 폴더의 `Editor.log`가 아님).
-* 무시해도 되는 로그: `Unable to join player connection multicast group (err: 10013)` — Windows 네트워크 권한 관련, 작업과 무관.
+* 에러 · 버그 피드백을 받으면 원인을 추측해 코드를 던지지 않는다. 먼저 `console`(level=error)로 에러와 StackTrace를 읽는다. 불가하면 "Console의 붉은 에러 메시지 전체를 붙여넣어 주세요"라고 요청한다.
+* `console` 버퍼는 도메인 리로드 중 항목을 놓칠 수 있다 → `console_status`의 `groundTruth.consoleErrors`와 수가 다르면 `run_script`(file=`AgentScripts/QA/ConsoleDump.cs`, entry=`ConsoleDump.Errors`). 에디터 로그는 프로젝트의 `Logs/Editor.log`. 무시해도 되는 로그: `Unable to join player connection multicast group (err: 10013)`.
 
-씬/프리팹 편집 가드 (훅으로 강제됨):
-* `.unity` / `.prefab`을 `Edit`·`Write`·MCP `write_text_file`로 텍스트 편집하려 하면 `.claude/settings.json`의 PreToolUse 훅이 **실행 전에 차단**한다. 오류가 아니라 의도된 가드다 — 우회하지 말고 MCP 도구(`create_gameobject` · `add_component` · `set_component_properties` · `set_serialized_field` · `save_prefab_contents` 등)를 쓴다.
-* 훅을 고칠 때: 스크립트에 백슬래시를 쓰지 않는다(도구 호출 인코딩 층에서 `\\`가 축약되는 문제 — Labyrinth 실측). `node`가 PATH에 있어야 동작한다.
-* **보드 씬 · 레벨 에디터 씬 · 프리팹의 정본은 `AgentScripts/Build/BoardSceneBuilder.cs`다** — `BuildScene`은 씬을 Main Camera만 남기고 다시 만든다. 씬을 고칠 땐 빌더를 고쳐 다시 실행한다. MCP로 씬을 직접 고친 값은 다음 `BuildScene` 때 사라진다(급히 직접 고쳤다면 빌더에도 같은 수정을 넣는다, 2026-10-04).
+씬 · 프리팹:
+* `.unity` / `.prefab` 텍스트 편집(Edit · Write · MCP `write_text_file`)은 PreToolUse 훅이 막는다 — 우회하지 말고 MCP 도구(`create_gameobject` · `add_component` · `set_component_properties` · `set_serialized_field` · `save_prefab_contents` 등)를 쓴다.
+* 보드 씬 · 레벨 에디터 씬 · 프리팹의 정본은 `AgentScripts/Build/BoardSceneBuilder.cs`다(`BuildScene`은 씬을 Main Camera만 남기고 다시 만든다). 씬을 고칠 땐 빌더를 고쳐 다시 실행한다. MCP로 직접 고친 값은 다음 `BuildScene` 때 사라진다 — 급히 고쳤다면 빌더에도 같은 수정을 넣는다. `UiTheme` 값을 바꾸면 `BuildPrefabs` → `BuildScene`.
+* MCP로 씬을 수정했으면 `save_scene`으로 저장한다. 사용자에게 에디터 셋업을 맡겼다면 "모든 설정을 마친 후 Scene을 저장(Ctrl+S)해 주세요"를 넣는다.
 
-버전 관리 (Git):
-* 원격: `origin` = `https://github.com/JHSeawater/ColoringBoot.git` (`main`). **공개 저장소**(2026-09-24 확인) — 비밀값 · 인증 정보 · 개인정보를 커밋하지 않는다.
-* 테스트 배포: GitHub Pages — `bash AgentScripts/Tools/deploy-pages.sh "메시지"`로 `Builds/WebGL`을 `gh-pages` 브랜치(빌드 결과물 전용, main 기록과 분리)에 올린다. 작업 트리는 `Builds/gh-pages`이고, 빌드 결과물 외 파일이 섞이면 스크립트가 중단한다. 주소: https://jhseawater.github.io/ColoringBoot/
-* gh-pages는 **커밋 하나만** 둔다(2026-10-04 사용자 결정 — 배포 이력이 저장소 용량의 88%였음): 스크립트가 매번 부모 없는 커밋으로 바꿔 `--force-with-lease`로 강제 push한다. 그래서 확인한 빌드는 gh-pages 해시가 아니라 날짜 · 빌드 바이트로 `Docs/BuildHistory.md`에 기록한다. 강제 push라 자동 모드 안전 장치가 막을 수 있다 — 그때는 사용자에게 `! bash AgentScripts/Tools/deploy-pages.sh "메시지"`로 직접 실행해 달라고 한다.
-* 커밋은 사용자가 요청하거나 승인할 때만 한다. 커밋 전에 변경 파일 목록과 메시지를 제안한다. push·원격 설정 변경도 요청 시에만.
+## 4. Git · 빌드 · 배포 · 앱인토스 SDK
 
-앱인토스 SDK (2026-10-11 시험 연동 — 공식 Unity SDK `im.toss.apps-in-toss-unity-sdk` v3.5.0, `AIT` 메뉴):
-* **SDK 빌드**(`AIT/Local Debug/Start Server` · `AIT/Advanced/Build & Package` · `AIT/Deploy …`)는 빌드 때 템플릿(`AITTemplate`) · 압축 · 캐싱 등을 바꾸고 끝나면 메모리만 되돌린다 — 디스크의 `ProjectSettings/ProjectSettings.asset`에 SDK 값이 남으니 **`git checkout -- ProjectSettings/ProjectSettings.asset`으로 되돌린다**(커밋 금지). WebGL 그래픽 API는 메모리에도 고정으로 남아 `PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, true)`로 되돌린다. 개발 서버(vite, 5173 — LAN에도 열림)는 메뉴 Stop이 안 될 때가 있어 프로세스를 끈다. 산출물 `webgl/` · `ait-build/`는 git이 무시한다.
-* **GitGuard**(SDK)가 에디터를 켤 때마다 `Assets/WebGLTemplates/`가 git에 있는지 보고 빼자는 창을 띄운다(확인하면 자동 커밋) → gh-pages 템플릿 원본은 `AgentScripts/Setup/WebTemplate/ColoringBoot/`, 빌드 전에 `AgentScripts/Tools/WebTemplate.cs`(`WebTemplate.Install`)로 복사한다. 템플릿을 고칠 땐 원본을 고친다. 저장소를 새로 받거나 템플릿이 추적되던 커밋(`a0c85e8` 이전)과 오가는 브랜치 전환 · 합치기를 하면 git이 작업 폴더의 템플릿을 지운다(2026-10-11 실제로 지워짐) → 다시 `Install`.
-* SDK 로딩 화면은 `Assets/AppsInToss/loading.html`(우리 디자인 — `AIT/Reset Loading Screen`을 누르면 덮어써짐). 배포 키 `AITCredentials.asset`은 git이 무시한다(공개 저장소 — 절대 커밋하지 않음).
-* SDK는 업데이트 · 경고 · GitGuard · 빌드 최적화 확인 창을 띄운다 — 뜨면 에디터 메인 스레드가 멈춰 MCP가 응답하지 않는다(`editor_status` 연결 실패). 창 제목은 PowerShell로 Unity 창 목록을 보면 알 수 있다 → 사용자에게 내용을 알리고 눌러 달라고 한다. 익명 에러 수집은 끔(이 PC 에디터 설정 `AIT_ErrorTracker_Enabled`, 2026-10-11 사용자).
-* 에셋은 `.meta`와 **항상 함께** 커밋한다(누락 시 GUID가 깨져 참조가 끊긴다).
+* 원격 `origin` = `https://github.com/JHSeawater/ColoringBoot.git`(`main`)은 **공개 저장소**다 — 비밀값 · 인증 정보 · 개인정보를 커밋하지 않는다. 앱인토스 배포 키 `AITCredentials.asset`은 git이 무시하며 절대 커밋하지 않는다.
+* 커밋 · push는 사용자가 요청하거나 승인할 때만 한다. 기능 단위로, 변경 파일 목록과 메시지를 먼저 제안한다. 에셋과 `.meta`는 항상 함께 커밋한다(빠지면 GUID가 깨져 참조가 끊긴다).
+* 빌드 전: `run_script`(file=`AgentScripts/Tools/WebTemplate.cs`, entry=`WebTemplate.Install`). 앱인토스 SDK의 GitGuard가 `Assets/WebGLTemplates/`를 git에서 빼므로 템플릿 원본은 `AgentScripts/Setup/WebTemplate/ColoringBoot/`다(템플릿을 고칠 땐 원본을). 저장소를 새로 받거나 브랜치를 오가면 템플릿이 지워질 수 있다 → 다시 `Install`.
+* 빌드 뒤: 압축 후 바이트를 `Docs/BuildHistory.md`에 한 줄 더하고, `git status`로 `ProjectSettings` 변화가 없는지 본다.
+* 테스트 배포(GitHub Pages, https://jhseawater.github.io/ColoringBoot/)는 `bash AgentScripts/Tools/deploy-pages.sh "메시지"`로만 한다(빌드 결과물 외 파일이 섞이면 스크립트가 중단한다). gh-pages는 커밋 하나만 두고 강제 push한다 — 자동 모드 안전 장치가 막으면 사용자에게 `! bash AgentScripts/Tools/deploy-pages.sh "메시지"` 실행을 부탁한다.
+* 배포본 브라우저 확인(콘솔 · 네트워크)은 Claude in Chrome으로 한다 — 헤드리스 Chrome은 이 PC에서 WebGL을 끝까지 못 돌린다. 배포 직후 "불러오지 못했어요"는 옛 `index.html` 캐시다 → 새로고침.
+* 앱인토스 SDK(v3.5.0, `AIT` 메뉴) 빌드(`AIT/Local Debug/Start Server` · `AIT/Advanced/Build & Package` · `AIT/Deploy …`)는 디스크의 `ProjectSettings/ProjectSettings.asset`에 SDK 값을 남긴다 → `git checkout -- ProjectSettings/ProjectSettings.asset`(커밋 금지). WebGL 그래픽 API는 `PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, true)`로 되돌린다. 개발 서버(vite, 5173 — LAN에도 열림)는 메뉴 Stop이 안 되면 프로세스를 끈다. 산출물 `webgl/` · `ait-build/`는 git이 무시한다.
+* SDK 로딩 화면은 `Assets/AppsInToss/loading.html`(우리 디자인 — `AIT/Reset Loading Screen`을 누르면 덮어써진다). 익명 에러 수집은 끔(이 PC 에디터 설정 `AIT_ErrorTracker_Enabled`).
 
----
+## 5. 아키텍처 · 게임 규칙 [CRITICAL]
 
-## 3. 코어 아키텍처 & 게임 규칙 [CRITICAL]
-
-**로직과 표현 분리 (GDD §10):**
-* 보드 상태 · 붓질 처리 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`를 상속하지 않는 **순수 C#** 클래스다. `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만).
-* 이 규칙은 어셈블리 정의(asmdef)의 **`noEngineReferences: true`**로 컴파일러가 강제하게 한다. 로직 테스트는 EditMode 테스트 어셈블리에 둔다.
-* **코드 구조** (2026-09-24 확정 · 2026-10-04 · 10-05 정리) — 네임스페이스 = 어셈블리 이름(하위 폴더는 네임스페이스를 나누지 않는다):
-
-| 위치 | 내용 |
-|---|---|
-| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`). `Rules/`(좌표 · 색 · 보드 · 붓질 · 판정 · 세션) · `Stages/`(스테이지 코드 읽기 · 쓰기) · `Solver/`(솔버 · 생성기 · 난이도 지표 `StageMetrics` · 그림 맵 시작 칸 찾기 `SeedSearch`) · `Records/`(진행 · 플레이 기록) |
-| `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층. `Board/`(한 판 — `PuzzleController` · `BoardView` · 칸 · 조합표) · `Screens/`(`GameFlow` · 화면 · 패널 · 전환) · `Data/`(ScriptableObject 타입) · `Platform/`(저장 · 광고 · 소리 · 주소 — 앱인토스 연동 때 바꿀 곳). `BoardView`는 partial 파일 4개: `BoardView.cs`(필드 · 칸 만들기 · 그리기 · 배치 · 선택 — 필드는 모두 여기) · `.Input`(끌기 · 탭 · 키보드) · `.Preview`(미리보기) · `.Motion`(연출) |
-| `Assets/Scripts/LevelEditor/` | `ColoringBoot.LevelEditor` — `defineConstraints: UNITY_EDITOR`(빌드에 안 들어가고 씬에는 붙음) + `Assets/Scenes/LevelEditor.unity`(빌드 목록 제외, 플레이해서 쓴다 · 조작 패널은 IMGUI) |
-| `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 프로토타입 스테이지 회귀 기준은 게임 데이터와 분리한 사본 `PrototypeStages/`(고치지 않는다) |
-| `Assets/Data/` | 챕터마다 `Chapters/ChapterN/`(`Stages/*.json` · `StageCatalog` · `ChapterArt` · `Chapter` — 제목 · 부제 · 목록 · 그림) · 따라 하기 `Tutorial/`(`Stages/` · `TutorialCatalog`) · 시험 목록 `Lab/`(`Stages/` · `LabCatalog` — `?lab`) · 무한 모드 퍼즐 묶음 `Endless/{Easy,Normal,Hard}.txt`(한 줄에 스테이지 코드 — `EndlessPoolBuilder`) · 팔레트 `Palettes/`(+ `PaletteCatalog`) · `Settings/`(디자인 값 `UiTheme` · 연출 값 `MotionSettings`) — 2026-10-07 챕터 단위로 옮김(GUID · 파일 이름 그대로) |
-| `Assets/Art/` | 챕터 그림(게임 크기) · 폰트 · 스프라이트 — 빌더가 만든다 |
-| `AgentScripts/` | `Assets/` 밖의 `run_script` 빌더(`Build/`) · QA(`QA/`) · 도구(`Tools/`) · 한 번 적용한 설정 기록(`Setup/`) — 무엇을 언제 다시 돌리는지는 `AgentScripts/README.md` |
-| `ArtSource/` | 그림 원본(`ChapterN/` — `ArtSpec.md` 규격, `Assets/` 밖). `_archive/` = 안 쓰는 원본 보관(임시 도안 `Chapter1-temp`) |
-
-* **화면**: 보드는 uGUI(Screen Space - Overlay, 2026-09-28 사용자 결정 — 렌더 스케일 0.8의 영향을 받지 않고 입력이 UI와 한 체계). 화면 흐름 = `GameFlow`(Phase 4.3): 씬 하나에서 타이틀(`TitleScreen`, Phase 7.3 — 주소에 `?stage=`가 있으면 건너뜀) · 선택 화면(`StageSelectView`) · 보드(`BoardScreen` — `PuzzleController.Open`으로 스테이지를 바꿔 연다) · 옵션(`OptionsView`) · 기록(`StatsView`) 패널을 켜고 끈다(씬 다시 불러오기 없음). 화면 · 패널은 켜질 때 0.2초 동안 나타난다(`ScreenFade` — 투명도만, 입력은 막지 않음). 저장소 · `SaveData`(진행 · 기록 · 설정) · 광고 자리는 `GameFlow`가 한 번 만들어 넘긴다.
-* **여러 챕터**(2026-10-11 사용자 결정): 목록 화면의 작은 그림 양옆 ◀ ▶로 챕터를 넘긴다(`StageSelectView.ChapterStepped` — 넘길 챕터가 없으면 숨김). 잠긴 챕터는 제목 "챕터 N · 잠김" · 버튼 모두 잠김 · 누르면 "앞 챕터 그림을 완성하면 열려요"(해금은 Core `Progress.IsChapterUnlocked`). 그림을 완성하면 그림 화면 버튼이 [다음 챕터] → 다음 챕터 목록. 타이틀 [시작]은 아직 완성하지 않은 첫 챕터(`Progress.CurrentChapter`). 지금 챕터 2는 임시(옛 판 사본 `Temp01~11` + 임시 도안, `AgentScripts/Setup/Phase8TempChapter2.cs`)이고 주소 `?chapters`일 때만 들어간다.
-* **따라 하기 · 힌트**(2026-10-07, GDD §6): 따라 하기 = 처음 [시작] 때(봤는지는 `SaveData.TutorialSeen`) · 옵션 "규칙 다시 보기" → `PuzzleController.OpenLesson` — 레슨 i = `TutorialCatalog`의 i번째 스테이지 + `TutorialLessons`(그을 획 · 한 줄 문구, 정해진 줄 · 방향만 받음 — 마지막 복습은 혼자 풀기: 아무 획 · 힌트 사용 가능). 힌트 = Core `PuzzleSession.FindHint`(다음 한 수 · 몇 수 되돌릴지, 탐색 상한) → `BoardView.ShowGuide`(손가락 표시 + 미리보기) · 안내 띠, 보상형 광고 자리(`IAdService.ShowRewarded`)를 거친다. "완벽"은 힌트와 무관.
-* **무한 모드**(2026-10-07, GDD §5): 타이틀 · 목록 아래 [무한 모드](따라 하기 뒤) → `EndlessView`(난이도) → `GameFlow.OpenEndless` — 퍼즐 i = 묶음의 i번째 줄, 기록 키 `Endless{난이도}{번호}`(퍼즐마다), 진행은 Core `EndlessProgress`(지금 번호 · 푼 수 · 건너뛴 수). 풀린 판을 떠날 때 다음 번호로. 위 가운데 [건너뛰기](안 풀린 판은 힌트처럼 보상형 광고 자리 `IAdService.ShowRewarded`를 거침, 2026-10-17 — 지나간 판은 다시 하지 않음: 묶음을 다 돌면 처음부터). 그림 보상 없음.
-* **보드 연출**(Phase 7.4) = `BoardView.PlayStroke` · `PlayClear` · `PlayShake`(값은 `MotionSettings`) — 세션 상태는 즉시 바뀌고 화면만 늦게 따라간다(경로는 Core `Trace`). `Render`가 진행 중인 연출을 끝난 모습으로 정리한다.
-* **챕터 그림**(Phase 5) = `ChapterArt`(선화 + 단계 조각, 단계 i ↔ 목록의 i번째 스테이지) · `ChapterView`(선택 화면 위 작은 그림 · `ChapterScreen` 큰 그림): 처음 클리어 → 클리어 띠 "다음" → 그림 화면에서 그 단계 칠하기(다 칠하면 "그림 완성!") → 다음 스테이지. 목록 버튼으로 나가면 작은 그림에서 칠한다. 다시 클리어하면 그림 화면을 거치지 않는다(`PuzzleController.FirstClear`). 그림을 바꿀 땐 `ChapterArtExport.py` → `ChapterArtBuilder`를 차례로 실행한다(`AgentScripts/README.md`).
-* **화면 디자인 기준**(Phase 7.1, 시안 A "종이와 갈색 선") = `UiTheme`(`Assets/Data/Settings/UiTheme.asset` — 바탕 · 글자/선 갈색 · 버튼 바탕 등. 퍼즐 칸 색은 팔레트라 여기 없음): `BoardSceneBuilder`가 이 값으로 씬 · 프리팹을 만든다(값을 바꾸면 BuildPrefabs → BuildScene). 버튼 모양 = 9-slice 둥근 사각형 `RoundFill` · `RoundRing` · 그림 테두리 `FrameRing` · 스테이지 버튼 외곽선 `HexLine`(`SpriteBuilder.BuildRound`).
+**구조 규칙**
+* 보드 상태 · 붓질 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`가 아닌 순수 C#이고 `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만). Core asmdef의 `noEngineReferences: true`가 막는다 — 막혔을 때 참조를 추가해 우회하지 않는다. 순수 로직은 로그 대신 반환값 · 예외로 알린다.
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
+* 화면 전환은 씬 하나에서 화면 · 패널을 켜고 끈다(`GameFlow`). 재시작 · 화면 전환에 `SceneManager.LoadScene`을 쓰지 않는다.
+* 코드 위치(하위 폴더 · 화면 · 기능별 구현은 `TDD.md` §1 · §2):
 
-**색 (GDD §2.3):** 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
-* **막힘**: 어떤 칸이든 `(cell & ~target) != 0` → 목표에 없는 기본색이 들어갔다(색은 빠지지 않으므로 복구 불가). 즉시 표시하고, 막힌 동안 보드 입력을 잠근다(되돌리기 · 처음부터 · 힌트만 — 2026-10-08 사용자 결정).
+| 위치 | 어셈블리 · 역할 |
+|---|---|
+| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`Rules/` · `Stages/` · `Solver/` · `Records/`) |
+| `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층(`Board/` · `Screens/` · `Data/` · `Platform/` — 저장 · 광고 · 소리 · 주소는 `Platform/`) |
+| `Assets/Scripts/LevelEditor/` | `ColoringBoot.LevelEditor` — 에디터 전용(`UNITY_EDITOR`) · `Assets/Scenes/LevelEditor.unity` |
+| `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 로직 · 콘텐츠 테스트 |
+| `Assets/Data/` | 챕터 · 따라 하기 · 시험 목록 · 무한 모드 묶음 · 팔레트 · 디자인 · 연출 값 |
+| `AgentScripts/` | `Assets/` 밖 `run_script` 빌더 · QA · 도구 · 설정 기록(`AgentScripts/README.md`) |
+| `ArtSource/` | 그림 원본(`ArtSpec.md` 규격) |
+
+**색 (GDD §2.3)**: 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
+* **막힘**은 어떤 칸이든 `(cell & ~target) != 0`뿐이다 — 목표에 없는 기본색이 들어갔다(색은 빠지지 않아 복구 불가). "목표와 다름"으로 판정하지 않는다(아직 칠하지 않은 칸도 목표와 다르다). 즉시 표시하고, 막힌 동안 보드 입력을 잠근다(되돌리기 · 처음부터 · 힌트만).
 * **성공**: 모든 칸이 `cell == target`.
-* **팔레트 (GDD §2.3)**: 색 값(0~7)은 규칙 전용이고, 화면에 보이는 색은 스테이지가 고른 팔레트(값 1~7 → 표시 색, `ScriptableObject`)가 정한다. 로직·솔버는 팔레트를 모른다. 표현 계층은 색을 코드에 넣지 않고 팔레트에서 읽는다. 접근성 기호(R · Y · B)는 색 값을 따른다. 구현(2026-09-30): `ColorPalette._id`(스테이지 JSON의 이름 — `default` · `pastel`) · `PaletteCatalog`(`Assets/Data/Palettes/PaletteCatalog.asset`, 첫 칸 = 기본). 이름이 없으면 기본, 모르는 이름이면 기본 + 경고. 기호 글자색은 칸 색의 밝기(`Color.grayscale` > 0.6이면 어두운 글자).
+* **팔레트**: 색 값(0~7)은 규칙 전용이고 화면 색은 스테이지가 고른 팔레트(`ScriptableObject`)가 정한다. 로직 · 솔버는 팔레트를 모른다. 표현 계층은 색을 코드에 넣지 않고 팔레트에서 읽는다. 접근성 기호(R · Y · B)는 색 값을 따른다.
 
-**육각 좌표 (GDD §3):** 꼭짓점이 위를 향하는 배치(pointy-top), 축 좌표 `(q, r)`.
+**육각 좌표 (GDD §3)**: 꼭짓점이 위를 향하는 배치(pointy-top), 축 좌표 `(q, r)`. flat-top 공식이나 offset 좌표를 섞지 않는다.
 
 | 방향 | 1시 | 3시 | 5시 | 7시 | 9시 | 11시 |
 |---|---|---|---|---|---|---|
@@ -160,100 +126,74 @@ MCP 안전 규칙:
 
 반대 방향 쌍은 1시↔7시, 3시↔9시, 5시↔11시 → 줄의 축은 3개다. 같은 줄 = 1시·7시 축은 `q + r`, 3시·9시 축은 `r`, 5시·11시 축은 `q`가 같은 칸들(프로토타입 `lineKey`와 동일).
 
-**화면 배치:** `x = size * sqrt(3) * (q + r / 2)`, `y = -size * 1.5 * r`. Unity는 y가 위쪽이라 부호를 뒤집는다(프로토타입 SVG는 y가 아래쪽이라 `+`).
+**화면 배치**: `x = size * sqrt(3) * (q + r / 2)`, `y = -size * 1.5 * r`. Unity는 y가 위쪽이라 부호를 뒤집는다(프로토타입 SVG는 `+` — 그대로 옮기면 1시와 5시 등이 위아래로 뒤집힌다).
 
-**붓질 (GDD §2.2 · §2.4 — 의사코드가 정본):**
+**붓질 (GDD §2.2 · §2.4 — 의사코드가 정본)**
 ```
 brush = 0
 for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝):
     if cell.color != 0: brush = brush | cell.color
     if brush != 0:      cell.color = brush
 ```
-* 고른 칸이 속한 줄 **전체**를 처리한다. 같은 줄·같은 방향이면 어느 칸을 골라도 결과가 같다.
-* 줄 중간에 칸이 없는 자리는 **건너간다**(GDD §2.2 — 2026-10-04 확정, 프로토타입 규칙). 즉 줄 = "연속 구간"이 아니라 "같은 직선 위의 모든 칸". 챕터 1 나비(`Butterfly` — 멈추는 규칙이면 못 풂) · 시험 목록 보랏빛 길 · 검은 날개(`LabVioletPath` · `LabBlackWing` — 2026-10-11 챕터에서 옮김, 검은 날개는 멈추는 규칙이면 최소 8수)가 빈자리를 건너는 획을 쓴다 — 규칙을 바꾸면 이 절 · 테스트와 함께 이 스테이지들도 다시 만든다.
-* 색이 하나도 바뀌지 않는 획(빈 줄 · 같은 색만 지남 · 1칸짜리 줄)은 **무시**한다 — 수로 세지 않고 되돌리기 기록도 남기지 않는다(GDD §2.2 — 2026-09-28 사용자 결정. 프로토타입은 1수로 세고, 1칸짜리 줄은 긋지 못하게 막는다). 솔버도 이런 획은 무시하므로 최소 수는 같다.
-* **보드 칸 기믹은 쓰지 않는다 (2026-10-12 사용자 결정)**: 시제품 벽 · 물 · 코팅 칸(2026-10-10)을 직접 해 보니 순정 규칙이 가장 나아 코드 · 시험 스테이지를 모두 뺐다(되살리려면 커밋 `49473a4`). 붓질 계산은 `Board.Sweep` 한 곳(붓질 · 미리보기 공용). 이동 횟수 제한 · 흰색(명암 조절)은 아직 후보(GDD §7).
+* 고른 칸이 속한 줄 **전체**를 반대편 끝에서 출발해 처리한다. 같은 줄 · 같은 방향이면 어느 칸을 골라도 결과가 같다. 빈 붓은 빈칸을 칠하지 않고, 섞이면 칸과 붓이 함께 바뀐다.
+* 줄 중간에 칸이 없는 자리는 **건너간다** — 줄 = 같은 직선 위의 모든 칸(연속 구간 아님). 이 규칙에 기대는 스테이지가 있어 바꾸면 콘텐츠 회귀 테스트가 실패한다 — 규칙 · 테스트 · 스테이지를 함께 바꾼다.
+* 색이 하나도 바뀌지 않는 획(빈 줄 · 같은 색만 지남 · 1칸짜리 줄)은 무시한다 — 수로 세지 않고 되돌리기 기록도 남기지 않는다(프로토타입은 1수로 센다). 솔버도 무시하므로 최소 수는 같다.
+* 붓질 계산은 `Board.Sweep` 한 곳이다(붓질 · 미리보기 공용). 보드 칸 기믹(벽 · 물 · 코팅)은 쓰지 않는다(사용자 결정 — 되살리려면 커밋 `49473a4`).
 
-**상태 · 되돌리기 (GDD §2.5 — 되돌리기 필수):** 보드는 최대 40칸 정도의 색 값뿐이라 작다 → 되돌리기는 획 단위 상태 스냅샷, 재시작은 시작 상태 복원이 가장 단순하다. 재시작은 되돌릴 수 없다(GDD §2.5 — 기록을 지움, 프로토타입과 같음). 재시작에 씬 다시 불러오기(`SceneManager.LoadScene`)를 쓰지 않는다.
+**상태 · 되돌리기 (GDD §2.5)**: 보드는 최대 40칸 정도의 색 값뿐이다 → 되돌리기는 획 단위 상태 스냅샷, 재시작은 시작 상태 복원. 재시작은 되돌릴 수 없다(기록을 지움).
 
-**스테이지 데이터:** 프로토타입 포맷 `{"name": ..., "cells": [[q, r, 시작 색, 목표 색], ...]}` (GDD §3) + 선택 필드 `palette`(팔레트 이름, 없으면 기본 팔레트) · `minMoves`(최소 수, 솔버가 채움, 없으면 미표시). 로직은 `palette`를 이름(문자열)으로만 들고, 팔레트 에셋을 고르는 일은 표현 계층이 한다. 프로토타입에 들어 있는 스테이지 9개(포도 포함)는 이 포맷 그대로 옮겨 쓸 수 있다. 읽기는 `Stage.Parse` — Core 전용 파서다(`JsonUtility`는 UnityEngine이고 중첩 배열을 못 읽음, 2026-09-28 사용자 결정). `name` · `cells` 필수, 모르는 키 · 0~7 밖의 색 · 좌표 중복은 `FormatException`.
-* **저장 형식 (2026-09-29 사용자 결정)**: 스테이지 = `Assets/Data/Chapters/ChapterN/Stages/<영문 이름>.json` TextAsset(이 포맷 그대로 — 프로토타입 코드와 복사 · 붙여넣기로 오감, git 차이가 읽힘). `minMoves`는 레벨 에디터가 저장할 때 솔버로 채운다. 순서 민감도는 저장하지 않고 에디터에만 표시. 게임이 여는 스테이지 목록은 `StageCatalog`(ScriptableObject, JSON TextAsset 순서 목록 — Phase 4 스테이지 선택 화면도 이것을 쓴다). 챕터는 `Chapter` 에셋(제목 · 부제 · 목록 · 그림, 2026-10-07)이 묶고 `GameFlow._chapters`(차례 — 앞 챕터 그림을 완성하면 다음 챕터, 2026-10-11)가 연다 — 파일 이름은 진행 기록의 키라 챕터 · 따라 하기 · 시험 목록 모두에서 겹치면 안 된다(`ContentRegressionTests`).
+**스테이지 데이터** (세부는 `TDD.md` §4)
+* 형식은 프로토타입 포맷 `{"name": ..., "cells": [[q, r, 시작 색, 목표 색], ...]}` + 선택 필드 `palette` · `minMoves`(레벨 에디터가 저장할 때 솔버로 채움). 읽기는 Core `Stage.Parse`만 쓴다(`JsonUtility`는 UnityEngine이고 중첩 배열을 못 읽는다).
+* 스테이지 파일 이름은 진행 기록의 키다 — 챕터 · 따라 하기 · 시험 목록 모두에서 겹치면 안 되고(`ContentRegressionTests`가 막는다), 이름을 바꾸면 옛 진행 기록과 끊긴다.
 
-**플랫폼 서비스 격리 (GDD §6 · §10):** 저장은 `PlayerPrefs`를 직접 부르지 않고 인터페이스 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 인터페이스 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 처음부터 구조에 넣는다. 구현(2026-09-30): `IKeyValueStore` · `PlayerPrefsStore`(쓸 때마다 `PlayerPrefs.Save()` — WebGL은 그래야 IndexedDB에 남음), 키 `ColoringBoot.Progress`(클리어 · 최고 기록, Core `Progress`) · `ColoringBoot.PlayStats`(플레이테스트 기록, Core `PlayStats`) — 저장 형식은 머리줄(`progress 1` · `stats 2` — 2026-10-07 힌트 칸, `stats 1`도 읽음) + 탭 구분 줄, 깨지면 빈 기록으로 시작. 따라 하기를 봤는지는 `ColoringBoot.Tutorial`, 무한 모드 진행은 `ColoringBoot.Endless`(`endless 1`, 2026-10-07) — `?reset`이면 함께 지움. 스테이지는 파일 이름으로 구분. 광고는 `IAdService` · `NoAdService`. 주소 쿼리(테스트 주소 — GitHub Pages · localhost · 127.0.0.1 — 에서만, `UrlQuery.IsQaHost`, 2026-10-07): `?stage=<파일 이름>` · `?stats`(기록 패널 — 지금 목록 + 따라 하기) · `?reset`(진행 · 기록 지우기) · `?palette=<이름>`(모든 스테이지를 그 팔레트로 — 색 확인용) · `?lab`(시험 목록 11개 — 소재 맵 시험 · 챕터 1에서 빠진 옛 판, 모두 열림 · 그림 화면 없음, 2026-10-06 · 10-11 · 기믹 판은 10-12에 뺌) · `?chapters`(임시 챕터 `GameFlow._testChapters`를 뒤에 붙임 — 여러 챕터 흐름 확인, 2026-10-11).
+**플랫폼 서비스** (세부는 `TDD.md` §5)
+* 저장은 `PlayerPrefs`를 직접 부르지 않고 `IKeyValueStore` 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 `IAdService` 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 구조에 넣는다.
+* 저장 형식은 머리줄 버전(`progress 1` · `stats 2` · `endless 1`)으로 시작한다. 형식을 바꾸면 옛 형식 읽기를 남기고 테스트한다(Full Plan).
+* QA 주소 쿼리(`?stage=` · `?stats` · `?reset` · `?palette=` · `?lab` · `?chapters`)는 테스트 주소에서만 켜진다(`UrlQuery.IsQaHost`).
 
-**회귀 기준 — 포도 스테이지 (GDD §3):** 최소 풀이 5수, 그 5수의 순서 120가지 중 8가지만 성공. 위 규칙 서술로 재현됨을 확인했다(2026-09-24 시뮬레이션 · 프로토타입 엔진 코드와 대조). 붓질·판정·솔버를 바꾸면 이 결과가 EditMode 테스트(`GrapeRegressionTests`)로 유지되어야 한다.
+**회귀 기준 — 포도 스테이지 (GDD §3)**: 최소 풀이 5수, 그 5수의 순서 120가지 중 8가지만 성공. 붓질 · 판정 · 솔버를 바꾸면 이 결과가 `GrapeRegressionTests`로 유지되어야 한다.
 
----
+**기획 문서 사용**
+* 확정만 구현한다. 후보(GDD §7 — 이동 횟수 제한 · 흰색)는 요청 전에 미리 구현 · 추상화 · 설정 옵션을 만들지 않는다. 지금 구현이 후보를 불가능하게 만드는지는 계획 단계에서 확인한다.
+* 기획이 바뀌면 같은 작업에서 `GDD.md`(승인 후)와 `DECISIONS.md`를 고친다.
 
-## 4. WebGL 제약 [CRITICAL] (GDD §10 · §11)
+## 6. WebGL 제약 [CRITICAL] (GDD §10 · §11)
 
-* **단일 스레드**: `Thread` · `Task.Run` 등 스레드를 쓰는 코드는 쓰지 않는다. 무거운 계산(솔버 BFS)은 에디터 도구로 돌리고, 런타임에 필요하면 여러 프레임에 나눠 실행한다(코루틴/`Awaitable`). 한 프레임에 오래 돌면 브라우저 탭이 멈춘다. 런타임 탐색에는 상태 수 상한을 둔다(프로토타입은 30만~40만 개에서 중단).
+* **단일 스레드**: `Thread` · `Task.Run` 등 스레드를 쓰는 코드는 쓰지 않는다. 무거운 계산(솔버 BFS)은 에디터 도구로 돌리고, 런타임에 필요하면 여러 프레임에 나눠 실행한다(코루틴/`Awaitable`). 한 프레임에 오래 돌면 브라우저 탭이 멈춘다 — 런타임 탐색에는 상태 수 상한을 둔다.
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
-* **첫 로딩 10초 (앱인토스 심사 기준)**: 압축(Brotli) · Managed Stripping Level · 에셋 용량을 처음부터 관리한다. 패키지·폰트·텍스처를 추가할 때는 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`로 보존.
-* **빌드로 확인**: 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저·휴대폰에서 열어 입력·세로 비율·로딩을 확인한다.
-* **현황 (2026-10-04 기준)**: WebGL Build Support 설치 · 활성 빌드 타깃 WebGL 확인(`list_build_targets` · `get_build_settings`). WebGL은 품질 레벨 `Mobile`(→ `Mobile_RPAsset`, URP)을 쓴다. 적용된 설정: 압축 Brotli + Decompression Fallback · Managed Stripping High · IL2CPP OptimizeSize · 기본 캔버스 540×960 · 데이터 캐싱 · 스레드 끔 · 스플래시 끔(Phase 4.1) · 전용 템플릿 `PROJECT:ColoringBoot` · 제품 이름 "컬러링붓" · Name Files As Hashes(Phase 7.6, `AgentScripts/Setup/Phase7WebTemplate.cs`). 텍스처 압축: 챕터 그림만 ASTC(선화 4×4 · 색칠 단계 6×6, `ChapterArtBuilder`), UI 스프라이트는 압축하지 않음(2026-10-11 사용자 결정 — 휴대폰이 그대로 써 메모리가 줄고, PC 브라우저는 불러올 때 푼다). 지금 배포본: 압축 후 **9,632,936바이트**(2026-10-19, 챕터 1 하늘 · 언덕 미리 칠한 소재 칸 — 그 전 무한 모드 건너뛰기 광고 자리 9,628,465 · 보드 칸 기믹 뺌 9,625,267 · 여러 챕터 구조 + 임시 챕터 2 그림 9,644,172 · 챕터 1 톱니 순서 9,317,873 · 챕터 그림 ASTC · 앱인토스 SDK 9,313,617 · 기믹 시제품 9,264,179. 빌드 뒤 `ProjectSettings` 되돌리기 불필요(입력 에셋 삭제). 따라 하기 레슨 5개 빌드 9,214,852는 사용자 확인 2026-10-07). Phase 7.6 빌드는 휴대폰 · PC 확인, 첫 로딩 이전과 거의 같음(2026-10-04 사용자 확인 — 숫자로 잰 마지막 값은 Phase 2의 약 3초). 크기는 바이트로 비교하고, 빌드마다 `Docs/BuildHistory.md` 표에 한 줄 더한다(Phase 0 기준선 이후 증감 · 그림 한 장 ≈ +686 KB 등은 그 표에).
-* **화면 방향**: 브라우저에서는 앱처럼 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 레이아웃 기준으로 만들되 PC의 가로 창에서도 깨지지 않게(레터박스) 한다.
+* **첫 로딩 10초(앱인토스 심사 기준)**: 압축 · Stripping · 에셋 용량을 관리한다. 패키지 · 폰트 · 텍스처를 추가하면 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`. 압축 · 파일 이름 설정을 바꾸기 전에 `TDD.md` §6 "설정 이유"를 본다.
+* **빌드로 확인**: WebGL · 실기에 관한 것은 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저 · 휴대폰에서 열어 입력 · 세로 비율 · 로딩을 확인한다.
+* **화면 방향**: 브라우저는 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 기준으로 만들되 PC 가로 창에서도 깨지지 않게 한다(레터박스).
 
----
+## 7. 검증과 테스트
 
-## 5. 유니티 코딩 규칙 (Universal Rules)
+* 코드를 고치면 §3 루프로 컴파일과 `run_tests`(mode=editor)를 확인한다. 씬 배선 뒤 · 빌드 전에는 `/qa-scene`.
+* 붓질 · 판정 · 솔버 · 스테이지를 바꾸면 회귀 테스트(`GrapeRegressionTests` · `PrototypeStageRegressionTests` · `ContentRegressionTests`)가 통과해야 한다. 프로토타입 회귀 기준 사본 `Assets/Tests/EditMode/PrototypeStages/`는 고치지 않는다.
+* 새 테스트 전에 기존 테스트가 이미 검증하는지 본다. 내부 구조가 아니라 관찰할 수 있는 결과를, 오류의 영향이 큰 동작부터 검증한다.
+* 실패하는 테스트를 통과시키려고 지우거나 건너뛰거나 기준을 약하게 바꾸지 않는다.
+* Task 완료 체크(`[x]`)는 실측 · 테스트 · 플레이로 확인한 것만(Task.md DoD). 주요 작업을 끝내면 `Task.md` 체크박스를 갱신하고 `DevelopLog.md` 최상단에 기록한다(날짜 YYYY-MM-DD · 제목 · 작업 내용 · 해결된 이슈). Phase 종료는 `/phase-close`.
 
-* **No GC / Allocations**: `Update` / `LateUpdate` 등 매 프레임 코드에서 `new` · LINQ · 문자열 조합 금지. `WaitForSeconds` 등은 루프 밖에서 캐싱.
-* **메모리 누수 가드**: `event` / `Action` 구독(`+=`)은 반드시 `OnDisable()` 또는 `OnDestroy()`에서 해제(`-=`).
-* **static 상태**: 이 프로젝트는 플레이 모드 진입 때 도메인 · 씬 리로드를 끈다(Enter Play Mode Options, `ProjectSettings/EditorSettings.asset`). 값이 바뀌는 static 필드 · static 이벤트 · 싱글턴은 에디터에서 플레이를 다시 시작해도 값이 남으므로 `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]`에서 초기화한다(빌드에는 영향 없음, 2026-09-29 점검).
-* **컴포넌트 캐싱**: `GetComponent<T>()` · `Find` 계열은 `Awake()` / `Start()`에서만. 태그 비교는 `CompareTag("Tag")`.
-* **캡슐화**: 인스펙터 노출 필드는 `[SerializeField] private`. 매직 넘버/스트링 하드코딩 금지(`const` 또는 필드).
-* **튜닝 값**: 애니메이션 속도 · 색 팔레트처럼 자주 바꾸는 값은 `ScriptableObject`로 분리한다. 스테이지 데이터는 JSON TextAsset + `StageCatalog`(§3 스테이지 데이터 · 2026-09-29).
-* **로깅**: `Debug.LogWarning("Msg", this)`처럼 컨텍스트를 포함한다. 순수 로직 계층은 로그 대신 반환값·예외로 알린다.
-* **Unity 6 API**: Obsolete API(`FindObjectOfType` 등)는 쓰지 않는다 → `FindFirstObjectByType` / `FindAnyObjectByType`.
-* **스타일**: 식별자는 영어, 주석은 한국어, private 필드는 `_camelCase`. 기존 코드가 생기면 그 스타일을 따른다.
+## 8. 세션
 
----
+* 재개할 때는 `resume` 스킬로 지금 상태를 확인한다. 세션을 끝낼 때 `Task.md` "지금 상태"를 갱신한다.
+* 같은 기능의 구현 · 디버깅은 같은 세션에서 이어간다. 계획 검수 · 코드 리뷰는 새 세션에서 한다.
+* 같은 수정이 두 번 실패하면 확인된 사실과 시도 이력을 정리해 새 세션에서 다시 분석한다.
+* 결정 · 상태 · 검증 결과는 채팅에만 두지 않고 문서(`DECISIONS.md` · `Task.md` · `DevelopLog.md`)에 남긴다.
 
-## 6. UI · 입력 · 플랫폼 (GDD §6)
+## 9. 스킬
 
-* **화면**: 세로 기준 `1080 × 1920`, `Canvas Scaler` = `Scale With Screen Size`. 보드는 화면 가운데, 조작 버튼은 한 손이 닿는 아래쪽. 스테이지 크기는 형식마다 다르고 최대 40칸 정도 — 손가락으로 칸을 구분할 수 있는 크기를 유지한다.
-* **안전영역**: 노치·Dynamic Island를 침범하지 않는다(최상단 UI 패널에 Safe Area 대응). WebGL에서 `Screen.safeArea`가 실제 노치 값을 주는지는 실기로 확인한다(웹 표준은 CSS `env(safe-area-inset-*)`).
-* **입력**: 칸을 누른 채 끌기(터치·마우스 공통)가 기본. 보조 입력은 모바일 탭 → 여섯 방향 버튼, PC 방향키(칸 선택) + 숫자키 `1·3·5·7·9·0`(방향, `0` = 11시 — 프로토타입 기준). 되돌리기는 버튼 + Ctrl+Z. 멀티터치 시 **처음 닿은 손가락만** 추적하고, UI 위의 터치는 보드 입력으로 처리하지 않는다.
-* **필수 UI**: 붓질 미리보기(경로 · 붓 색 변화 · 결과를 반투명으로), 목표 표시(썸네일 + 칸별 목표 색 마커), 막힘 표시, 수 카운터(현재/최소), 색 조합표(스테이지 팔레트), 접근성 기호(R · Y · B 조합).
-* **사운드**: 처음부터 켜고 끄기 + 백그라운드 전환 시 정지. 브라우저는 첫 사용자 입력 전에는 소리를 막는다(자동재생 정책) — 버그가 아니다.
-
----
-
-## 7. 스킬 (Skills)
-
-| 스킬 | 언제 쓰나 |
+| 스킬 | 언제 |
 |---|---|
-| `unity-pipeline` (프로젝트) | MCP/CLI로 에디터를 다룰 때 — 편집→컴파일→테스트 루프, `run_script`, 코드 리로드, 주의사항 |
-| `/phase-close` (프로젝트) | Phase를 닫을 때 — DoD 게이트 → Task.md·DevelopLog 갱신 → 커밋 제안 |
-| `/qa-scene` (프로젝트) | 보드 씬 셋업 전수 실측(읽기 전용) — 씬 배선 뒤 · 빌드 전후 · 인스펙터가 비었는지 의심될 때 |
-| `/code-review` · `/simplify` | 기능 구현 후 셀프 리뷰 — 버그 찾기 / 과한 코드 정리 |
-| `/update-config` | 훅 · 권한 등 `.claude/settings.json` 변경 |
-| `/fewer-permission-prompts` | 자주 쓰는 조회용 MCP 도구의 권한 확인 줄이기 |
-| `claude-in-chrome` | WebGL 배포본을 실제 브라우저로 열어 확인할 때 — 콘솔 · 네트워크 읽기(§2) |
-| `anthropic-skills:skill-creator` | 반복 작업을 프로젝트 스킬로 만들 때 |
-| `anthropic-skills:pptx` | 동아리 발표 자료 |
+| `resume` (프로젝트) | 세션을 시작 · 재개할 때 — 지금 상태와 다음 할 일 |
+| `/plan` (프로젝트) | Full Plan의 계획을 `Docs/plans/`에 쓸 때 |
+| `/review-plan <계획 파일>` (프로젝트) | 새 세션에서 계획 검수(읽기 전용) |
+| `unity-pipeline` (프로젝트) | MCP · CLI로 에디터를 다룰 때 |
+| `/qa-scene` (프로젝트) | 보드 씬 셋업 전수 실측(읽기 전용) — 씬 배선 뒤 · 빌드 전 · 인스펙터가 비었는지 의심될 때 |
+| `/phase-close` (프로젝트) | Phase를 닫을 때 — DoD 게이트 → Task.md · DevelopLog 갱신 → 커밋 제안 |
+| `/code-review` · `/simplify` | 새 세션 코드 리뷰 / 과한 코드 정리 |
+| `anthropic-skills:chrome-browser` | WebGL 배포본을 실제 브라우저로 확인할 때(§4) |
 
----
+## 10. 자주 하는 실수
 
-## 8. 자주 하는 실수 (작업 전 점검)
-
-* **붓질 규칙 오해** — 빈 붓은 빈칸을 칠하지 않는다 / 반대편 끝에서 출발한다 / 섞이면 칸과 붓이 함께 바뀐다 / 줄 중간 빈자리에서 멈추지 않는다. 헷갈리면 GDD §2.4 의사코드와 포도 풀이(GDD §3)로 확인한다.
-* **막힘을 "목표와 다름"으로 판정** — 아직 칠하지 않은 칸도 목표와 다르다. 막힘은 `(cell & ~target) != 0`뿐이다.
-* **육각 좌표 혼용** — flat-top 공식이나 offset 좌표를 섞지 않는다. §3 방향 표가 기준.
-* **화면 y축 부호** — Unity는 y가 위, 프로토타입(SVG)은 아래. 배치 공식을 그대로 옮기면 1시와 5시 등이 위아래로 뒤집힌다(§3 화면 배치).
-* **순수 로직에 `UnityEngine` 유입** — asmdef가 막았을 때 참조를 추가해 우회하지 않는다.
-* **비동기 MCP 명령의 완료 가정 · 설정 변경의 Undo 기대** — §2 MCP 안전 규칙.
-* **한글이 □로 표시** — TMP 기본 폰트(LiberationSans SDF)에는 한글 글리프가 없다(Labyrinth 2026-09-16 선례 — 이 프로젝트는 2026-09-30에 LiberationSans를 지웠다. TMP Essential Resources를 다시 임포트하면 되살아나 빌드에 들어간다). 한글 폰트는 용량이 커서 첫 로딩 10초에 영향을 주므로, 필요한 글자 범위와 방식을 정해서 넣는다 → Pretendard SemiBold 고정 아틀라스(쓰는 글자만, 2026-09-28 사용자 결정 — 1024² 한 장, 샘플링 56: 64에서 254자에 두 장이 되어 2026-09-30에 낮춤. `FontBuilder.Build` 결과가 두 장이 되면 용량과 함께 보고한다 — 2026-10-11 294자에서 두 장이 됨: 2번째 장은 글자 5개뿐이라 빌드 +664바이트 · 휴대폰 메모리 +1 MiB, WebGL 표시 정상). **화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Build/FontBuilder.cs`를 다시 실행**하고(폰트 에셋이 새로 만들어지므로) `BoardSceneBuilder`의 BuildPrefabs → BuildScene도 다시 돌린다. 문구는 문자열 리터럴로 써야 수집된다(로그 · 예외 메시지 · `[Tooltip]` · `[Header]` 줄은 제외 — 2026-10-02부터 인스펙터 설명 글자를 빼서 278 → 199자, 2026-10-05부터 머리글도). 빌더는 `Assets/Scripts/Game` · `Assets/Data`(모든 스테이지 JSON)를 하위 폴더까지 읽고(2026-10-05) 챕터 에셋의 제목 · 부제도 모으며(2026-10-07), `QaScene`이 씬 글자 · 스테이지 이름이 모두 폰트에 있는지 점검한다. 폰트를 다시 만들지 않고 모을 글자만 보려면 `FontBuilder.Preview`. 주의: 이 TMP 버전은 `AtlasPopulationMode.Static`을 폐기 예정(obsolete)으로 표시한다 — 지금은 빌드 · 표시 정상(2026-09-29). TMP를 올릴 때 Dynamic 방식으로 옮길지(용량 · 원본 폰트 포함 여부) 다시 정한다.
-* **에디터에서만 확인하고 완료 처리** — §4 "빌드로 확인".
-* **GitHub Pages + Brotli** — 서버가 `Content-Encoding: br` 헤더를 주지 못하면 로드에 실패한다 → Decompression Fallback을 켜거나 압축 방식을 바꾼다.
-* **배포 직후 옛 파일과 섞임** — 빌드 파일 이름이 매번 같으면(`WebGL.wasm.unityweb` 등) 브라우저가 GitHub Pages 캐시(10분)의 옛 파일과 새 파일을 섞어 실행해 `RangeError: Maximum call stack size exceeded`로 멈춘다(2026-10-03: 직전 배포를 열어 본 PC 크롬만 — 휴대폰 · 로컬 서버 · 가로 화면 강제는 정상, 몇 분 뒤 저절로 풀림). → `Name Files As Hashes` 켬(빌드마다 이름이 다름, `AgentScripts/Setup/Phase7WebTemplate.cs`) · 템플릿 CSS는 `index.html` 안에. 남는 경우: 배포 직후 옛 `index.html`이 캐시에서 열리면 지워진 옛 파일을 찾아 "불러오지 못했어요" → 새로고침. 헤드리스 Chrome은 이 PC에서 WebGL 본체를 끝까지 못 돌린다 — 실제 브라우저 확인은 Claude in Chrome(콘솔 읽기)으로.
-* **기믹·확장 포인트 선반영** — GDD §7 기믹은 채택되지 않은 후보다. 보드 칸 기믹(벽 · 물 · 코팅)은 시제품을 해 보고 쓰지 않기로 했다(2026-10-12, §3). 남은 후보(이동 횟수 제한 · 흰색)도 요청 전에 추상화·설정 옵션을 미리 만들지 않는다.
-* **UI가 안 찍힌 스크린샷** — `capture_game_view` 기본값(source=camera)은 Screen Space - Overlay UI를 빠뜨린다 → Play Mode에서 `source=screen`. `save_path`는 `Assets/` 기준으로 저장되어 에셋으로 임포트된다(2026-10-02: `Assets/Temp`가 생김) → 저장하지 말고 인라인으로 받는다(받은 이미지는 도구 결과 폴더에 파일로 남는다). 사용자에게 보여 줄 이미지는 git이 무시하는 `Builds/` 아래에 만든다.
-* **플레이 모드 중 씬 수정** — Play Mode에서 바꾼 씬 값은 플레이를 멈추면 되돌아간다. 씬 수정·저장은 `editor_stop` 후에 한다. `editor_stop` 직후 다른 씬을 열면, 늦게 끝나는 플레이 종료가 플레이를 시작한 씬을 다시 열 수 있다(2026-09-29: 레벨 에디터 씬이 도로 열려 `QaScene`이 보드를 못 찾음) → 씬을 바꾼 뒤 활성 씬을 다시 확인한다.
-* **Windows 도구 환경** — ① 셸 명령에 넣은 백슬래시는 의도대로 전달되지 않을 수 있다(Labyrinth 실측, 2026-09-24에도 백슬래시가 든 grep 패턴이 오작동) → 문자 클래스(`[.]`) · Python `chr(92)` · `/` 경로로 우회한다. ② Windows Python의 표준 출력은 cp949라 한글·특수문자에서 깨진다 → `sys.stdout.reconfigure(encoding='utf-8')`. ③ Python `subprocess`로 `bash`를 부르면 WSL bash가 잡힌다 → Git Bash(`C:/Program Files/Git/usr/bin/bash.exe`)를 명시한다. ④ Write/Edit 내용에 역슬래시 + `u` + 16진 4자리를 적으면 그 유니코드 글자로 바뀌어 저장된다(2026-09-28: 테스트 JSON의 한글 이스케이프가 "포도"로 저장됨). `\\` · `\n` 같은 다른 이스케이프는 그대로다 → 소스에 유니코드 이스케이프가 필요하면 다른 문자로 적고 치환하거나(`.Replace('%', '\\')`) `(char)0xD3EC`로 쓴다.
-* **`.meta` 누락 커밋** — 에셋과 `.meta`는 항상 함께.
-* **gh-pages 배포에 소스 섞임** — orphan 브랜치 작업 트리에는 main의 파일과 `.gitignore`가 딸려 온다(2026-09-24: 소스 71개가 함께 올라가고, `/Build/` 규칙 때문에 빌드 폴더가 빠짐). 배포는 `AgentScripts/Tools/deploy-pages.sh`로만 한다.
-* **패키지 제거 뒤 옛 코드가 남음** — 패키지를 지운 뒤 도메인 리로드가 제대로 끝나지 않으면, 지워진 패키지 코드가 메모리에 남아 에러를 쏟아낸다(2026-09-24: AI Assistant 제거 후 에러 119건). 디스크의 컴파일 결과(`Library/ScriptAssemblies`)가 정상이면 에디터 재시작으로 해결된다. 패키지를 제거한 뒤에는 재시작을 먼저 안내한다. 제거된 패키지의 IDE 프로젝트 파일(`.csproj`)도 루트에 남을 수 있는데, git이 무시해서 `git status`에 보이지 않는다 → 솔루션(`.slnx`)이 참조하지 않는 `.csproj`를 찾아 지운다(2026-09-24: 79개).
-* **낡은 조회 결과로 기록** — 에디터가 재시작되었거나 사용자가 에디터를 만졌다면 이전 조회 결과는 낡았다. 상태를 문서에 적기 전에 다시 조회한다(2026-09-24: 재시작 후 재확인 없이 "빌드 타깃은 아직 Windows"라고 기록했으나 실제로는 이미 WebGL이었다).
-* **테스트 중 씬 조회** — EditMode `run_tests`가 도는 동안 테스트 러너는 임시 새 씬(이름 · 경로 없음, Main Camera + Directional Light)을 연다. 이때 `get_scene_hierarchy`를 부르면 그 씬이 잡힌다(2026-09-28). 테스트와 씬 조회를 동시에 하지 않는다.
+* **한글이 □** — 화면 문구 · 스테이지 이름을 새로 쓰고 폰트를 다시 만들지 않음 → `FontBuilder.Build` → `BuildPrefabs` → `BuildScene`(`.claude/rules/game-code.md`). TMP Essential Resources를 다시 임포트하면 지운 LiberationSans가 되살아나 빌드에 들어간다.
+* **Windows 도구 환경** — ① 셸 명령 · 훅 스크립트에 넣은 백슬래시는 의도대로 전달되지 않을 수 있다 → 문자 클래스(`[.]`) · Python `chr(92)` · `/` 경로로 우회한다. ② Windows Python 표준 출력은 cp949라 한글이 깨진다 → `sys.stdout.reconfigure(encoding='utf-8')` 또는 `python -X utf8`. ③ Python `subprocess`로 `bash`를 부르면 WSL bash가 잡힌다 → Git Bash(`C:/Program Files/Git/usr/bin/bash.exe`)를 명시한다. ④ Write/Edit 내용에 역슬래시 + `u` + 16진 4자리를 적으면 그 유니코드 글자로 바뀌어 저장된다(`\\` · `\n`은 그대로) → 다른 문자로 적고 치환하거나(`.Replace('%', '\\')`) `(char)0xD3EC`로 쓴다.

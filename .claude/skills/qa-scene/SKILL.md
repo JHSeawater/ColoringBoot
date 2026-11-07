@@ -5,11 +5,11 @@ description: 보드 씬(Assets/Scenes/Board.unity) 셋업 전수 실측 — 읽�
 
 # /qa-scene — 보드 씬 셋업 실측 (읽기 전용)
 
-Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 정본인 빌더 `AgentScripts/Build/BoardSceneBuilder.cs`를 고쳐 다시 실행한다(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `AgentScripts/Build/FontBuilder.cs` 먼저). MCP로 씬을 직접 고친 값은 다음 `BuildScene` 때 사라진다 — 급할 때만 쓰고 빌더에도 같은 수정을 넣는다(CLAUDE.md §2).
+Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 정본인 빌더 `AgentScripts/Build/BoardSceneBuilder.cs`를 고쳐 다시 실행한다(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `AgentScripts/Build/FontBuilder.cs` 먼저). MCP로 씬을 직접 고친 값은 다음 `BuildScene` 때 사라진다 — 급할 때만 쓰고 빌더에도 같은 수정을 넣는다(CLAUDE.md §3).
 
 ## 0. 전제
 - `editor_status`: `ready`, `playMode: stopped`, `projectPath`가 이 프로젝트. Play Mode면 멈추라고 알리고 중단(플레이 중 값은 저장 안 됨).
-- EditMode `run_tests`와 동시에 하지 않는다(테스트 러너의 임시 씬이 잡힘 — CLAUDE.md §8).
+- EditMode `run_tests`와 동시에 하지 않는다(테스트 러너의 임시 씬이 잡힘 — CLAUDE.md §3).
 - 활성 씬이 `Assets/Scenes/Board.unity`가 아니면 보고하고 중단(`list_open_scenes`).
 
 ## 1. 계층 (`get_scene_hierarchy`)
@@ -53,7 +53,7 @@ Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 �
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner` · `_hintButton` · `_guideBanner` · `_guideLabel` · `_overlays` = 옵션 · 기록 패널(열려 있으면 키보드 무시, 2026-10-05)
-- `/Game` GameFlow: `_chapter`(Chapter — 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 `Stages`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · 그림 `Art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`), 2026-10-07) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton` · `_labCatalog`(시험 목록 `?lab` — 모두 풀리고 `minMoves` 일치 · 이름 글자 · 파일 이름이 챕터 목록과 안 겹침, 2026-10-06) · `_tutorialCatalog`(따라 하기 — 레슨 수 = `TutorialLessons.Count` · 안내대로 그으면 풀림(= 최소 수 — 혼자 풀기 레슨은 솔버 최소 수) · 일부러 막히는 획은 막힘 · 문구 · 이름 글자 · 파일 이름 안 겹침, 2026-10-07) · `_endlessPools`(무한 모드 묶음 3개 — 퍼즐 있음 · 첫 줄 읽힘) · `_endless`(EndlessView — 뒤로 · 난이도 버튼 · 글자 3개, 난이도 이름 글자가 폰트에 있음) · `_endlessButton` · `_selectEndlessButton` · `_skipButton`(2026-10-07)
+- `/Game` GameFlow: `_chapters`(Chapter 배열, 1개 이상 · 차례대로 — 2026-10-11) · `_testChapters`(임시 챕터 — 주소 `?chapters`, 비어 있어도 됨) — 두 배열의 챕터마다(Chapter — 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 `Stages`(StageCatalog — 요소 모두 읽힘 · 순서는 `AgentScripts/Build/StageOrder.cs`) · 그림 `Art`(ChapterArt — 단계 수 = 스테이지 수 · 선화와 단계 조각 모두 있음 · 캔버스 4:5, `AgentScripts/Build/ChapterArtBuilder.cs`), 2026-10-07) · `_puzzle` · `_sound` · `_boardScreen` · `_select` · `_options` · `_statsView` · `_backButton` · `_boardOptionsButton` · `_selectOptionsButton` · `_nextButton` · `_nextLabel` · `_selectPicture` · `_chapterScreen` · `_chapterPicture` · `_chapterCaption` · `_chapterNextButton` · `_chapterNextLabel` · `_titleScreen` · `_startButton` · `_labCatalog`(시험 목록 `?lab` — 모두 풀리고 `minMoves` 일치 · 이름 글자 · 파일 이름이 챕터 목록과 안 겹침, 2026-10-06) · `_tutorialCatalog`(따라 하기 — 레슨 수 = `TutorialLessons.Count` · 안내대로 그으면 풀림(= 최소 수 — 혼자 풀기 레슨은 솔버 최소 수) · 일부러 막히는 획은 막힘 · 문구 · 이름 글자 · 파일 이름 안 겹침, 2026-10-07) · `_endlessPools`(무한 모드 묶음 3개 — 퍼즐 있음 · 첫 줄 읽힘) · `_endless`(EndlessView — 뒤로 · 난이도 버튼 · 글자 3개, 난이도 이름 글자가 폰트에 있음) · `_endlessButton` · `_selectEndlessButton` · `_skipButton`(2026-10-07)
 - `…/SelectScreen` StageSelectView: `_title` · `_subtitle`(챕터 부제 줄 — 글자는 실행 때 `Chapter`에서, 시험 목록에서 숨김) · `_grid` · `_buttonTemplate` · `_noticePanel` · `_notice` / 템플릿 StageButtonView: `_button` · `_fill` · `_ring` · `_number` · `_lock` · `_star`
 - `…/OptionsPanel` OptionsView: `_symbolsButton` · `_symbolsLabel` · `_soundButton` · `_soundLabel` · `_closeButton` · `_tutorialButton`(규칙 다시 보기)
 - `…/StatsPanel` StatsView: `_text` · `_closeButton`

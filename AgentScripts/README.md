@@ -35,9 +35,17 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 하는 일 | entry |
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
-| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(CLAUDE.md §2) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) · `TestChapters`(주소 `?chapters`처럼 임시 챕터를 붙임 — 2026-10-11) 등 |
+| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) · `TestChapters`(주소 `?chapters`처럼 임시 챕터를 붙임 — 2026-10-11) 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 · 생성 조건 · 그림 → 시작 칸 찾기 · 붙여넣기 · 시험 플레이(2026-10-13) | `Paint` · `Record` · `Check` · `Save` · `GenerateWith` · `FindSeeds` · `Paste` · `Play` · `PlaySolve` · `PlayDeadMove` · `PlayUndo` 등 (시험 플레이 열기와 끌기는 다른 호출로) |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
+
+### BoardQa 사용 순서 (2026-11-07 CLAUDE.md에서 옮김)
+
+- 칸 탭 · 드래그 · 방향 버튼 · 되돌리기 · 처음부터 · 상태 — 실제 포인터 이벤트 경로를 탄다. 화면 흐름: `Flow`(지금 화면 · 선택 화면 버튼 상태) · `ChooseStage` · `Press`(버튼 경로).
+- 첫 화면은 타이틀이라 `Press("TitleScreen/StartButton")` → 선택 화면. 저장 키가 없으면 따라 하기 1이 열린다 — `Press("BoardScreen/BackButton")`으로 나가면 목록 · 봤음으로 저장된다. 보드 QA 전에 `ChooseStage(1)`.
+- 연속 플레이: `SolveByDrag`(솔버 풀이를 실제 끌기로) → 1.5초 기다린 뒤 다음 호출에서 `Press("BoardScreen/ClearBanner/NextButton")` 반복(`run_script` 한 번에 한 스테이지씩 확인).
+- 시험 목록(`?lab`)은 에디터에 주소가 없어 `Lab()`으로, 임시 챕터(`?chapters`)는 `TestChapters()`로 연다.
+- 호출 나누기 · 띠가 켜지는 때 · 끝난 뒤 저장 키 지우기는 `CLAUDE.md` §3 "에디터 플레이 확인".
 
 ## Tools/
 
