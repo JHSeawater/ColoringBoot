@@ -7,7 +7,7 @@ paths:
 
 # 게임 코드 · 데이터 규칙 (표현 계층 · 레벨 에디터 · 데이터)
 
-> 이 파일들을 다룰 때만 읽힌다. 순수 로직(Core) · 게임 규칙은 `CLAUDE.md` §5, 구현 지도는 `TDD.md`.
+> 이 파일들을 다룰 때만 읽힌다. 순수 로직(Core) · 게임 규칙은 `CLAUDE.md` §5, 구현 지도는 `Docs/TDD.md`.
 
 ## 유니티 코딩
 
@@ -16,7 +16,7 @@ paths:
 * **static 상태**: 이 프로젝트는 플레이 모드 진입 때 도메인 · 씬 리로드를 끈다(Enter Play Mode Options, `ProjectSettings/EditorSettings.asset`). 값이 바뀌는 static 필드 · static 이벤트 · 싱글턴은 에디터에서 플레이를 다시 시작해도 값이 남으므로 `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]`에서 초기화한다(빌드에는 영향 없음).
 * **컴포넌트 캐싱**: `GetComponent<T>()` · `Find` 계열은 `Awake()` / `Start()`에서만. 태그 비교는 `CompareTag("Tag")`.
 * **캡슐화**: 인스펙터 노출 필드는 `[SerializeField] private`. 매직 넘버/스트링 하드코딩 금지(`const` 또는 필드).
-* **튜닝 값**: 애니메이션 속도 · 색 팔레트처럼 자주 바꾸는 값은 `ScriptableObject`로 분리한다(`UiTheme` · `MotionSettings` · 팔레트). 스테이지 데이터는 JSON TextAsset + `StageCatalog`(`TDD.md` §4).
+* **튜닝 값**: 애니메이션 속도 · 색 팔레트처럼 자주 바꾸는 값은 `ScriptableObject`로 분리한다(`UiTheme` · `MotionSettings` · 팔레트). 스테이지 데이터는 JSON TextAsset + `StageCatalog`(`Docs/TDD.md` §4).
 * **로깅**: `Debug.LogWarning("Msg", this)`처럼 컨텍스트를 포함한다.
 * **Unity 6 API**: Obsolete API(`FindObjectOfType` 등)는 쓰지 않는다 → `FindFirstObjectByType` / `FindAnyObjectByType`.
 * **스타일**: 식별자는 영어, 주석은 한국어, private 필드는 `_camelCase`. 기존 코드 스타일을 따른다.
@@ -32,4 +32,4 @@ paths:
 
 * 화면 문구나 스테이지 이름을 새로 쓰면 `AgentScripts/Build/FontBuilder.cs`(`FontBuilder.Build`)를 다시 실행하고 `BoardSceneBuilder`의 `BuildPrefabs` → `BuildScene`도 다시 돌린다. 안 하면 게임에 □로 나온다. 다시 만들지 않고 모을 글자만 보려면 `FontBuilder.Preview`.
 * 문구는 문자열 리터럴로 쓴다(빌더가 리터럴을 모은다 — 로그 · 예외 메시지 · `[Tooltip]` · `[Header]` 줄은 모으지 않는다).
-* 아틀라스 장 수가 늘면 빌드 용량과 함께 보고한다. 폰트 방식 · 수집 범위 · 지금 장 수는 `TDD.md` §7.
+* 아틀라스 장 수가 늘면 빌드 용량과 함께 보고한다. 폰트 방식 · 수집 범위 · 지금 장 수는 `Docs/TDD.md` §7.

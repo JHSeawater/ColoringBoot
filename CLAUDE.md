@@ -7,18 +7,19 @@
 
 ## 0. 문서 지도 — 세부가 필요하면 추측하지 말고 해당 문서를 읽는다
 
-* `GDD.md` — 기획(무엇 · 왜)이자 게임 규칙의 정본. 기획자(사용자) 문서라 수정은 제안 → 승인 후에만.
+* 문서는 이 파일을 빼고 모두 `Docs/`에 둔다(새 문서도). 문서 안의 경로는 프로젝트 루트 기준이고, `Docs/` 문서끼리는 이름으로 가리킨다.
+* `Docs/GDD.md` — 기획(무엇 · 왜)이자 게임 규칙의 정본. 기획자(사용자) 문서라 수정은 제안 → 승인 후에만.
 * 웹 프로토타입 — 규칙 엔진 · 솔버 · 생성기 · 에디터의 참조 구현, 스테이지 코드 9개. `https://claude.ai/artifact/W8SJpnCtw75KM9eNfLpb3p`(Artifact `read`) · 로컬 사본 `Prototype/Prototype.html`. 규칙이 애매하면 GDD 다음으로 이 코드와 대조한다.
-* `TDD.md` — 기술 스펙(구현 지도): 코드 구조 세부 · 화면과 기능 · 팔레트 · 스테이지 데이터 · 저장 · WebGL 설정 · 폰트. 기능 코드를 고치기 전에 해당 절을 읽는다.
-* `DECISIONS.md` — 결정과 이유(2026-11-07부터, 최신이 위). 그 전 결정은 GDD §5 "정한 사항"과 `DevelopLog.md`.
-* `Task.md` — 지금 상태 · Phase · 작업 목록 · 완료 기준(DoD) · 태그 규칙.
-* `DevelopLog.md` — 작업 · 버그 수정 경위(최상단에 추가).
-* `ArtSpec.md` — 챕터 그림 전달 규격. 그림 빌더 · 임시 도안 · `QaScene` 그림 점검이 따른다. 아트 담당 공유 페이지(`https://claude.ai/artifact/NFJon5GaAfKKjKQutvY9oG`)는 이 파일 그대로 — 고치면 페이지도 다시 게시.
+* `Docs/TDD.md` — 기술 스펙(구현 지도): 코드 구조 세부 · 화면과 기능 · 팔레트 · 스테이지 데이터 · 저장 · WebGL 설정 · 폰트. 기능 코드를 고치기 전에 해당 절을 읽는다.
+* `Docs/DECISIONS.md` — 결정과 이유(2026-11-07부터, 최신이 위). 그 전 결정은 GDD §5 "정한 사항"과 `Docs/DevelopLog.md`.
+* `Docs/Task.md` — 지금 상태 · Phase · 작업 목록 · 완료 기준(DoD) · 태그 규칙.
+* `Docs/DevelopLog.md` — 작업 · 버그 수정 경위(최상단에 추가).
+* `Docs/ArtSpec.md` — 챕터 그림 전달 규격. 그림 빌더 · 임시 도안 · `QaScene` 그림 점검이 따른다. 아트 담당 공유 페이지(`https://claude.ai/artifact/NFJon5GaAfKKjKQutvY9oG`)는 이 파일 그대로 — 고치면 페이지도 다시 게시.
 * `AgentScripts/README.md` — 빌더 · QA · 도구 목록과 규칙. 스크립트를 쓰거나 에셋을 옮기기 전에 읽는다.
 * `Docs/BuildHistory.md` — WebGL 빌드 크기 · 첫 로딩 · 배포 이력. `Docs/plans/` — `/plan`이 쓰는 계획 파일.
 * `Docs/Archive/` — 지난 기록(Task Phase 0~6 · Phase 7~9 완료 항목 근거 · DevelopLog 2026-10-10 이전). 위 문서에 없는 옛 근거를 찾을 때.
 * `.claude/rules/game-code.md` — `Assets/Scripts/Game` · `Assets/Scripts/LevelEditor` · `Assets/Data`를 다룰 때 읽히는 규칙(코딩 · UI · 입력 · 폰트).
-* 검토 · 점검 보고서는 할 일 목록으로 쓰지 않는다. 조치할 항목은 `Task.md`로, 처리 경위는 `DevelopLog.md`로, 하지 않기로 한 이유는 `DECISIONS.md`로 옮긴다. 보고서 원문은 작성 시점의 스냅샷이다.
+* 검토 · 점검 보고서는 할 일 목록으로 쓰지 않는다. 조치할 항목은 `Docs/Task.md`로, 처리 경위는 `Docs/DevelopLog.md`로, 하지 않기로 한 이유는 `Docs/DECISIONS.md`로 옮긴다. 보고서 원문은 작성 시점의 스냅샷이다.
 
 ## 1. 작업 원칙
 
@@ -101,7 +102,7 @@ MCP 안전 규칙:
 * 보드 상태 · 붓질 · 색 혼합 · 막힘/성공 판정 · 솔버는 `MonoBehaviour`가 아닌 순수 C#이고 `UnityEngine`을 참조하지 않는다(`Vector2Int` · `Mathf` · `Debug.Log`도 금지 — 자체 타입과 `System`만). Core asmdef의 `noEngineReferences: true`가 막는다 — 막혔을 때 참조를 추가해 우회하지 않는다. 순수 로직은 로그 대신 반환값 · 예외로 알린다.
 * 표현 계층(보드 렌더링 · 입력 · UI · 사운드)은 로직을 호출하고 결과를 그리기만 한다. 규칙 판단을 표현 계층에 복제하지 않는다.
 * 화면 전환은 씬 하나에서 화면 · 패널을 켜고 끈다(`GameFlow`). 재시작 · 화면 전환에 `SceneManager.LoadScene`을 쓰지 않는다.
-* 코드 위치(하위 폴더 · 화면 · 기능별 구현은 `TDD.md` §1 · §2):
+* 코드 위치(하위 폴더 · 화면 · 기능별 구현은 `Docs/TDD.md` §1 · §2):
 
 | 위치 | 어셈블리 · 역할 |
 |---|---|
@@ -111,7 +112,7 @@ MCP 안전 규칙:
 | `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 로직 · 콘텐츠 테스트 |
 | `Assets/Data/` | 챕터 · 따라 하기 · 시험 목록 · 무한 모드 묶음 · 팔레트 · 디자인 · 연출 값 |
 | `AgentScripts/` | `Assets/` 밖 `run_script` 빌더 · QA · 도구 · 설정 기록(`AgentScripts/README.md`) |
-| `ArtSource/` | 그림 원본(`ArtSpec.md` 규격) |
+| `ArtSource/` | 그림 원본(`Docs/ArtSpec.md` 규격) |
 
 **색 (GDD §2.3)**: 비트마스크 — 빈칸 `0`, 빨강 `1`, 노랑 `2`, 파랑 `4`. 혼합은 OR(`|`), `7` = 검정.
 * **막힘**은 어떤 칸이든 `(cell & ~target) != 0`뿐이다 — 목표에 없는 기본색이 들어갔다(색은 빠지지 않아 복구 불가). "목표와 다름"으로 판정하지 않는다(아직 칠하지 않은 칸도 목표와 다르다). 즉시 표시하고, 막힌 동안 보드 입력을 잠근다(되돌리기 · 처음부터 · 힌트만).
@@ -142,11 +143,11 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 
 **상태 · 되돌리기 (GDD §2.5)**: 보드는 최대 40칸 정도의 색 값뿐이다 → 되돌리기는 획 단위 상태 스냅샷, 재시작은 시작 상태 복원. 재시작은 되돌릴 수 없다(기록을 지움).
 
-**스테이지 데이터** (세부는 `TDD.md` §4)
+**스테이지 데이터** (세부는 `Docs/TDD.md` §4)
 * 형식은 프로토타입 포맷 `{"name": ..., "cells": [[q, r, 시작 색, 목표 색], ...]}` + 선택 필드 `palette` · `minMoves`(레벨 에디터가 저장할 때 솔버로 채움). 읽기는 Core `Stage.Parse`만 쓴다(`JsonUtility`는 UnityEngine이고 중첩 배열을 못 읽는다).
 * 스테이지 파일 이름은 진행 기록의 키다 — 챕터 · 따라 하기 · 시험 목록 모두에서 겹치면 안 되고(`ContentRegressionTests`가 막는다), 이름을 바꾸면 옛 진행 기록과 끊긴다.
 
-**플랫폼 서비스** (세부는 `TDD.md` §5)
+**플랫폼 서비스** (세부는 `Docs/TDD.md` §5)
 * 저장은 `PlayerPrefs`를 직접 부르지 않고 `IKeyValueStore` 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 `IAdService` 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 구조에 넣는다.
 * 저장 형식은 머리줄 버전(`progress 1` · `stats 2` · `endless 1`)으로 시작한다. 형식을 바꾸면 옛 형식 읽기를 남기고 테스트한다(Full Plan).
 * QA 주소 쿼리(`?stage=` · `?stats` · `?reset` · `?palette=` · `?lab` · `?chapters`)는 테스트 주소에서만 켜진다(`UrlQuery.IsQaHost`).
@@ -155,13 +156,13 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 
 **기획 문서 사용**
 * 확정만 구현한다. 후보(GDD §7 — 이동 횟수 제한 · 흰색)는 요청 전에 미리 구현 · 추상화 · 설정 옵션을 만들지 않는다. 지금 구현이 후보를 불가능하게 만드는지는 계획 단계에서 확인한다.
-* 기획이 바뀌면 같은 작업에서 `GDD.md`(승인 후)와 `DECISIONS.md`를 고친다.
+* 기획이 바뀌면 같은 작업에서 `Docs/GDD.md`(승인 후)와 `Docs/DECISIONS.md`를 고친다.
 
 ## 6. WebGL 제약 [CRITICAL] (GDD §10 · §11 — Android 빌드도 같은 코드라 이 제약을 기준으로 만든다)
 
 * **단일 스레드**: `Thread` · `Task.Run` 등 스레드를 쓰는 코드는 쓰지 않는다. 무거운 계산(솔버 BFS)은 에디터 도구로 돌리고, 런타임에 필요하면 여러 프레임에 나눠 실행한다(코루틴/`Awaitable`). 한 프레임에 오래 돌면 브라우저 탭이 멈춘다 — 런타임 탐색에는 상태 수 상한을 둔다.
 * **파일 시스템**: `System.IO`로 로컬 파일을 다루지 않는다. 저장은 저장 인터페이스로만.
-* **첫 로딩 10초(앱인토스 심사 기준)**: 압축 · Stripping · 에셋 용량을 관리한다. 패키지 · 폰트 · 텍스처를 추가하면 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`. 압축 · 파일 이름 설정을 바꾸기 전에 `TDD.md` §6 "설정 이유"를 본다.
+* **첫 로딩 10초(앱인토스 심사 기준)**: 압축 · Stripping · 에셋 용량을 관리한다. 패키지 · 폰트 · 텍스처를 추가하면 빌드 용량 영향을 함께 보고한다. Stripping을 올리면 리플렉션으로만 쓰는 타입이 빠질 수 있다 → `link.xml`. 압축 · 파일 이름 설정을 바꾸기 전에 `Docs/TDD.md` §6 "설정 이유"를 본다.
 * **빌드로 확인**: WebGL · 실기에 관한 것은 에디터 동작만으로 완료 처리하지 않는다. WebGL 빌드를 브라우저 · 휴대폰에서 열어 입력 · 세로 비율 · 로딩을 확인한다.
 * **화면 방향**: 브라우저는 화면 방향을 확실히 고정할 수 없다(특히 iOS Safari). 세로 기준으로 만들되 PC 가로 창에서도 깨지지 않게 한다(레터박스).
 
@@ -171,14 +172,14 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 * 붓질 · 판정 · 솔버 · 스테이지를 바꾸면 회귀 테스트(`GrapeRegressionTests` · `PrototypeStageRegressionTests` · `ContentRegressionTests`)가 통과해야 한다. 프로토타입 회귀 기준 사본 `Assets/Tests/EditMode/PrototypeStages/`는 고치지 않는다.
 * 새 테스트 전에 기존 테스트가 이미 검증하는지 본다. 내부 구조가 아니라 관찰할 수 있는 결과를, 오류의 영향이 큰 동작부터 검증한다.
 * 실패하는 테스트를 통과시키려고 지우거나 건너뛰거나 기준을 약하게 바꾸지 않는다.
-* Task 완료 체크(`[x]`)는 실측 · 테스트 · 플레이로 확인한 것만(Task.md DoD). 주요 작업을 끝내면 `Task.md` 체크박스를 갱신하고 `DevelopLog.md` 최상단에 기록한다(날짜 YYYY-MM-DD · 제목 · 작업 내용 · 해결된 이슈). Phase 종료는 `/phase-close`.
+* Task 완료 체크(`[x]`)는 실측 · 테스트 · 플레이로 확인한 것만(Docs/Task.md DoD). 주요 작업을 끝내면 `Docs/Task.md` 체크박스를 갱신하고 `Docs/DevelopLog.md` 최상단에 기록한다(날짜 YYYY-MM-DD · 제목 · 작업 내용 · 해결된 이슈). Phase 종료는 `/phase-close`.
 
 ## 8. 세션
 
-* 재개할 때는 `resume` 스킬로 지금 상태를 확인한다. 세션을 끝낼 때 `Task.md` "지금 상태"를 갱신한다.
+* 재개할 때는 `resume` 스킬로 지금 상태를 확인한다. 세션을 끝낼 때 `Docs/Task.md` "지금 상태"를 갱신한다.
 * 같은 기능의 구현 · 디버깅은 같은 세션에서 이어간다. 계획 검수 · 코드 리뷰는 새 세션에서 한다.
 * 같은 수정이 두 번 실패하면 확인된 사실과 시도 이력을 정리해 새 세션에서 다시 분석한다.
-* 결정 · 상태 · 검증 결과는 채팅에만 두지 않고 문서(`DECISIONS.md` · `Task.md` · `DevelopLog.md`)에 남긴다.
+* 결정 · 상태 · 검증 결과는 채팅에만 두지 않고 문서(`Docs/DECISIONS.md` · `Docs/Task.md` · `Docs/DevelopLog.md`)에 남긴다.
 
 ## 9. 스킬
 
@@ -189,7 +190,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 | `/review-plan <계획 파일>` (프로젝트) | 새 세션에서 계획 검수(읽기 전용) |
 | `unity-pipeline` (프로젝트) | MCP · CLI로 에디터를 다룰 때 |
 | `/qa-scene` (프로젝트) | 보드 씬 셋업 전수 실측(읽기 전용) — 씬 배선 뒤 · 빌드 전 · 인스펙터가 비었는지 의심될 때 |
-| `/phase-close` (프로젝트) | Phase를 닫을 때 — DoD 게이트 → Task.md · DevelopLog 갱신 → 커밋 제안 |
+| `/phase-close` (프로젝트) | Phase를 닫을 때 — DoD 게이트 → Docs/Task.md · DevelopLog 갱신 → 커밋 제안 |
 | `/code-review` · `/simplify` | 새 세션 코드 리뷰 / 과한 코드 정리 |
 | `anthropic-skills:chrome-browser` | WebGL 배포본을 실제 브라우저로 확인할 때(§4) |
 

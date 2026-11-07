@@ -1,12 +1,12 @@
 ---
 name: phase-close
-description: Task.md의 Phase를 닫는 표준 절차 — DoD 게이트 검사(미완 항목·QA 항목·실측 근거·테스트) → Task.md 갱신 → DevelopLog.md 기록 → 문서 정합성 점검 → 커밋 제안. 인자로 Phase 번호를 받는다(없으면 현재 진행 Phase).
+description: Docs/Task.md의 Phase를 닫는 표준 절차 — DoD 게이트 검사(미완 항목·QA 항목·실측 근거·테스트) → Docs/Task.md 갱신 → Docs/DevelopLog.md 기록 → 문서 정합성 점검 → 커밋 제안. 인자로 Phase 번호를 받는다(없으면 현재 진행 Phase).
 ---
 
 # /phase-close — Phase 종료 절차
 
-Task.md 상단 "문서 사용 규칙"의 완료 기준(DoD)을 기계적으로 집행한다.
-인자: Phase 번호(예: `/phase-close 1`). 없으면 Task.md 헤더의 "현재 위치"에서 대상 Phase를 추론한다.
+Docs/Task.md 상단 "문서 사용 규칙"의 완료 기준(DoD)을 기계적으로 집행한다.
+인자: Phase 번호(예: `/phase-close 1`). 없으면 Docs/Task.md 상단의 "지금 상태"에서 대상 Phase를 추론한다.
 
 ## 1. DoD 게이트 — 하나라도 걸리면 닫지 않고 보고 후 중단
 
@@ -19,12 +19,12 @@ Task.md 상단 "문서 사용 규칙"의 완료 기준(DoD)을 기계적으로 �
 
 ## 2. 문서 갱신 (게이트 통과 시)
 
-- **`Task.md`**: Phase 헤더에 `✅ (YYYY-MM-DD 완료)` 표기, 문서 상단 "지금 상태"를 다음 Phase 기준으로 갱신.
-- **`DevelopLog.md`**: **최상단**에 추가 — 포맷: 날짜(YYYY-MM-DD) · 제목 · 작업 내용 · 해결된 이슈 (CLAUDE.md §7).
+- **`Docs/Task.md`**: Phase 헤더에 `✅ (YYYY-MM-DD 완료)` 표기, 문서 상단 "지금 상태"를 다음 Phase 기준으로 갱신.
+- **`Docs/DevelopLog.md`**: **최상단**에 추가 — 포맷: 날짜(YYYY-MM-DD) · 제목 · 작업 내용 · 해결된 이슈 (CLAUDE.md §7).
 - **정합성 점검**:
-  - 이 Phase에서 `GDD.md` §14 미정 사항이 확정됐거나, GDD와 다르게 구현한 부분이 있으면 GDD 반영안을 제시한다. GDD는 기획자(사용자) 문서이므로 **승인 후에만 수정**한다.
-  - `CLAUDE.md`의 규칙(§5 게임 규칙, §6 WebGL, §10 자주 하는 실수 등)과 `TDD.md`의 구현 지도(화면 · 데이터 · 저장 · WebGL 설정)가 낡았으면 정정안을 제시한다. 이 Phase에서 정한 것이 `DECISIONS.md`에 있는지도 본다.
-  - 정정 사실은 Task.md의 `[Doc]` 항목으로 남긴다.
+  - 이 Phase에서 `Docs/GDD.md` §14 미정 사항이 확정됐거나, GDD와 다르게 구현한 부분이 있으면 GDD 반영안을 제시한다. GDD는 기획자(사용자) 문서이므로 **승인 후에만 수정**한다.
+  - `CLAUDE.md`의 규칙(§5 게임 규칙, §6 WebGL, §10 자주 하는 실수 등)과 `Docs/TDD.md`의 구현 지도(화면 · 데이터 · 저장 · WebGL 설정)가 낡았으면 정정안을 제시한다. 이 Phase에서 정한 것이 `Docs/DECISIONS.md`에 있는지도 본다.
+  - 정정 사실은 Docs/Task.md의 `[Doc]` 항목으로 남긴다.
 
 ## 3. 마무리
 
