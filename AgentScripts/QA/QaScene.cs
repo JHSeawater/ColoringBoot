@@ -56,7 +56,7 @@ public static class QaScene
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
             "_palettes", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
             "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner",
-            "_hintButton", "_guideBanner", "_guideLabel");
+            "_hintButton", "_guideBanner", "_guideLabel", "_sound");
         // 보드를 덮는 패널(옵션 · 기록) — 열려 있으면 키보드 입력을 받지 않는다(2026-10-05)
         SerializedProperty overlays = new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_overlays");
         Expect(overlays.arraySize == 2 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
@@ -75,6 +75,9 @@ public static class QaScene
         CheckRefs(Object.FindAnyObjectByType<OptionsView>(FindObjectsInactive.Include), Expect, "_symbolsButton", "_symbolsLabel", "_soundButton", "_soundLabel", "_closeButton", "_tutorialButton");
         CheckRefs(Object.FindAnyObjectByType<StatsView>(FindObjectsInactive.Include), Expect, "_text", "_closeButton");
         Expect(Object.FindAnyObjectByType<SoundController>() != null, "SoundController 있음");
+        CheckRefs(Object.FindAnyObjectByType<SoundController>(), Expect, "_source", "_buttonClip", "_popClip", "_wrongClip", "_clearPopClip");
+        SerializedProperty strokeClips = new SerializedObject(Object.FindAnyObjectByType<SoundController>()).FindProperty("_strokeClips");
+        Expect(strokeClips.arraySize == 8 && Enumerable.Range(0, 8).All(i => strokeClips.GetArrayElementAtIndex(i).objectReferenceValue != null), "SoundController 획 소리 8개");
         // 챕터 에셋(2026-10-07 · 여러 챕터 2026-10-11): 챕터 목록 1개 이상 + 임시 챕터(?chapters). 챕터마다 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 · 그림이 연결됨
         var flowSo = new SerializedObject(flow);
         Chapter[] mainChapters = Enumerable.Range(0, flowSo.FindProperty("_chapters").arraySize)

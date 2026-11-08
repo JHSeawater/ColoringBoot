@@ -58,6 +58,12 @@ namespace ColoringBoot.Game
         // 붓질 요청 (칸 인덱스, 방향)
         public event Action<int, HexDirection> BrushRequested;
 
+        // 붓질 물결에서 칸 하나가 새 색으로 칠해지는 순간 (소리)
+        public event Action CellPainted;
+
+        // 클리어 연출에서 칸 하나가 커지기 시작하는 순간 (소리)
+        public event Action ClearCellPopped;
+
         private static readonly Vector2[] _directionVectors = CreateDirectionVectors();
         // 접근성 기호 — 색 값(비트)을 따르므로 팔레트와 상관없다 (GDD §6)
         private static readonly string[] _symbols = { "", "R", "Y", "RY", "B", "RB", "YB", "RYB" };

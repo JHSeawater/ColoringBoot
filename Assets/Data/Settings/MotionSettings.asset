@@ -15,7 +15,7 @@ MonoBehaviour:
   _strokeStep: 0.04
   _popSeconds: 0.15
   _popScale: 1.12
-  _clearStep: 0.03
+  _clearStep: 0.06
   _clearPopSeconds: 0.2
   _clearPopScale: 1.15
   _shakeSeconds: 0.35

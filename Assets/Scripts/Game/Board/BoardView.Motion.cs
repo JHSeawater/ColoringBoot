@@ -43,6 +43,7 @@ namespace ColoringBoot.Game
         {
             float step = _motion.StrokeStep, pop = _motion.PopSeconds;
             float total = (_waveCount - 1) * step + pop;
+            int next = 0;   // 아직 칠해지지 않은 첫 칸
             for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
             {
                 for (int k = 0; k < _waveCount; k++)
@@ -54,6 +55,10 @@ namespace ColoringBoot.Game
                     bool changed = now != _waveBefore[k];
                     _cells[cell].transform.localScale = Vector3.one * (changed ? Pop(local, pop, _motion.PopScale) : 1f);
                 }
+                for (; next < _waveCount && time >= next * step; next++)
+                {
+                    if (_session.ColorAt(_waveCells[next]) != _waveBefore[next]) CellPainted?.Invoke();
+                }
                 yield return null;
             }
             FinishMotion();
@@ -63,10 +68,12 @@ namespace ColoringBoot.Game
         {
             float step = _motion.ClearStep, pop = _motion.ClearPopSeconds;
             float total = (_cells.Length - 1) * step + pop;
+            int next = 0;   // 아직 커지지 않은 첫 칸
             for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
             {
                 for (int i = 0; i < _cells.Length; i++)
                     _cells[i].transform.localScale = Vector3.one * Pop(time - i * step, pop, _motion.ClearPopScale);
+                for (; next < _cells.Length && time >= next * step; next++) ClearCellPopped?.Invoke();
                 yield return null;
             }
             FinishMotion();

@@ -2,6 +2,7 @@ using ColoringBoot.Game;
 using ColoringBoot.LevelEditor;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -28,6 +29,8 @@ public static class BoardSceneBuilder
     private const string LabCatalogPath = "Assets/Data/Lab/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
     private const string TutorialCatalogPath = "Assets/Data/Tutorial/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
     private const string PaletteCatalogPath = "Assets/Data/Palettes/PaletteCatalog.asset";
+    private const string SoundFolder = "Assets/Sound/Effect";
+    private const int StrokeClipCount = 8;   // move-1 ~ move-8
     private const string EndlessFolder = "Assets/Data/Endless";   // 무한 모드 퍼즐 묶음 — AgentScripts/Build/EndlessPoolBuilder.cs 먼저 (2026-10-07)
     private static readonly string[] EndlessTiers = { "Easy", "Normal", "Hard" };
     private const string EditorScenePath = "Assets/Scenes/LevelEditor.unity";
@@ -290,8 +293,19 @@ public static class BoardSceneBuilder
         // 플레이테스트 기록 (주소 ?stats) — 맨 위를 덮는 패널, 처음엔 숨김
         StatsView statsView = StatsPanel(safeArea);
 
-        // 사운드 켜고 끄기(옵션 화면) · 백그라운드 정지
-        var sound = new GameObject("Sound", typeof(SoundController));
+        // 사운드 효과음 · 켜고 끄기(옵션 화면) · 백그라운드 정지
+        var sound = new GameObject("Sound", typeof(SoundController), typeof(AudioSource));
+        var soundController = sound.GetComponent<SoundController>();
+        var audioSource = sound.GetComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        SetRefs(soundController, ("_source", audioSource),
+            ("_buttonClip", Asset<AudioClip>($"{SoundFolder}/ui_button.wav")),
+            ("_popClip", Asset<AudioClip>($"{SoundFolder}/pop.ogg")),
+            ("_wrongClip", Asset<AudioClip>($"{SoundFolder}/wrong.mp3")),
+            ("_clearPopClip", Asset<AudioClip>($"{SoundFolder}/pop5.wav")));
+        var strokeClips = new Object[StrokeClipCount];
+        for (int i = 0; i < strokeClips.Length; i++) strokeClips[i] = Asset<AudioClip>($"{SoundFolder}/move-{i + 1}.mp3");
+        SetArray(soundController, "_strokeClips", strokeClips);
 
         var puzzle = new GameObject("Puzzle", typeof(PuzzleController));
         var controller = puzzle.GetComponent<PuzzleController>();
@@ -310,7 +324,8 @@ public static class BoardSceneBuilder
             ("_stuckBanner", stuckBanner),
             ("_hintButton", hintButton),
             ("_guideBanner", guideBanner),
-            ("_guideLabel", guideLabel));
+            ("_guideLabel", guideLabel),
+            ("_sound", soundController));
         // 보드를 덮는 패널 — 열려 있으면 키보드가 뒤의 보드를 움직이지 않는다(2026-10-05)
         SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject);
 
@@ -319,7 +334,7 @@ public static class BoardSceneBuilder
         SetArray(game.GetComponent<GameFlow>(), "_testChapters", Asset<Chapter>(TestChapterPath));
         SetRefs(game.GetComponent<GameFlow>(),
             ("_puzzle", controller),
-            ("_sound", sound.GetComponent<SoundController>()),
+            ("_sound", soundController),
             ("_boardScreen", boardScreen),
             ("_select", selectView),
             ("_options", optionsView),
@@ -345,6 +360,9 @@ public static class BoardSceneBuilder
             ("_skipButton", skipButton));
         SetArray(game.GetComponent<GameFlow>(), "_endlessPools", System.Array.ConvertAll(EndlessTiers, tier =>
             (Object)(AssetDatabase.LoadAssetAtPath<TextAsset>($"{EndlessFolder}/{tier}.txt") ?? throw new System.InvalidOperationException($"{tier}.txt 없음 — EndlessPoolBuilder 먼저"))));
+        // 버튼 소리 — 씬의 모든 버튼(복제되는 스테이지 버튼 원본 포함). 방향 버튼은 프리팹이라 빠진다(획 소리만 난다)
+        foreach (Button button in safeArea.GetComponentsInChildren<Button>(true))
+            UnityEventTools.AddPersistentListener(button.onClick, soundController.PlayButton);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         return $"씬 → {ScenePath} (루트 {scene.rootCount}개: {string.Join(", ", System.Array.ConvertAll(scene.GetRootGameObjects(), g => g.name))}), EventSystem {eventSystem.name}";

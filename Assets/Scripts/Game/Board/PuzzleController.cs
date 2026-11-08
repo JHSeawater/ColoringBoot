@@ -29,6 +29,7 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _hintButton;
         [SerializeField] private GameObject _guideBanner;  // 따라 하기 · 힌트 안내 한 줄 (2026-10-07)
         [SerializeField] private TMP_Text _guideLabel;
+        [SerializeField] private SoundController _sound;
 
         private const int HintLimit = 200000;     // 힌트 탐색 상한(상태 하나당) — 지금 스테이지 최악 4만여 개(2026-10-07 에디터 실측 327 ms)
         private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
@@ -147,6 +148,8 @@ namespace ColoringBoot.Game
         private void OnEnable()
         {
             _boardView.BrushRequested += OnBrushRequested;
+            _boardView.CellPainted += _sound.PlayCellPainted;
+            _boardView.ClearCellPopped += _sound.PlayClearPop;
             _undoButton.onClick.AddListener(Undo);
             _stuckUndoButton.onClick.AddListener(Undo);
             _restartButton.onClick.AddListener(Restart);
@@ -156,6 +159,8 @@ namespace ColoringBoot.Game
         private void OnDisable()
         {
             _boardView.BrushRequested -= OnBrushRequested;
+            _boardView.CellPainted -= _sound.PlayCellPainted;
+            _boardView.ClearCellPopped -= _sound.PlayClearPop;
             _undoButton.onClick.RemoveListener(Undo);
             _stuckUndoButton.onClick.RemoveListener(Undo);
             _restartButton.onClick.RemoveListener(Restart);
@@ -207,6 +212,7 @@ namespace ColoringBoot.Game
             for (int k = 0; k < count; k++) _pathBefore[k] = _session.ColorAt(_path[k]);
             bool wasDead = _session.IsDead;
             if (!_session.Brush(cell, dir)) return;
+            if (!_session.IsDead) _sound.PlayStroke(_session.MoveCount, _minMoves);   // 막히는 획은 물결 뒤 AfterStroke에서 wrong
             _data.Stats.Stroked(_stageId);
             if (_session.IsSolved)
             {
@@ -235,6 +241,7 @@ namespace ColoringBoot.Game
             }
             else
             {
+                _sound.PlayWrong();
                 _boardView.PlayShake();
                 _stuckBanner.SetActive(true);
             }
