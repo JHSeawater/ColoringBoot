@@ -3,6 +3,9 @@ using System.Linq;
 using ColoringBoot.Core;
 using TMPro;
 using UnityEngine;
+#if UNITY_ANDROID
+using UnityEngine.InputSystem;
+#endif
 using UnityEngine.UI;
 
 namespace ColoringBoot.Game
@@ -22,6 +25,9 @@ namespace ColoringBoot.Game
         private const string NextChapterText = "다음 챕터";
         private const string ListText = "목록";
         private const string CompleteText = "그림 완성!";
+#if UNITY_ANDROID
+        private const int AndroidFrameRate = 60;     // 모바일 기본 30fps면 끌기가 끊겨 보인다. 120은 배터리 · 발열 부담 대비 얻는 것이 적다(2026-11-10)
+#endif
         // 무한 모드 난이도(2026-10-07): 기록의 키(EndlessProgress · 퍼즐 id "Endless{키}{번호}") · 화면 이름 — _endlessPools와 같은 순서
         private static readonly string[] EndlessKeys = { "Easy", "Normal", "Hard" };
         private static readonly string[] EndlessNames = { "쉬움", "보통", "어려움" };
@@ -81,6 +87,9 @@ namespace ColoringBoot.Game
 
         private void Awake()
         {
+#if UNITY_ANDROID
+            Application.targetFrameRate = AndroidFrameRate;
+#endif
             _data = new SaveData(new PlayerPrefsStore());
             _ads = new NoAdService();
             _puzzle.SetAds(_ads);
@@ -354,6 +363,45 @@ namespace ColoringBoot.Game
         }
 
         private void ShowOptions() => _options.Show(_data);
+
+#if UNITY_ANDROID
+        // 화면 상태와 상관없이 매 프레임 읽는다 — wasPressedThisFrame은 처음 호출할 때만 아주 빠른 입력을 놓칠 수 있다(Input System)
+        private void Update()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) HandleBack();
+        }
+#endif
+
+        // 시스템 뒤로가기 (Android, 2026-11-10) — 위에 덮인 것부터 빠져나간다. 타이틀이면 앱을 끝낸다(붓질마다 저장해 잃는 것이 없다)
+        private void HandleBack()
+        {
+            if (_options.gameObject.activeSelf)
+            {
+                _options.Hide();
+            }
+            else if (_boardScreen.activeSelf)
+            {
+                LeaveBoard();
+            }
+            else if (_chapterScreen.activeSelf)
+            {
+                _toNextChapter = false;
+                ShowSelect();
+            }
+            else if (_endless.gameObject.activeSelf)
+            {
+                LeaveEndless();
+            }
+            else if (_select.gameObject.activeSelf)
+            {
+                ShowTitle();
+            }
+            else
+            {
+                Application.Quit();
+            }
+        }
 
         // 타이틀 — 무한 모드 버튼은 따라 하기를 본 뒤에 보인다
         private void ShowTitle()

@@ -9,6 +9,18 @@
 
 ---
 
+### 📅 [2026-11-10] 9.2 Android 시험 빌드 — Galaxy S25 Edge 실기 · 뒤로가기 · 60fps · WebGL 회귀
+
+* **계획**: `Docs/plans/2026-11-10-android-build.md`(Full Plan, 검수 2라운드, 사용자 승인). 결정은 `DECISIONS.md` 2026-11-10.
+* **작업**: `AgentScripts/Setup/Phase9AndroidSettings.cs`(패키지 · 회사 이름 · 세로 고정) · `ChapterArtBuilder`가 Android에도 같은 ASTC · 그림 `.meta` 24개(Android 칸만) · `GameFlow`(`HandleBack` · Android `Update` · `targetFrameRate` 60) · `OptionsView.Hide` 공개. 임시 `AndroidProbe.cs`로 안전영역 · FPS를 재고 커밋 전에 지움.
+* **코드 · 테스트로 확인**: EditMode 207/207(활성 타깃 Android · WebGL 모두, 수정마다) · `QaScene` 297항목 · 그림 `.meta`의 WebGL 칸 변화 없음 · APK 매니페스트(타깃 API 36 · 세로 · `enableOnBackInvokedCallback=true` · 일반 빌드는 `debuggable` 없음) · `ProjectSettings` 차이는 계획한 세 값뿐 · 에디터 플레이에서 `HandleBack` 10개 경로가 의도한 화면으로 감.
+* **실기(Galaxy S25 Edge · Android 17 · 사용자 + adb)**: 터치 없는 `KEYCODE_BACK` 10회로 선택이 10/10 풀림(같은 PID — `Keyboard.escapeKey`까지 옴. 처음 사용자 측정은 터치로 풀린 것과 구분되지 않아 다시 잼) · 뒤로가기 표 전체 제스처 · 3버튼 사용자 확인 · 끌기 포함 59.2~60.0fps(프로세스 시작 직후 첫 5초 한 번만 30.0, 수정 전 30.0) · 기본 조작 · 그림 화질 · 세로 고정 · 카메라 구멍 · 가장자리 끌기 · 소리 켜고 끄기 사용자 확인 · `safeArea` 1440×2996(화면 1440×3120) · 강제 종료 · 덮어 설치 뒤 진행 유지 · 홈 복귀: 소리는 이어서 남, 놓기 전 획은 취소, 놓은 뒤 연출 중이면 마저 그어짐(판 상태는 놓을 때 이미 바뀜 — 설계대로).
+* **해결된 이슈**: 걸린 시간에 나가 있던 시간이 더해짐 — 복귀 첫 프레임의 `Time.unscaledDeltaTime`에 통째로 들어옴(약 5초 머물러 +68.7초). `PuzzleController`가 1초를 넘는 프레임을 세지 않게 → 재측정 +4.9초. 그때 폰의 시험 기록 `Vine`에 약 63초가 남음(그대로 둠).
+* **빌드 · 배포**: Android 일반 빌드 32,751,785바이트(첫 실행 0.82초) · WebGL 9,875,730바이트(−263, 에러 0) · gh-pages `0d03e54`(파일 4개 HTTP 200 · 로컬과 크기 같음). 배포 직후 Pages 게시 지연으로 옛 빌드가 잠깐 나와, 그때 본 화면은 근거에서 뺌. PC Chrome(사용자): 레터박스 · Esc는 선택 해제만 · 기존 진행 유지 · 콘솔 오류 없음. 휴대폰 브라우저(사용자): 세로 화면 정상.
+* **확인 못 함**: 휴대폰 브라우저의 기존 진행 유지(사용자가 처음 상태로 보았으나 그전 상태를 기억하지 못함 — PC는 유지) · 완전 새 설치의 첫 실행 시간 · 앱인토스의 하단 3버튼과 UI 겹침(`Docs/Task.md` 9.4에 추가) · 빌드가 `UnityConnectSettings.m_Enabled`를 켜는 이유(되돌림 — `Docs/TDD.md` §8).
+
+---
+
 ### 📅 [2026-11-08] 효과음 첫 연결 — UI 버튼 · 획 소리 (시험 중)
 
 * **사용자 결정**: 배경음은 보류. `Assets/Sound/Effect/`의 Pixabay 로열티 프리 효과음으로 버튼과 획 소리를 넣어 보고 해 보면서 고친다. 최소 수가 m인 판의 k번째 획은 `move-(8-m+k)`(최소 2수 → 7 · 8, 최소 8수 → 1~8), 이어서 수정: 칸 하나가 칠해질 때마다 `pop`, 최소 수를 넘은 획은 `move` 없이 칸의 `pop`만. 막히는 획(`IsDead`)은 `move` 대신 `wrong.mp3` + 칸의 `pop` — 플레이에서 칸 소리와 `move` 소리를 잠시 비우고 확인: 3번 벌집 정상 획 재생 없음 · 막히는 획 재생됨, `QaScene` 296항목. 이어서 `wrong`을 `AfterStroke`(흔들림 · 막힘 띠와 같은 프레임)로 옮김 — 매 프레임 확인: 띠 전 재생 없음 · 띠 켜진 프레임 재생.

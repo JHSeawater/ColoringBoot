@@ -71,7 +71,7 @@ namespace ColoringBoot.Game
             Changed?.Invoke();
         }
 
-        private void Hide() => gameObject.SetActive(false);
+        public void Hide() => gameObject.SetActive(false);
 
         private void Refresh()
         {

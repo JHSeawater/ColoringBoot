@@ -36,6 +36,7 @@ namespace ColoringBoot.Game
         private const string HintNotFound = "힌트를 찾지 못했어요";
         private const float GoalPulseScale = 0.12f;   // 따라 하기 1 클리어: 목표 그림이 커졌다 작아지는 정도 · 한 번 걸리는 초
         private const float GoalPulseCycle = 1f;
+        private const float MaxCountedFrame = 1f;     // 이보다 긴 프레임은 앱이 뒤로 갔다 온 것 — 걸린 시간에 넣지 않는다(2026-11-10 Android 실측: 복귀 첫 프레임에 나가 있던 시간이 통째로 들어옴)
 
         private IAdService _ads;
         private int _lesson = -1;    // 따라 하기 레슨(-1 = 아님) — TutorialLessons
@@ -172,7 +173,8 @@ namespace ColoringBoot.Game
         {
             if (_session == null) return;
             // 걸린 시간은 앱이 앞에 있고 아직 풀지 못했을 때만 센다
-            if (!_session.IsSolved && Application.isFocused) _data.Stats.AddTime(_stageId, Time.unscaledDeltaTime);
+            float frame = Time.unscaledDeltaTime;
+            if (!_session.IsSolved && Application.isFocused && frame < MaxCountedFrame) _data.Stats.AddTime(_stageId, frame);
             // 패널이 보드를 덮고 있으면 키보드로 뒤의 보드를 움직이지 않는다 (2026-10-05 코드 점검 8)
             if (IsCovered()) return;
 

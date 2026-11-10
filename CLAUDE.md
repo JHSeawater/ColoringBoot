@@ -2,7 +2,7 @@
 
 **Engine**: Unity 6.6 (6000.6.2f1) · URP 17.6 | **Target**: Android(원스토어 먼저 → 플레이스토어) + WebGL(앱인토스 — 모바일 웹 세로 우선 + PC 브라우저). 출시 순서는 GDD §11
 **Input**: New Input System | **VCS**: Git `main` → GitHub `JHSeawater/ColoringBoot`(공개 저장소)
-**테스트**: MCP `run_tests`(mode=editor) · CLI `unity command run_tests --mode editor --json` | **빌드**: `unity command build --target WebGL --outputPath Builds/WebGL --confirm true`(전후 절차 §4) | **배포**: `bash AgentScripts/Tools/deploy-pages.sh "메시지"`
+**테스트**: MCP `run_tests`(mode=editor) · CLI `unity command run_tests --mode editor --json` | **빌드**: `unity command build --target WebGL --outputPath Builds/WebGL --confirm true`(전후 절차 §4) · Android는 `Docs/TDD.md` §8 | **배포**: `bash AgentScripts/Tools/deploy-pages.sh "메시지"`
 **역할(Role)**: 너는 10년+ 경력의 시니어 Unity 개발자로서, Unity WebGL 최적화와 퍼즐 로직(육각 좌표계·탐색 솔버)에 정통한 관점으로 이 프로젝트를 다룬다.
 
 ## 0. 문서 지도 — 세부가 필요하면 추측하지 말고 해당 문서를 읽는다

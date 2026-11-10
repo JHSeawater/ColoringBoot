@@ -3,6 +3,13 @@
 > 2026-11-07부터 기록한다. 그 전 결정은 `GDD.md` §5 "정한 사항"과 `DevelopLog.md`(더 옛 기록은 `Docs/Archive/`)에 있다.
 > 사용자 의견과 AI 정리를 섞지 않는다 — AI 제안이 사용자 결정으로 둔갑하지 않게. 하지 않기로 한 일 · 폐기한 기획도 이유와 함께 여기에 적는다.
 
+## 2026-11-10 — Android 시험 빌드 방식과 뒤로가기 · 프레임
+- 상태: 채택
+- 사용자 의견: 패키지 이름 `com.jhseawater.coloringboot` · 회사 이름 `JHSeawater` · 시험 폰 Galaxy S25 Edge. 계획 검수의 추천대로 — 타이틀에서 뒤로가기는 바로 종료 · 스테이지 목록의 뒤로가기는 타이틀로 · 프레임 60 · `packages-lock.json`의 앱인토스 SDK 해시 변경은 WebGL 빌드 통과 뒤 별도 커밋 · 에디터의 11/11 저장 기록은 새 회사 이름 경로로 옮기지 않음 · 측정은 Development 빌드, 최종 크기와 첫 실행 시간은 일반 빌드.
+- AI 정리·가정: 빌드 전환은 활성 타깃을 오간다(플랫폼별 값이 PlayerSettings에서 이미 나뉘어 빌드 프로필이 필요 없고, 프로젝트 사본은 git 밖 음원 · 템플릿을 두 곳에서 관리해야 함). 세로 고정은 PlayerSettings 공용 값(앱 시작 전에 적용 · 코드 분기 없음). 플랫폼 분기는 `GameFlow`의 뒤로가기 호출과 프레임 두 곳뿐. 임시 측정 코드는 Unity 6.6이 `DEVELOPMENT_BUILD` 기호를 폐기 예정으로 경고해 계획의 `#if` 대신 `Debug.isDebugBuild`로 막았고 커밋 전에 지웠다. 걸린 시간은 복귀 첫 프레임에 나가 있던 시간이 통째로 들어와(실측 +68.7초 → 수정 뒤 +4.9초) 1초를 넘는 프레임을 세지 않게 했다(계획 단계 5의 "문제가 나온 곳만" — WebGL과 공용 코드).
+- 근거: `Docs/plans/2026-11-10-android-build.md`(검수 2라운드) · 실기 측정(DevelopLog 2026-11-10).
+- 영향: `ProjectSettings/ProjectSettings.asset`(패키지 · 회사 · 방향) · 챕터 그림 `.meta` · `GameFlow` · `OptionsView` · `PuzzleController` · `Docs/TDD.md` §8 · `Docs/Task.md` 9.1 · 9.2 · 9.3(서명 키를 옮김) · 9.4. 에디터 PlayerPrefs는 회사 이름 경로가 바뀌어 옛 기록이 보이지 않는다(옛 경로에 남음).
+
 ## 2026-11-10 — Full Plan 구현은 계획 검수와 다른 새 세션에서 시작한다
 - 상태: 채택
 - 사용자 의견: 계획 검수 뒤 구현도 새 세션에서 하는 게 나은지 물었고, AI 제안대로 스킬과 규칙을 고치라고 했다.
