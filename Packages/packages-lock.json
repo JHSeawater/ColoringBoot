@@ -169,13 +169,13 @@
       }
     },
     "im.toss.apps-in-toss-unity-sdk": {
-      "version": "https://github.com/toss/apps-in-toss-unity-sdk.git#b54421ecb020eb5559e1f2f42cf4541fab076171",
+      "version": "https://github.com/toss/apps-in-toss-unity-sdk.git#c2892282018b44e1666b364a7a97711a130761d6",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
-      "hash": "b54421ecb020eb5559e1f2f42cf4541fab076171"
+      "hash": "c2892282018b44e1666b364a7a97711a130761d6"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",

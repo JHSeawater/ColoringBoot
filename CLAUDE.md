@@ -93,7 +93,7 @@ MCP 안전 규칙:
 * 빌드 뒤: 압축 후 바이트를 `Docs/BuildHistory.md`에 한 줄 더하고, `git status`로 `ProjectSettings` 변화가 없는지 본다.
 * 테스트 배포(GitHub Pages, https://jhseawater.github.io/ColoringBoot/)는 `bash AgentScripts/Tools/deploy-pages.sh "메시지"`로만 한다(빌드 결과물 외 파일이 섞이면 스크립트가 중단한다). gh-pages는 커밋 하나만 두고 강제 push한다 — 자동 모드 안전 장치가 막으면 사용자에게 `! bash AgentScripts/Tools/deploy-pages.sh "메시지"` 실행을 부탁한다.
 * 배포본 브라우저 확인(콘솔 · 네트워크)은 Claude in Chrome으로 한다 — 헤드리스 Chrome은 이 PC에서 WebGL을 끝까지 못 돌린다. 배포 직후 "불러오지 못했어요"는 옛 `index.html` 캐시다 → 새로고침.
-* 앱인토스 SDK(v3.5.0, `AIT` 메뉴) 빌드(`AIT/Local Debug/Start Server` · `AIT/Advanced/Build & Package` · `AIT/Deploy …`)는 디스크의 `ProjectSettings/ProjectSettings.asset`에 SDK 값을 남긴다 → `git checkout -- ProjectSettings/ProjectSettings.asset`(커밋 금지). WebGL 그래픽 API는 `PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, true)`로 되돌린다. 개발 서버(vite, 5173 — LAN에도 열림)는 메뉴 Stop이 안 되면 프로세스를 끈다. 산출물 `webgl/` · `ait-build/`는 git이 무시한다.
+* 앱인토스 SDK(v3.9.0, `AIT` 메뉴) 빌드(`AIT/Local Debug/Start Server` · `AIT/Advanced/Build & Package` · `AIT/Deploy …`)는 디스크의 `ProjectSettings/ProjectSettings.asset`에 SDK 값을 남긴다 → `git checkout -- ProjectSettings/ProjectSettings.asset`(커밋 금지). WebGL 그래픽 API는 `PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, true)`로 되돌린다. 개발 서버(vite, 5173 — LAN에도 열림)는 메뉴 Stop이 안 되면 프로세스를 끈다. 산출물 `webgl/` · `ait-build/`는 git이 무시한다.
 * SDK 로딩 화면은 `Assets/AppsInToss/loading.html`(우리 디자인 — `AIT/Reset Loading Screen`을 누르면 덮어써진다). 익명 에러 수집은 끔(이 PC 에디터 설정 `AIT_ErrorTracker_Enabled`).
 
 ## 5. 아키텍처 · 게임 규칙 [CRITICAL]

@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c3cbd8251a0c434481614bbcd8082ff, type: 3}
   m_Name: AITConfig
   m_EditorClassIdentifier: AppsInTossSDKEditor::AppsInToss.AITEditorScriptObject
-  appName: 
-  displayName: 
+  appName: coloringboot
+  displayName: "\uCEEC\uB7EC\uB9C1\uBD93"
   version: 0.0.1
   description: 
   primaryColor: '#3182F6'
@@ -30,19 +30,17 @@ MonoBehaviour:
   vitePort: 5173
   outdir: dist
   devServerProfile:
-    enableDebugConsole: 1
     developmentBuild: 1
     enableLZ4Compression: 1
     compressionFormat: 0
     managedStrippingLevel: -1
     debugSymbolsExternal: 0
   productionProfile:
-    enableDebugConsole: 0
     developmentBuild: 0
     enableLZ4Compression: 1
     compressionFormat: -1
     managedStrippingLevel: -1
-    debugSymbolsExternal: 1
+    debugSymbolsExternal: 0
   memorySize: -1
   threadsSupport: -1
   dataCaching: -1
