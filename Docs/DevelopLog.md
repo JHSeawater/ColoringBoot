@@ -9,6 +9,24 @@
 
 ---
 
+### 📅 [2026-11-11] `df5c867` 코드 리뷰 반영 — 뒤로가기 처리 순서 · 따라 하기 · 분기 정리
+
+* **작업 내용**: `GameFlow` — 따라 하기 중 뒤로가기는 `TutorialSeen`을 저장하지 않음 · 뒤로가기를 `LateUpdate`에서 읽어 `PuzzleController.Update`의 Esc 뒤에 처리 · `using` · `const`의 `#if`를 없애 분기를 TDD대로 두 곳으로 · 낡은 주석 수정. `Docs/TDD.md` §8 갱신. 앱인토스 뒤로가기 조사(`DECISIONS.md` 2026-11-11).
+* **해결된 이슈**: 첫 실행 따라 하기에서 뒤로가기 한 번으로 튜토리얼이 영구히 건너뛰어지던 문제 · 옵션을 닫을 때 스크립트 실행 순서에 따라 보드 선택까지 풀리던 문제.
+* **확인**: EditMode 207/207 · 활성 타깃 WebGL 컴파일 경고 0 · Android 플레이어 스크립트 컴파일(`CompilePlayerScripts`) 통과. 에디터 플레이에서 `HandleBack` 호출 — 레슨 0 → 목록(`seen=False`) → 타이틀 → [시작]이 레슨 0을 다시 염 · 목록 버튼 경로는 `seen=True`로 저장(기존 동작 유지). 전날 미확인이던 SDK SHA 고정의 패키지 해석도 에디터에서 정상(해시 그대로).
+* **남은 것**: `LateUpdate` 처리 순서는 Android 실기에서 확인하지 않음(옵션 닫기 때 선택 유지) · 앱인토스 샌드박스 실기에서 뒤로가기 종료 확인창 확인.
+
+---
+
+### 📅 [2026-11-10] 코드 리뷰 지적 5건 반영 — SDK 커밋 고정 · `_setup/` git 제외 · 지침서 템플릿 정정
+
+* **작업 내용**: `Packages/manifest.json` · `packages-lock.json`의 앱인토스 SDK 주소를 태그에서 전체 SHA `b54421e…`로 고정(결정은 `DECISIONS.md` 2026-11-10). `.gitignore`에 `/_setup/`. `_setup/setup_guide.md`(git 밖) — 훅 command 경로에 따옴표 · 훅이 `file_path`와 `path`를 함께 읽음 · 문서 경로를 `Docs/`로 통일.
+* **해결된 이슈**: 태그가 옮겨지면 SDK 코드가 조용히 바뀌던 문제 · `git add -A` 한 번에 내부 지침서가 공개 저장소에 올라갈 수 있던 문제 · 공백 경로에서 씬 편집 차단이 꺼지던 템플릿 문제.
+* **확인**: 템플릿을 지침서에서 추출해 공백 경로에서 실행 — `.unity` · `.prefab` 종료 코드 2(`file_path` · `path` 모두), `.cs` 0, 옛 따옴표 없는 템플릿은 1로 재현. `git check-ignore` 통과. SHA로 fetch 성공 · `package.json` 버전 3.5.0.
+* **남은 것**: 에디터가 닫혀 있어 Unity의 패키지 해석 · 컴파일은 확인하지 못함 — 다음에 에디터를 열 때 Package Manager 오류가 없는지 본다.
+
+---
+
 ### 📅 [2026-11-10] 9.2 Android 시험 빌드 — Galaxy S25 Edge 실기 · 뒤로가기 · 60fps · WebGL 회귀
 
 * **계획**: `Docs/plans/2026-11-10-android-build.md`(Full Plan, 검수 2라운드, 사용자 승인). 결정은 `DECISIONS.md` 2026-11-10.

@@ -7,7 +7,7 @@
     "com.unity.render-pipelines.universal": "17.6.0",
     "com.unity.test-framework": "1.8.0",
     "com.unity.ugui": "2.6.0",
-    "im.toss.apps-in-toss-unity-sdk": "https://github.com/toss/apps-in-toss-unity-sdk.git#release/v3.5.0",
+    "im.toss.apps-in-toss-unity-sdk": "https://github.com/toss/apps-in-toss-unity-sdk.git#b54421ecb020eb5559e1f2f42cf4541fab076171",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
     "com.unity.modules.ai": "1.0.0",

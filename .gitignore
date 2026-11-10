@@ -145,6 +145,9 @@ Assets/Resources/AITVersionInfo.json.meta
 # 앱인토스 SDK가 빌드 때 만드는 폴더 — 안에는 git이 무시하는 AITVersionInfo.json뿐(2026-10-11)
 Assets/Resources.meta
 
+# 새 환경을 만들 때 쓰는 지침 원본 — git 밖에 둔다(Docs/DECISIONS.md 2026-11-07)
+/_setup/
+
 # 효과음 원본 — 공개 저장소에 두지 않는다(라이선스, Docs/DECISIONS.md 2026-11-09). 이 PC에만 있으니 따로 백업
 Assets/Sound/
 Assets/Sound.meta
