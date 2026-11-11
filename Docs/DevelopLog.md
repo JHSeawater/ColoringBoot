@@ -9,6 +9,12 @@
 
 ---
 
+### 📅 [2026-11-11] 점검 스킬 `/health-check` · `/code-audit` · 금지 패턴 테스트
+* **작업 내용**: 흩어져 있던 점검(테스트 · `QaScene` · `BoardQa`)을 실행 점검 `/health-check [quick]`으로 묶고, 비용 · 빈도가 다른 전체 코드 리뷰는 `/code-audit <범위> [강도]`로 나눔(기본 `/code-review`를 경로 대상으로 돌린 뒤 프로젝트 관점 점검 — 사용자만 호출, 기본 강도 medium, `all`은 AgentScripts 제외). 규칙 위반 grep은 스킬 대신 EditMode 테스트 `SourceRuleTests`로 — `Core` · `Game`에서 스레드(`Thread` · `ThreadPool` · `Task.Run` · `Parallel.`) · `System.IO` · `PlayerPrefs`(`PlayerPrefsStore.cs` 예외) · `LoadScene`을 줄 주석을 뗀 코드에서 찾음. Core의 `UnityEngine` 참조는 asmdef가 막으므로 넣지 않음, 하드코딩 색은 오탐이 많아 `/code-audit`로. CLAUDE.md §9 스킬 표에 두 줄.
+* **검증**: `SourceRuleTests` 통과 → 네 규칙을 하나씩 어긴 임시 파일 `Game/RuleProbeTemp.cs`로 4건 모두 실패 확인(파일:줄 · 규칙 · 원문 표시) → 임시 파일 삭제 · Refresh → EditMode 208/208.
+* **확인 못 한 것**: 두 스킬을 실제로 돌려 보지 않음. `/code-audit`의 기본 `/code-review`가 경로 대상에서 파일 전체를 보는지는 첫 실행(`/code-audit core`, 새 세션)에서 확인 — 변경분만 보면 독립 방식으로 바꿀지 사용자가 정한다.
+* **해결된 이슈**: 프로젝트 전체를 한 번에 점검하는 절차가 없던 문제.
+
 ### 📅 [2026-11-11] 커밋 `6bcd328` 코드 리뷰 반영(9건) — AIT 설정 되돌림 · 토스 인셋 재시도 · 겹치는 영역 · ◀ ▶ 최소 칸
 * **작업 내용**: ① 작업 트리 `ProjectSettings.asset`에 AIT 빌드 값(메모리 1024 · 예외 3 · 캐싱 0 · 디버그 심볼 · `AITTemplate` · WebGL 그래픽 API 수동)이 남아 있어 `SetUseDefaultGraphicsAPIs(WebGL, true)` 뒤 `git checkout`(에디터 메모리 값은 그래픽 API 말고는 원래대로였음 — `SaveAssets`하면 IL2CPP 기본값 항목 2개 · `WebGLSupport m_Automatic 1`이 다시 써질 수 있으나 빌드 결과는 같음, 커밋하지 않는다). ② `SafeAreaFitter` — 토스 번호를 매 프레임이 아니라 0.5초마다 확인하고, 지난 읽기가 실패(-1)했으면 다음 확인 때 다시 읽는다(첫 프레임 인셋 미준비로 이 로드 내내 ⋯ ✕ 밑에 가려지던 문제). 토스 값은 `Screen.safeArea`와 축마다 더 안쪽을 쓴다(토스가 아래 0을 줘도 홈 표시줄을 피함). ③ jslib — 구독 실패 시 `CbSafeAreaVersion`을 부를 때마다 다시 구독, 성공하면 번호 증가 · `CbSafeAreaRead`는 여섯 값을 모두 검사한 뒤에만 `HEAPF32`에 씀. ④ `BoardSceneBuilder` — `PictureSlot.minHeight` 0 → `ChapterArrowSize`(140): 그림 칸이 ◀ ▶보다 낮아져 화살표가 격자 1 · 4열과 부제에 겹치던 문제(트레이드오프: 그만큼도 안 남으면 격자가 아래로 밀림 — 3줄이면 패널이 1920의 약 72% 미만, 4줄이면 약 85% 미만일 때). ⑤ 문서 — `qa-scene` 계층표를 `Body/PictureSlot` · `Body/Grid`로, `TDD.md` §5 안전영역 첫 문장과 재시도 · 겹치는 영역 · 최소 칸 설명을 코드와 맞춤.
 * **검증**: 에디터 컴파일 · WebGL 분기만 꺼낸 사본 컴파일(오류 0) · jslib `node --check` · Node 모의 브리지(토스 밖 0 · `left` undefined면 -1이고 `HEAPF32` 그대로 · 구독 1회 실패 → 다음 호출에 성공하고 번호 증가 · `onEvent` 번호 증가) · EditMode 207/207 · `BuildScene` 뒤 `QaScene.Check` 297항목 통과 · 에디터 플레이 1080×1920에서 패널 위쪽을 줄여 실측(1.0: 칸 600 / 0.88: 453 / 0.72: 145, 캡처로 ▶와 격자 · 부제 겹침 없음 확인 / 0.6: 140에서 멈추고 격자가 225 밀림 — 수정 전에도 이 높이에서는 격자가 본문보다 커서 밀림). 저장 키 지움.

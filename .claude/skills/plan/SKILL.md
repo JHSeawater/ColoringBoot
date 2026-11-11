@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Full Plan 작업(구조 · 저장 형식 · 핵심 규칙 · 플랫폼 SDK · 광고 연동)의 구현 계획을 Docs/plans/에 쓴다 — 코드는 고치지 않는다. Direct · Inline Plan의 짧은 계획에는 쓰지 않는다(그건 채팅에 3~5줄).
-argument-hint: [작업 요청]
+argument-hint: "[작업 요청]"
 ---
 
 # plan — Full Plan 계획 쓰기

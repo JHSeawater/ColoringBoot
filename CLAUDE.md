@@ -191,6 +191,8 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 | `unity-pipeline` (프로젝트) | MCP · CLI로 에디터를 다룰 때 |
 | `/qa-scene` (프로젝트) | 보드 씬 셋업 전수 실측(읽기 전용) — 씬 배선 뒤 · 빌드 전 · 인스펙터가 비었는지 의심될 때 |
 | `/phase-close` (프로젝트) | Phase를 닫을 때 — DoD 게이트 → Docs/Task.md · DevelopLog 갱신 → 커밋 제안 |
+| `/health-check [quick]` (프로젝트) | 실행 점검(읽기 전용) — 컴파일 · 테스트 전체 · `QaScene` · 에디터 플레이 흐름(`quick`이면 뺌). 작업 마칠 때 · 빌드 전 |
+| `/code-audit <범위> [강도]` (프로젝트) | 영역 단위 전체 코드 점검(읽기 전용, 사용자만 호출, 새 세션) — `/code-review` + 프로젝트 관점. 사용자가 주기적으로 직접 부른다 |
 | `/code-review` · `/simplify` | 새 세션 코드 리뷰 / 과한 코드 정리 |
 | `anthropic-skills:chrome-browser` | WebGL 배포본을 실제 브라우저로 확인할 때(§4) |
 
