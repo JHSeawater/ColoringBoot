@@ -22,7 +22,10 @@ Docs/Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡
 | `/Canvas` | Canvas · CanvasScaler · GraphicRaycaster | O |
 | `/Canvas/SafeArea` | SafeAreaFitter | O |
 | `…/TitleScreen`(Chip1~3 · Title · Subtitle · StartButton) | ScreenFade — 실행하면 처음 켜짐(주소 `?stage=`면 건너뜀, Phase 7.3) | **X** |
-| `…/SelectScreen`(Title · OptionsButton · Picture · Grid · Notice · StageButtonTemplate) | StageSelectView · Picture에 ChapterView(작은 챕터 그림) · Grid에 GridLayoutGroup(4열) · 템플릿에 StageButtonView | **X** |
+| `…/SelectScreen`(Title · OptionsButton · Subtitle · Body · Notice · EndlessButton · StageButtonTemplate) | StageSelectView · 템플릿에 StageButtonView | **X** |
+| `…/SelectScreen/Body`(PictureSlot · Grid — 2026-11-11) | VerticalLayoutGroup(위에서 아래, 높이만 제어) | O |
+| `…/SelectScreen/Body/PictureSlot`(Picture · PrevChapterButton · NextChapterButton) | LayoutElement(minHeight = 140 = ◀ ▶ 높이 · preferredHeight 600) · Picture에 ChapterView(작은 챕터 그림) · AspectRatioFitter(Fit In Parent, 0.8) | O(◀ ▶는 처음엔 꺼짐) |
+| `…/SelectScreen/Body/Grid` | GridLayoutGroup(4열) | O |
 | `…/BoardScreen` | (묶음) | **X** |
 | `…/BoardScreen/BackButton` · `…/OptionsButton` | Image · Button · Label | O(화면 안에서) |
 | `…/BoardScreen/StageName` · `…/MoveCounter` | Label(TextMeshProUGUI) | O |

@@ -519,7 +519,8 @@ public static class BoardSceneBuilder
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
         TMP_Text subtitle = TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted);
         // 본문(2026-11-11): 위 -210부터 잠김 안내 띠 위까지. 격자는 줄 수만큼, 작은 그림은 남는 높이만큼(최대 480 × 600) —
-        // 패널이 짧거나(앱인토스 ⋯ ✕) 줄이 늘면 그림만 작아지고 격자는 [무한 모드] · 안내 띠와 겹치지 않는다. 1920 높이 패널에서는 그림 -210 · 격자 -850
+        // 패널이 짧거나(앱인토스 ⋯ ✕) 줄이 늘면 그림만 작아지고 격자는 [무한 모드] · 안내 띠와 겹치지 않는다. 1920 높이 패널에서는 그림 -210 · 격자 -850.
+        // 그림 칸은 ◀ ▶ 높이(ChapterArrowSize) 밑으로 줄지 않는다 — 화살표가 격자 버튼 · 부제와 겹쳐 터치를 빼앗기지 않게(그만큼도 안 남으면 격자가 아래로 밀린다)
         var body = NewUI("Body", screen);
         Stretch(body, new Vector2(0f, 265f), new Vector2(0f, -210f));
         var bodyLayout = body.AddComponent<VerticalLayoutGroup>();
@@ -533,7 +534,7 @@ public static class BoardSceneBuilder
         var pictureSlot = NewUI("PictureSlot", body);
         ((RectTransform)pictureSlot.transform).sizeDelta = new Vector2(940f, 600f);
         var slotElement = pictureSlot.AddComponent<LayoutElement>();
-        slotElement.minHeight = 0f;
+        slotElement.minHeight = ChapterArrowSize;
         slotElement.preferredHeight = 600f;
         picture = Picture(pictureSlot, 0f, new Vector2(480f, 600f));
         var pictureFitter = picture.gameObject.AddComponent<AspectRatioFitter>();
@@ -598,13 +599,15 @@ public static class BoardSceneBuilder
     }
 
     // 챕터 넘기기 버튼 — 작은 그림 칸(PictureSlot) 세로 가운데 양옆, 외곽선 버튼 + 화살표(side -1 = 왼쪽, 화살표를 뒤집음)
+    private const float ChapterArrowSize = 140f;
+
     private static Button ChapterArrow(GameObject parent, string name, int side)
     {
         var go = NewUI(name, parent);
         var rect = (RectTransform)go.transform;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = new Vector2(side * 360f, 0f);
-        rect.sizeDelta = new Vector2(140f, 140f);
+        rect.sizeDelta = new Vector2(ChapterArrowSize, ChapterArrowSize);
         Button button = OutlinedButton(go, "", 44f);
         Image arrow = AddImage("Arrow", go, "Arrow", Strong, 0.22f, 0.78f);
         if (side < 0) arrow.rectTransform.localEulerAngles = new Vector3(0f, 0f, 180f);
