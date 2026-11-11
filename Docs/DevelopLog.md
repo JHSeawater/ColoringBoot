@@ -9,6 +9,12 @@
 
 ---
 
+### 📅 [2026-11-11] Codex 문서 진입점 연결
+* **작업 내용**: 루트 `AGENTS.md` 추가. `CLAUDE.md`를 공통 규칙 정본으로 유지하고, 경로별 `game-code.md`와 기존 프로젝트 스킬 8개를 필요할 때 직접 읽도록 연결. Task · 결정 · 개발 일지는 기존 문서를 공유한다.
+* **해결된 이슈**: Codex가 Claude용 지침 · 경로별 규칙 · 스킬 절차를 어디서 읽어야 하는지 명시되지 않았던 문제. Claude 훅의 씬 · 프리팹 직접 편집 금지와 AIT 설정 커밋 차단 조건도 Codex 지침에 명시했다.
+* **검증**: 참조 경로 존재 여부와 문서 diff · 공백 오류 확인. 문서만 변경하여 Unity 컴파일 · 테스트 · 빌드는 실행하지 않음.
+* **확인 못 한 것**: 새 Codex 세션의 자동 지침 로딩. Unity MCP · CLI 연결과 Claude 전용 훅의 Codex 자동 실행은 설정하거나 검증하지 않았으며, 문서 연결과 별개다.
+
 ### 📅 [2026-11-11] AIT 빌드 뒤 ProjectSettings — 자동 정리 · 배포 차단 · 커밋 차단
 * **배경**: 앱인토스 SDK 빌드가 디스크 `ProjectSettings.asset`에 토스 값을 남겨 같은 날 두 번 작업 트리에 남음(코드 리뷰 1번). 여러 세션이 함께 작업하므로 기억에 맡기지 않기로 함(결정은 `DECISIONS.md` 2026-11-11 "AIT 빌드 뒤 설정").
 * **작업 내용**: SDK 3.9.0 코드 확인 — 빌드 직전 스냅샷 → 빌드 뒤 메모리 값만 복원(디스크 저장 없음 · 그래픽 API는 복원 목록에 없음). ① `Assets/Editor/AitSettingsCleanup.cs`(`IPostprocessBuildWithReport` + `[InitializeOnLoad]`): 토스 템플릿 WebGL 빌드 뒤 템플릿이 돌아올 때까지 `EditorApplication.update`로 기다렸다가 그래픽 API 기본값 + `AssetDatabase.SaveAssets()`. `SaveAssetIfDirty(PlayerSettings)`는 디스크에 쓰지 않는 것을 확인해 전체 저장. ② `deploy-pages.sh`: `index.html`에 "컬러링붓 전용 템플릿"이 없으면 중단. ③ `.claude/hooks/ait-settings-guard.js` + `settings.json`(PreToolUse Bash · PowerShell): `ProjectSettings.asset`에 `PROJECT:AITTemplate`가 있으면 `git commit` 차단. 문서: CLAUDE.md §4 · `AgentScripts/README.md`. 정리 저장 때 생기는 무해한 3줄(WebGL 그래픽 API 자동 · IL2CPP 기본값 2줄)을 `ProjectSettings.asset`에 반영.

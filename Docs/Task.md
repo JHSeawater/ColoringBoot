@@ -92,6 +92,19 @@
 - [ ] [Editor] 무한 모드 묶음을 수천 개로 · 난이도 기준 확정 — `?stats` 기록이 충분하다고 사용자가 판단하면 임시 기준(GDD §5 — 쉬움 3~4 · 보통 5~6 · 어려움 6~8수)을 고쳐 `EndlessPoolBuilder`로 다시 만들고 용량을 보고한다(출시 전)
 - [ ] [Doc] (사용자) 이동 횟수 제한 · 흰색(명암 조절) 도입 결정(GDD §7 · §9) — 플레이테스트 의견 · 기록이 충분하다고 사용자가 판단할 때. 도입하면 데이터 형식 · 파서 · 레벨 에디터 · 칸 그림 · 테스트를 한 번에 바꾸는 Full Plan. 미리 만들지 않는다
 
+### 코드 점검 — Core (`/code-audit core`, 2026-11-11)
+
+> 높음 없음. 중간 3 · 개선 4를 옮김. 솔버 · 파서를 고치는 항목은 회귀 테스트(`GrapeRegressionTests` · `PrototypeStageRegressionTests` · `ContentRegressionTests`)를 통과해야 끝난다.
+
+- [ ] [QA] 막다른 길 힌트 시간 실측 — 조용한 막다른 길에서 몇 획 더 그은 뒤 힌트를 누른다(PC · 휴대폰, `?lab&stage=LabSkyHill` 등 큰 맵). 2026-10-07 "한 프레임 유지" 결정은 시작 상태 힌트만 쟀다 → 결과로 아래 두 항목의 범위를 정한다
+- [ ] [Code] 힌트 탐색 상한을 호출 전체에서 하나로 — `PuzzleSession.FindHint`는 지금 상태 하나당 20만(`PuzzleController.HintLimit`) × (되돌리기 기록 수 + 1)까지 돈다. 상한에 걸리면 지금처럼 `Hint.Unknown`
+- [ ] [Code] 솔버 할당 줄이기 — `Solver.Solve`가 색이 안 바뀌는 수도 상태 배열을 복사하고, `seen`과 `previous`에 같은 키를 이중으로 보관한다(런타임 힌트 경로)
+- [ ] [Code] 생성기 — 그린 칸들이 줄을 하나도 공유하지 않으면 `Board.Moves`가 비어 `Generator.Generate`가 `ArgumentOutOfRangeException`(예: (0,0) · (1,1)). 수가 없으면 `null`. 에디터 전용
+- [ ] [Code] 콘텐츠 테스트에 "파일 이름이 진행 기록 키 규칙(`Progress.IsValidStage` — 공백 · 제어 문자 없음)을 통과한다" 추가 — 지금은 겹침만 본다. 공백이 든 이름이면 클리어 때 `RecordClear`가 예외를 던져 기록이 남지 않는다
+- [ ] [Code] `StageWriter` 숫자를 Invariant로 — `Append(int)`는 현재 문화권이라 음수 부호가 `−`(U+2212)인 문화권에서 쓴 코드를 `StageParser`가 못 읽는다
+- [ ] [Code] `StageParser` 중복 키를 `FormatException`으로 — 지금은 마지막 값이 이긴다(`cells` 두 번이면 앞의 보드가 조용히 사라짐)
+- [ ] [Code] `SeedSearch.SolveLimit`(120000)을 `Generator`와 같은 상수 하나로
+
 ### 완료
 
 > 끝난 묶음 3개(항목 · 근거는 `Docs/Archive/Task-2026-11-11.md`): **구조 정리** 10항목(폰트 빌더 하위 폴더 · 챕터 데이터 폴더 · 콘텐츠 회귀 테스트 · Game 하위 폴더 · `BoardView` 나누기 · `InputSystem_Actions` 정리 · 붓질 계산 하나로 · 진행 규칙 Core로 · 여러 챕터 흐름 · 코드 점검 수정 확인) · **소재 맵 시험** 7항목(자유 맵 방향 확정, 2026-10-06) · **기믹 시제품** 8항목(벽 · 물 · 코팅 — 시험 뒤 빼기로 결정, 2026-10-12).
