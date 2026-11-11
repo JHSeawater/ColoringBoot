@@ -5,7 +5,7 @@ description: 보드 씬(Assets/Scenes/Board.unity) 셋업 전수 실측 — 읽�
 
 # /qa-scene — 보드 씬 셋업 실측 (읽기 전용)
 
-Docs/Task.md DoD 3조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 정본인 빌더 `AgentScripts/Build/BoardSceneBuilder.cs`를 고쳐 다시 실행한다(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `AgentScripts/Build/FontBuilder.cs` 먼저). MCP로 씬을 직접 고친 값은 다음 `BuildScene` 때 사라진다 — 급할 때만 쓰고 빌더에도 같은 수정을 넣는다(CLAUDE.md §3).
+Docs/Task.md DoD 4조 "코드는 맞는데 인스펙터가 비어 있음"을 잡는 절차. **아무것도 고치지 않는다** — 문제는 표로 보고하고, 수정은 사용자 승인 뒤 정본인 빌더 `AgentScripts/Build/BoardSceneBuilder.cs`를 고쳐 다시 실행한다(다시 실행해도 같은 결과, 폰트가 바뀌었으면 `AgentScripts/Build/FontBuilder.cs` 먼저). MCP로 씬을 직접 고친 값은 다음 `BuildScene` 때 사라진다 — 급할 때만 쓰고 빌더에도 같은 수정을 넣는다(CLAUDE.md §3).
 
 ## 0. 전제
 - `editor_status`: `ready`, `playMode: stopped`, `projectPath`가 이 프로젝트. Play Mode면 멈추라고 알리고 중단(플레이 중 값은 저장 안 됨).

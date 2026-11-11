@@ -9,10 +9,16 @@
 
 ---
 
+### 📅 [2026-11-11] Task.md 정리 — 260줄 → 173줄 · 긴 항목 줄임 · 출시 준비 앞당김 규칙
+* **작업 내용**: 정리 직전 원문을 `Docs/Archive/Task-2026-11-11.md`로 통째로 보관(diff로 같음 확인) → `Task.md`를 다시 씀. "지금 상태" 4줄(이력은 이 문서로) · Phase 7을 완료 표 한 줄로 · Phase 8 끝난 묶음 3개를 한 줄 요약으로 · 남은 완료 항목은 제목만 · 미완 항목은 무엇 · 끝나는 조건 · 근거 위치만(가장 긴 줄 1,223자 → 617자). Phase 8 미완 항목을 사운드 / 챕터 2~5 / 무한 모드 · 규칙 후보로 묶음. 규칙: DoD 3조(항목은 짧게) 신설 · 1조에 "태그 둘이면 나눈다" · 트랙 규칙과 Phase 9 선행을 실제 진행에 맞춤 · 9.2 · 9.3 · 9.5에 `🚀[출시]`. 결정은 `DECISIONS.md` 2026-11-11.
+* **검증**: 미완 항목 32개 — 태그별 수(Asset 3 · Code 3 · Doc 9 · Editor 5 · QA 12)가 원문과 같음. 다른 문서의 DoD 번호 참조는 `qa-scene` 스킬 하나(3조 → 4조로 고침).
+* **해결된 이슈**: 완료 74개 · 긴 항목에 묻혀 남은 일이 안 보이던 문제.
+
 ### 📅 [2026-11-11] 점검 스킬 `/health-check` · `/code-audit` · 금지 패턴 테스트
 * **작업 내용**: 흩어져 있던 점검(테스트 · `QaScene` · `BoardQa`)을 실행 점검 `/health-check [quick]`으로 묶고, 비용 · 빈도가 다른 전체 코드 리뷰는 `/code-audit <범위> [강도]`로 나눔(기본 `/code-review`를 경로 대상으로 돌린 뒤 프로젝트 관점 점검 — 사용자만 호출, 기본 강도 medium, `all`은 AgentScripts 제외). 규칙 위반 grep은 스킬 대신 EditMode 테스트 `SourceRuleTests`로 — `Core` · `Game`에서 스레드(`Thread` · `ThreadPool` · `Task.Run` · `Parallel.`) · `System.IO` · `PlayerPrefs`(`PlayerPrefsStore.cs` 예외) · `LoadScene`을 줄 주석을 뗀 코드에서 찾음. Core의 `UnityEngine` 참조는 asmdef가 막으므로 넣지 않음, 하드코딩 색은 오탐이 많아 `/code-audit`로. CLAUDE.md §9 스킬 표에 두 줄.
 * **검증**: `SourceRuleTests` 통과 → 네 규칙을 하나씩 어긴 임시 파일 `Game/RuleProbeTemp.cs`로 4건 모두 실패 확인(파일:줄 · 규칙 · 원문 표시) → 임시 파일 삭제 · Refresh → EditMode 208/208.
-* **확인 못 한 것**: 두 스킬을 실제로 돌려 보지 않음. `/code-audit`의 기본 `/code-review`가 경로 대상에서 파일 전체를 보는지는 첫 실행(`/code-audit core`, 새 세션)에서 확인 — 변경분만 보면 독립 방식으로 바꿀지 사용자가 정한다.
+* **확인함(같은 날, 새 세션)**: `/code-audit core`(medium · 16파일 1,564줄) — 기본 `/code-review`가 경로 안 파일 전체를 리뷰함(Core 변경분이 없는데 Generator · Solver · StageParser 등 여러 파일을 짚음). 높음 없음. 지금 방식(기본 `/code-review` + 프로젝트 관점) 유지.
+* **확인 못 한 것**: `/health-check`는 아직 돌려 보지 않음.
 * **해결된 이슈**: 프로젝트 전체를 한 번에 점검하는 절차가 없던 문제.
 
 ### 📅 [2026-11-11] 커밋 `6bcd328` 코드 리뷰 반영(9건) — AIT 설정 되돌림 · 토스 인셋 재시도 · 겹치는 영역 · ◀ ▶ 최소 칸
