@@ -12,6 +12,12 @@ SRC="$ROOT/Builds/WebGL"
 WT="$ROOT/Builds/gh-pages"
 
 [ -f "$SRC/index.html" ] || { echo "빌드가 없습니다: $SRC/index.html"; exit 1; }
+# 앱인토스 SDK 빌드 값(AITTemplate · 디버그 심볼 · 캐싱 끔 등)이 남은 설정으로 만든 빌드는 배포하지 않는다 (CLAUDE.md §4)
+grep -q "컬러링붓 전용 템플릿" "$SRC/index.html" || {
+    echo "우리 WebGL 템플릿(ColoringBoot)으로 만든 빌드가 아니라 중단합니다 — 앱인토스 SDK 값이 남은 ProjectSettings로 빌드했을 수 있습니다."
+    echo "git checkout -- ProjectSettings/ProjectSettings.asset → 에디터 재시작(또는 WebGL 설정 확인) → WebTemplate.Install → 다시 빌드"
+    exit 1
+}
 BYTES=$(cat "$SRC"/Build/* | wc -c | tr -d ' ')
 MSG="${1:-deploy: WebGL 빌드} (빌드 ${BYTES}바이트)"
 

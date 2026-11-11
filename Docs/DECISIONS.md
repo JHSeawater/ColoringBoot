@@ -3,6 +3,13 @@
 > 2026-11-07부터 기록한다. 그 전 결정은 `GDD.md` §5 "정한 사항"과 `DevelopLog.md`(더 옛 기록은 `Docs/Archive/`)에 있다.
 > 사용자 의견과 AI 정리를 섞지 않는다 — AI 제안이 사용자 결정으로 둔갑하지 않게. 하지 않기로 한 일 · 폐기한 기획도 이유와 함께 여기에 적는다.
 
+## 2026-11-11 — AIT 빌드 뒤 설정: 사람 · 세션이 기억하지 않아도 되게 세 겹으로
+- 상태: 채택
+- 사용자 의견: 여러 세션이 함께 작업하므로 "AIT 빌드 뒤 매번 되돌리기"를 기억에 맡기면 안 된다 — 제안(자동 정리 · 배포 차단 · 커밋 차단)대로.
+- AI 정리·가정: SDK 3.9.0(`AITConvertCore`)은 빌드 직전 PlayerSettings를 스냅샷하고 빌드 뒤 메모리 값만 되돌린다. 디스크 `ProjectSettings.asset`에는 토스 값이 남고 그래픽 API(WebGL 2 전용)는 되돌리지 않는다 → 위험은 그 파일을 커밋할 때 · 에디터를 다시 켜 디스크 값이 올라온 뒤 Pages에 빌드 · 배포할 때. ① `Assets/Editor/AitSettingsCleanup.cs` — 토스 템플릿 WebGL 빌드가 끝나면 SDK가 템플릿을 되돌릴 때까지 기다렸다가 그래픽 API 기본값 + `AssetDatabase.SaveAssets()`(PlayerSettings만 저장하는 `SaveAssetIfDirty`는 디스크에 쓰지 않아 전체 저장 — 저장 안 된 다른 에셋도 함께 저장됨). 도메인 리로드는 `SessionState`로 넘기고 30분 넘게 안 돌아오면 경고만. ② `deploy-pages.sh` — 빌드 `index.html`에 우리 템플릿 표식("컬러링붓 전용 템플릿")이 없으면 중단. ③ `.claude/hooks/ait-settings-guard.js`(PreToolUse Bash · PowerShell) — 스테이징된(또는 같은 명령에서 add · `commit -a`하는) `ProjectSettings.asset`에 `PROJECT:AITTemplate`가 있으면 `git commit` 차단. 정리 저장 때 생기는 무해한 항목(WebGL 그래픽 API "자동" · IL2CPP 기본값 2줄)은 한 번 커밋해 이후 차이를 0으로.
+- 근거: SDK 코드(`AITBuildSession` · `AITConvertCore`) · 2026-11-11 작업 트리에 AIT 값이 두 번 남음(코드 리뷰 1번).
+- 영향: ①은 SDK 동작(템플릿 이름 `AITTemplate` · 빌드 뒤 메모리 복원)에 기댄다 — SDK를 올리면 다시 확인. ②③은 SDK와 무관한 마지막 장치. ③은 Claude 세션만 막고 사람이 직접 하는 커밋은 못 막음(git 훅은 저장소마다 설정이 필요해 하지 않음). CLAUDE.md §4.
+
 ## 2026-11-11 — Task.md 정리 · 출시 준비 앞당김을 규칙으로
 - 상태: 채택
 - 사용자 의견: Task.md가 보기 힘들다 — 정리안대로 진행.

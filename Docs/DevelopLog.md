@@ -9,6 +9,13 @@
 
 ---
 
+### 📅 [2026-11-11] AIT 빌드 뒤 ProjectSettings — 자동 정리 · 배포 차단 · 커밋 차단
+* **배경**: 앱인토스 SDK 빌드가 디스크 `ProjectSettings.asset`에 토스 값을 남겨 같은 날 두 번 작업 트리에 남음(코드 리뷰 1번). 여러 세션이 함께 작업하므로 기억에 맡기지 않기로 함(결정은 `DECISIONS.md` 2026-11-11 "AIT 빌드 뒤 설정").
+* **작업 내용**: SDK 3.9.0 코드 확인 — 빌드 직전 스냅샷 → 빌드 뒤 메모리 값만 복원(디스크 저장 없음 · 그래픽 API는 복원 목록에 없음). ① `Assets/Editor/AitSettingsCleanup.cs`(`IPostprocessBuildWithReport` + `[InitializeOnLoad]`): 토스 템플릿 WebGL 빌드 뒤 템플릿이 돌아올 때까지 `EditorApplication.update`로 기다렸다가 그래픽 API 기본값 + `AssetDatabase.SaveAssets()`. `SaveAssetIfDirty(PlayerSettings)`는 디스크에 쓰지 않는 것을 확인해 전체 저장. ② `deploy-pages.sh`: `index.html`에 "컬러링붓 전용 템플릿"이 없으면 중단. ③ `.claude/hooks/ait-settings-guard.js` + `settings.json`(PreToolUse Bash · PowerShell): `ProjectSettings.asset`에 `PROJECT:AITTemplate`가 있으면 `git commit` 차단. 문서: CLAUDE.md §4 · `AgentScripts/README.md`. 정리 저장 때 생기는 무해한 3줄(WebGL 그래픽 API 자동 · IL2CPP 기본값 2줄)을 `ProjectSettings.asset`에 반영.
+* **검증**: ① 흉내(디스크에 AIT 값 · 대기 상태 → `RequestScriptReload` 뒤에도 대기 · 구독 1개 유지 → 메모리 복원 시 정리 로그 1회 · 디스크는 무해한 3줄만 · 대기 해제) → 실제 `AIT/Advanced/Build & Package`: `Editor.log`에서 SDK "스냅샷 복원 완료" 바로 뒤 `[AIT 정리]` 1회, 끝난 뒤 디스크 차이는 무해한 3줄뿐 · 메모리 템플릿 ColoringBoot · 메모리 32 · 캐싱 켬 · 디버그 심볼 끔 · 그래픽 API 자동. ② 가짜 폴더에서 AIT 템플릿 `index.html`은 중단(exit 1), 우리 결과물은 표식 검사 통과. ③ 임시 저장소에서 6가지(커밋 아님 · 작업 트리만 AIT이고 add 없음 · `add -A &&` · `commit -am` · 스테이징 AIT · 실제 저장소 정리된 상태) 모두 기대대로(0 · 0 · 2 · 2 · 2 · 0).
+* **확인 못 한 것**: 훅이 이 세션에서 바로 적용되는지(설정 변경은 다음 세션부터일 수 있음 — 스크립트는 직접 실행으로만 확인). `AIT/Local Debug/Start Server` · `AIT/Deploy …` 경로(같은 `AITConvertCore`를 쓰는 것으로 보이나 실행하지 않음). 사람이 직접 하는 커밋은 막지 않음.
+* **해결된 이슈**: AIT 빌드 뒤 정리를 사람 · 세션이 기억해야 하던 문제.
+
 ### 📅 [2026-11-11] Task.md 정리 — 260줄 → 173줄 · 긴 항목 줄임 · 출시 준비 앞당김 규칙
 * **작업 내용**: 정리 직전 원문을 `Docs/Archive/Task-2026-11-11.md`로 통째로 보관(diff로 같음 확인) → `Task.md`를 다시 씀. "지금 상태" 4줄(이력은 이 문서로) · Phase 7을 완료 표 한 줄로 · Phase 8 끝난 묶음 3개를 한 줄 요약으로 · 남은 완료 항목은 제목만 · 미완 항목은 무엇 · 끝나는 조건 · 근거 위치만(가장 긴 줄 1,223자 → 617자). Phase 8 미완 항목을 사운드 / 챕터 2~5 / 무한 모드 · 규칙 후보로 묶음. 규칙: DoD 3조(항목은 짧게) 신설 · 1조에 "태그 둘이면 나눈다" · 트랙 규칙과 Phase 9 선행을 실제 진행에 맞춤 · 9.2 · 9.3 · 9.5에 `🚀[출시]`. 결정은 `DECISIONS.md` 2026-11-11.
 * **검증**: 미완 항목 32개 — 태그별 수(Asset 3 · Code 3 · Doc 9 · Editor 5 · QA 12)가 원문과 같음. 다른 문서의 DoD 번호 참조는 `qa-scene` 스킬 하나(3조 → 4조로 고침).
