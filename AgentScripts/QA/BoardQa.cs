@@ -12,7 +12,7 @@ using UnityEngine.UI;
 // 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 시험 목록(?lab): Lab() → 선택 화면(모두 열림) → 같은 방식
-// 여러 챕터(?chapters, 2026-10-11): TestChapters() → Press("SelectScreen/NextChapterButton") · PrevChapterButton
+// 여러 챕터(?chapters, 2026-10-11): TestChapters() → Press("SelectScreen/Body/PictureSlot/NextChapterButton") · PrevChapterButton
 // 따라 하기: 저장 키가 없으면 타이틀 [시작]이 레슨 1을 연다 → Drag로 안내한 획 → Press("BoardScreen/ClearBanner/NextButton"). 힌트: Press("BoardScreen/HintButton")
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
@@ -156,12 +156,12 @@ public static class BoardQa
             Transform screen = safe.Find("ChapterScreen");
             text += $" | {screen.Find("Caption").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(screen.Find("Picture"))} [{screen.Find("NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
         }
-        if (select) text += $" | 작은 그림 칠한 단계 {Painted(safe.Find("SelectScreen/Picture"))}";
+        if (select) text += $" | 작은 그림 칠한 단계 {Painted(safe.Find("SelectScreen/Body/PictureSlot/Picture"))}";
         // 챕터 넘기기(2026-10-11): 보이는 화살표
-        if (select) text += $" | 넘기기 {(safe.Find("SelectScreen/PrevChapterButton").gameObject.activeSelf ? "◀" : "-")}{(safe.Find("SelectScreen/NextChapterButton").gameObject.activeSelf ? "▶" : "-")}";
+        if (select) text += $" | 넘기기 {(safe.Find("SelectScreen/Body/PictureSlot/PrevChapterButton").gameObject.activeSelf ? "◀" : "-")}{(safe.Find("SelectScreen/Body/PictureSlot/NextChapterButton").gameObject.activeSelf ? "▶" : "-")}";
         if (select)
         {
-            Transform grid = safe.Find("SelectScreen/Grid");
+            Transform grid = safe.Find("SelectScreen/Body/Grid");
             var buttons = Enumerable.Range(0, grid.childCount).Select(i =>
             {
                 Transform b = grid.GetChild(i);
@@ -212,7 +212,7 @@ public static class BoardQa
     // 선택 화면에서 number번 스테이지 버튼을 누른다
     public static string ChooseStage(int number)
     {
-        GameObject.Find("Canvas/SafeArea/SelectScreen/Grid").transform.GetChild(number - 1).GetComponent<Button>().onClick.Invoke();
+        GameObject.Find("Canvas/SafeArea/SelectScreen/Body/Grid").transform.GetChild(number - 1).GetComponent<Button>().onClick.Invoke();
         return Flow();
     }
 

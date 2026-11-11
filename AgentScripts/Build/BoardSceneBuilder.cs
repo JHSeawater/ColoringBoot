@@ -518,16 +518,34 @@ public static class BoardSceneBuilder
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
         TMP_Text subtitle = TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted);
-        picture = Picture(screen, -210f, new Vector2(480f, 600f));
-        // 챕터 넘기기 (2026-10-11): 작은 그림 양옆 — 넘길 챕터가 없으면 StageSelectView가 숨긴다
-        Button prevChapter = ChapterArrow(screen, "PrevChapterButton", -1);
-        Button nextChapter = ChapterArrow(screen, "NextChapterButton", 1);
+        // 본문(2026-11-11): 위 -210부터 잠김 안내 띠 위까지. 격자는 줄 수만큼, 작은 그림은 남는 높이만큼(최대 480 × 600) —
+        // 패널이 짧거나(앱인토스 ⋯ ✕) 줄이 늘면 그림만 작아지고 격자는 [무한 모드] · 안내 띠와 겹치지 않는다. 1920 높이 패널에서는 그림 -210 · 격자 -850
+        var body = NewUI("Body", screen);
+        Stretch(body, new Vector2(0f, 265f), new Vector2(0f, -210f));
+        var bodyLayout = body.AddComponent<VerticalLayoutGroup>();
+        bodyLayout.childAlignment = TextAnchor.UpperCenter;
+        bodyLayout.spacing = 40f;
+        bodyLayout.childControlWidth = false;
+        bodyLayout.childControlHeight = true;
+        bodyLayout.childForceExpandWidth = false;
+        bodyLayout.childForceExpandHeight = false;
 
-        var grid = NewUI("Grid", screen);
+        var pictureSlot = NewUI("PictureSlot", body);
+        ((RectTransform)pictureSlot.transform).sizeDelta = new Vector2(940f, 600f);
+        var slotElement = pictureSlot.AddComponent<LayoutElement>();
+        slotElement.minHeight = 0f;
+        slotElement.preferredHeight = 600f;
+        picture = Picture(pictureSlot, 0f, new Vector2(480f, 600f));
+        var pictureFitter = picture.gameObject.AddComponent<AspectRatioFitter>();
+        pictureFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        pictureFitter.aspectRatio = 480f / 600f;
+        // 챕터 넘기기 (2026-10-11): 작은 그림 양옆 — 넘길 챕터가 없으면 StageSelectView가 숨긴다
+        Button prevChapter = ChapterArrow(pictureSlot, "PrevChapterButton", -1);
+        Button nextChapter = ChapterArrow(pictureSlot, "NextChapterButton", 1);
+
+        var grid = NewUI("Grid", body);
         var gridRect = (RectTransform)grid.transform;
-        gridRect.anchorMin = gridRect.anchorMax = gridRect.pivot = new Vector2(0.5f, 1f);
-        gridRect.anchoredPosition = new Vector2(0f, -850f);
-        gridRect.sizeDelta = new Vector2(940f, 760f);
+        gridRect.sizeDelta = new Vector2(940f, 0f);
         var gridLayout = grid.AddComponent<GridLayoutGroup>();
         gridLayout.cellSize = new Vector2(200f, 230f); // 꼭짓점이 위인 육각형 비율(너비 = 높이 × √3/2)
         gridLayout.spacing = new Vector2(36f, 16f);
@@ -579,13 +597,13 @@ public static class BoardSceneBuilder
         return view;
     }
 
-    // 챕터 넘기기 버튼 — 작은 그림(가운데 480 × 600, 위 -210) 세로 가운데 양옆, 외곽선 버튼 + 화살표(side -1 = 왼쪽, 화살표를 뒤집음)
+    // 챕터 넘기기 버튼 — 작은 그림 칸(PictureSlot) 세로 가운데 양옆, 외곽선 버튼 + 화살표(side -1 = 왼쪽, 화살표를 뒤집음)
     private static Button ChapterArrow(GameObject parent, string name, int side)
     {
         var go = NewUI(name, parent);
         var rect = (RectTransform)go.transform;
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
-        rect.anchoredPosition = new Vector2(side * 360f, -440f);
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(side * 360f, 0f);
         rect.sizeDelta = new Vector2(140f, 140f);
         Button button = OutlinedButton(go, "", 44f);
         Image arrow = AddImage("Arrow", go, "Arrow", Strong, 0.22f, 0.78f);

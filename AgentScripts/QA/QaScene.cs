@@ -67,7 +67,7 @@ public static class QaScene
             "_selectPicture", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
             "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
-        foreach (string picture in new[] { "SelectScreen/Picture", "ChapterScreen/Picture" })
+        foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Picture", "ChapterScreen/Picture" })
             Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice",
             "_prevChapterButton", "_nextChapterButton");

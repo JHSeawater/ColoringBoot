@@ -3,6 +3,27 @@
 > 2026-11-07부터 기록한다. 그 전 결정은 `GDD.md` §5 "정한 사항"과 `DevelopLog.md`(더 옛 기록은 `Docs/Archive/`)에 있다.
 > 사용자 의견과 AI 정리를 섞지 않는다 — AI 제안이 사용자 결정으로 둔갑하지 않게. 하지 않기로 한 일 · 폐기한 기획도 이유와 함께 여기에 적는다.
 
+## 2026-11-11 — 목록 화면: 고정 숫자 대신 남는 높이에 맞춰 그림 크기 조절
+- 상태: 채택(에디터 실측, 토스 실기 재확인 전) — 같은 날 "목록 화면 겹침은 빌더 숫자만 고쳐 해결"(아래 항목)을 대신한다.
+- 사용자 의견: 코드 리뷰 남은 지적(4 · 5번 목록 화면 배치, 8번 jslib `.meta`)도 마저 고친다("이어서 마저 고쳐라").
+- AI 정리·가정: 고정 숫자는 한 기기(14% 짧아짐)에 맞춘 값이라 토스 위 여백이 약 15%를 넘거나 격자가 4줄이 되면 다시 겹치고, 겹침이 없던 Android · Pages에서도 그림이 작아졌다. 런타임 코드 없이 Unity 레이아웃 컴포넌트(`VerticalLayoutGroup` · `LayoutElement` · `AspectRatioFitter`)로 그림이 남는 높이를 갖게 했다. 본문 아래 끝을 [무한 모드]가 아니라 잠김 안내 띠 위(265)에 둬서 띠가 격자 번호를 가리지 않게 했다 — 대가로 짧은 패널의 그림은 이전 고정값(416×520)보다 작다(331×414). 공간이 정말 모자라면(4줄 + 짧은 패널) 그림이 아주 작아진다(135×168) — 겹침보다 낫다고 봄.
+- 근거: 코드 리뷰(2026-11-11) · 에디터 실측(`DevelopLog.md` 2026-11-11).
+- 영향: `BoardSceneBuilder`(`SelectScreen/Body/PictureSlot` · `Body/Grid` — 계층이 바뀜) · `AgentScripts/QA/BoardQa.cs` · `QaScene.cs` 경로 · `Docs/TDD.md` §5.
+
+## 2026-11-11 — 앱인토스 안전영역 보강: 인셋 변경 구독 · 토스 밖과 실패 구분 · 작은 캔버스 제외
+- 상태: 채택(로컬 PC Chrome 모의 브리지로 확인, 토스 실기 재확인 전)
+- 사용자 의견: 코드 리뷰 지적 8건 중 1 · 2 · 3번부터 고친다(6 · 7번은 같은 변경으로 해소, 4 · 5 · 8번은 이어서 — 위 항목).
+- AI 정리·가정: 계획의 "`SafeAreaInsets.subscribe`는 쓰지 않는다"를 뒤집는다 — WebGL은 `Screen.safeArea`가 늘 전체 화면이라 캔버스 크기가 그대로면 다시 읽을 계기가 없어, 브리지가 첫 프레임보다 늦게 생기거나 토스가 인셋만 바꾸면 UI가 `⋯ ✕` 아래로 돌아간다. jslib이 브리지를 처음 볼 때와 `onEvent`마다 번호를 올리고, `SafeAreaFitter`는 매 프레임 번호(정수)만 비교한다. 로그는 `window.AppsInToss` 유무로 나눈다 — 없으면 정보 로그(토스 밖), 있는데 못 읽으면 에러, 구독만 실패하면 경고. 여백을 뺀 패널이 캔버스의 절반보다 작으면(가로 · 분할 화면 · 떠 있는 창) 토스 값을 쓰지 않고 경고 — 그 화면에서는 상단 버튼이 다시 가려질 수 있다(배치가 무너지는 것보다 낫다고 봄, 기준 0.5는 AI 가정). SDK C# `SafeAreaInsetsSubscribe`는 `onEvent`를 JSON으로 넘겨 함수가 사라지므로 쓸 수 없다(SDK jslib 확인).
+- 근거: 코드 리뷰(2026-11-11) · SDK `AppsInToss-SafeArea.jslib` · web-framework 타입(`subscribe({ onEvent }) => () => void`) · 로컬 확인(`DevelopLog.md` 2026-11-11).
+- 영향: `SafeAreaFitter` · `ColoringBootSafeArea.jslib` · `Docs/TDD.md` §5. 토스 실기에서 로그 · 배치를 다시 본다.
+
+## 2026-11-11 — 앱인토스 안전영역: 자체 jslib · `✕` 여유값 · 목록 화면 숫자 조정
+- 상태: 채택(Android 샌드박스 실기 확인, iPhone 미확인)
+- 사용자 의견(계획 검수 1 · 2라운드 선택): 안전영역 호출은 SDK C# API 대신 자체 jslib. `✕` 높이 여유는 `CloseBarHeight 44` + `Gap 8` CSS px. 토스 밖(Pages)에서 경고가 로드마다 1회 남는 것을 허용. iPhone은 이번에 확인하지 못하고 출시 전 실기 항목으로 둔다. 목록 화면 겹침은 빌더 숫자만 고쳐 해결(동적 배치 코드 없음 — 모든 플랫폼의 작은 그림이 조금 작아짐). 인셋은 배율을 곱하지 않고 캔버스 CSS 크기로 나눈다. 모의 값에 좌우 인셋을 넣어 네 방향을 함께 확인.
+- AI 정리·가정: SDK C# API를 참조하면 SDK `link.xml`의 `preserve="all"`로 Newtonsoft 등이 빌드에 들어올 수 있고, SDK의 배율 조회는 초기화 순서에 따라 `window.devicePixelRatio`로 떨어져 템플릿이 낮춘 배율과 어긋날 수 있다 → 자체 jslib은 두 문제를 함께 피한다. `⋯ ✕` 위치는 iOS 5 · Android 10 중 큰 쪽(10)을 분기 없이 쓴다.
+- 근거: 계획 `Docs/plans/2026-11-11-toss-safe-area.md` · 샌드박스 실기(인셋 위 35.4 · 나머지 0, 캔버스 411×876 CSS px — 화면 높이와 같음, 버튼 위 끝 계산 108.8 · 캡처 약 109, `✕` 아래 끝과 버튼 사이 약 35 CSS px) · WebGL 크기 −7,352바이트(`BuildHistory.md`).
+- 영향: `SafeAreaFitter` · `Assets/Plugins/WebGL/ColoringBootSafeArea.jslib` · `BoardSceneBuilder`(목록 화면) · `Docs/TDD.md` §5 · §6. SDK를 올리면 브리지 이름(`window.AppsInToss.SafeAreaInsets`)을 실기로 다시 본다.
+
 ## 2026-11-11 — 앱인토스 SDK 3.9.0 유지 · SHA 재고정, 상단 겹침은 SDK 안전영역 값으로
 - 상태: 채택
 - 사용자 의견: 3.9.0을 유지하되 GitHub Releases의 정식 릴리스 태그인지 먼저 확인하고 정식이면 SHA로 고정. 토스 상단바 · `✕` 겹침은 방법 A(SDK 실제 값으로 UI 전체를 내림)로.

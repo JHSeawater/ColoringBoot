@@ -154,3 +154,6 @@ Assets/Resources.meta
 # 효과음 원본 — 공개 저장소에 두지 않는다(라이선스, Docs/DECISIONS.md 2026-11-09). 이 PC에만 있으니 따로 백업
 Assets/Sound/
 Assets/Sound.meta
+
+# 위 SDK 패턴 `webgl/`이 Windows(대소문자 무시)에서 우리 jslib 폴더까지 잡는다 — 다시 포함(2026-11-11). SDK 블록은 GitGuard가 되살리므로 고치지 않는다
+!Assets/Plugins/WebGL/
