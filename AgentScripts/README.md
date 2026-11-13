@@ -21,7 +21,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 만드는 것 | 언제 다시 실행 | entry |
 |---|---|---|---|
 | `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` (목록 순서는 `StageOrder` — 옛 `BuildCatalog`는 챕터 1 다시 짝짓기 때 지움, 2026-10-11) |
-| `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) · `BuildFinger`(따라 하기 · 힌트 손가락 — 사용자 그림 `ArtSource/UI/finger2.png`를 높이 256px로 줄이고 손끝을 pivot으로, 색 그대로. 2026-11-13) |
+| `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘 — `Finger`만 사용자 그림 색 그대로, 코드는 흐려짐만) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) · `BuildFinger`(따라 하기 · 힌트 손가락 — 사용자 그림 `ArtSource/UI/finger2.png`를 높이 256px로 줄이고 손끝을 pivot으로, 색 그대로. 2026-11-13) |
 | `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
 | `StageOrder.cs` | 챕터 N의 `StageCatalog` 순서 · 시험 목록 `LabCatalog`(`?lab`) · 따라 하기 `TutorialCatalog`(레슨 i ↔ `TutorialLessons`) — 시험 · 따라 하기 목록 에셋은 없으면 만듦 | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder`(args=[챕터 번호]) · `SetLabOrder` · `SetTutorialOrder` |

@@ -70,8 +70,8 @@ public static class BoardQa
         return State();
     }
 
-    // BoardView 자식 순서: 칸 N개 · 미리보기 선 N+1개 · 방향 버튼 6개
-    private static int ButtonIndex(int dir) => 2 * Session().Board.CellCount + 1 + dir;
+    // BoardView 자식 순서: 칸 N개 · 미리보기 선 N+1개 · (손가락 표시 — 플레이 보드만) · 방향 버튼 6개 → 버튼은 맨 끝 6개(2026-11-13)
+    private static int ButtonIndex(int dir) => Board().transform.childCount - 6 + dir;
 
     // 칸 (q, r)을 누른 채 dir 쪽으로 반지름 × distance만큼 끈다. release=false면 누른 채 멈춰 미리보기를 남긴다
     public static string Drag(int q, int r, int dir, float distance, bool release)

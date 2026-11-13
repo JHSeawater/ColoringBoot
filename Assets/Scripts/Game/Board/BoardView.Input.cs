@@ -32,11 +32,12 @@ namespace ColoringBoot.Game
             Select(best);
         }
 
-        // 키보드: 선택한 칸에서 dir로 긋는다. 선택이 없으면 첫 칸을 고르기만 한다(프로토타입과 같음)
+        // 키보드: 선택한 칸에서 dir로 긋는다. 선택이 없으면 칸을 고르기만 한다(프로토타입과 같음)
         public void BrushSelected(HexDirection dir)
         {
             if (!_interactable || _board == null) return;
-            if (_selected < 0) Select(0);
+            // 손가락 표시(따라 하기 · 힌트) 중이면 그 칸을 고른다 — 따라 하기는 손가락 칸에서 시작한 획만 받는다(2026-11-13 리뷰 4)
+            if (_selected < 0) Select(_guideRoutine != null ? _guideCell : 0);
             else if (_board.LineLength(_selected, dir) > 1) OnDirectionClicked(dir);
         }
 

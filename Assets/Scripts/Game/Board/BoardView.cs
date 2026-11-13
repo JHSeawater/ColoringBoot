@@ -53,7 +53,6 @@ namespace ColoringBoot.Game
         [SerializeField] private MotionSettings _motion;
         [Tooltip("안내 손가락 표시(튜토리얼 · 힌트) — 비우면 표시 없음(목표 썸네일 · 레벨 에디터)")]
         [SerializeField] private Sprite _guideSprite;
-        [SerializeField] private Color _guideColor = new Color32(0x38, 0x20, 0x08, 0x99);
 
         // 붓질 요청 (칸 인덱스, 방향)
         public event Action<int, HexDirection> BrushRequested;
@@ -156,6 +155,20 @@ namespace ColoringBoot.Game
                 segment.SetActive(false);
             }
 
+            // 안내 손가락 표시: 미리보기 선 위, 방향 버튼 아래에 그린다(버튼을 가리지 않게 — 2026-11-13 리뷰 2). 스프라이트 pivot(손끝)이 칸 가운데에 오게 한다
+            _guide = null;
+            if (_guideSprite != null)
+            {
+                var guide = new GameObject("Guide", typeof(RectTransform), typeof(Image));
+                guide.transform.SetParent(transform, false);
+                _guide = guide.GetComponent<Image>();
+                _guide.sprite = _guideSprite;
+                _guide.raycastTarget = false;
+                _guide.rectTransform.pivot = _guideSprite.pivot / _guideSprite.rect.size;
+                _guideAspect = _guideSprite.rect.width / _guideSprite.rect.height;
+                guide.SetActive(false);
+            }
+
             // 방향 버튼: 누르면 긋고, 손가락 · 마우스를 올리면 미리보기
             _buttons = new RectTransform[DirectionCount];
             for (int d = 0; d < DirectionCount; d++)
@@ -168,20 +181,6 @@ namespace ColoringBoot.Game
                 AddTrigger(trigger, EventTriggerType.PointerExit, ClearPreview);
                 button.gameObject.SetActive(false);
                 _buttons[d] = (RectTransform)button.transform;
-            }
-
-            // 안내 손가락 표시: 맨 위(방향 버튼 다음)에 그린다. 스프라이트 pivot(손끝)이 칸 가운데에 오게 한다
-            _guide = null;
-            if (_guideSprite != null)
-            {
-                var guide = new GameObject("Guide", typeof(RectTransform), typeof(Image));
-                guide.transform.SetParent(transform, false);
-                _guide = guide.GetComponent<Image>();
-                _guide.sprite = _guideSprite;
-                _guide.raycastTarget = false;
-                _guide.rectTransform.pivot = _guideSprite.pivot / _guideSprite.rect.size;
-                _guideAspect = _guideSprite.rect.width / _guideSprite.rect.height;
-                guide.SetActive(false);
             }
             _layoutDirty = true;
         }

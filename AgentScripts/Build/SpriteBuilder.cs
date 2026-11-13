@@ -82,7 +82,7 @@ public static class SpriteBuilder
     public static string BuildFinger()
     {
         var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        source.LoadImage(File.ReadAllBytes(FingerSource));
+        if (!source.LoadImage(File.ReadAllBytes(FingerSource))) throw new System.InvalidOperationException($"{FingerSource}: 그림을 읽지 못함");
         int w = source.width, h = source.height;
         Color32[] src = source.GetPixels32();   // 아래 줄부터
         int minX = w, maxX = -1, minY = h, maxY = -1;
@@ -93,6 +93,8 @@ public static class SpriteBuilder
                 minX = Mathf.Min(minX, x); maxX = Mathf.Max(maxX, x);
                 minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y);
             }
+        // 그림이 비었거나 손끝을 못 찾으면 엉뚱한 pivot으로 저장하지 않고 멈춘다(2026-11-13 리뷰 5)
+        if (maxX < 0) throw new System.InvalidOperationException($"{FingerSource}: 불투명 픽셀(알파 {AlphaCut} 이상)이 없음");
         // 손끝: 맨 위에서 조금 내려간 줄의 불투명 구간 = 검지 굵기 → 가운데 x, 위 끝에서 굵기 절반 아래
         int probe = maxY - (maxY - minY) / 20, left = -1, right = -1;
         for (int x = minX; x <= maxX; x++)
@@ -101,8 +103,10 @@ public static class SpriteBuilder
             if (left < 0) left = x;
             right = x;
         }
-        float cropW = maxX - minX + 1, cropH = maxY - minY + 1;
-        var pivot = new Vector2(((left + right) * 0.5f - minX) / cropW, (maxY - (right - left) * 0.5f - minY) / cropH);
+        if (left < 0) throw new System.InvalidOperationException($"{FingerSource}: 손끝 줄(y={probe})에 불투명 픽셀이 없음");
+        // 픽셀 가장자리 기준: 구간 [left, right + 1] · 위 끝 maxY + 1 (리뷰 6)
+        float cropW = maxX - minX + 1, cropH = maxY - minY + 1, tip = right - left + 1;
+        var pivot = new Vector2((left + tip * 0.5f - minX) / cropW, (maxY + 1 - tip * 0.5f - minY) / cropH);
 
         int outW = Mathf.RoundToInt(cropW * FingerHeight / cropH);
         var texture = new Texture2D(outW, FingerHeight, TextureFormat.RGBA32, false);
@@ -126,26 +130,8 @@ public static class SpriteBuilder
                 pixels[y * outW + x] = result;
             }
         texture.SetPixels32(pixels);
-        string path = $"{Folder}/Finger.png";
-        File.WriteAllBytes(path, texture.EncodeToPNG());
-        Object.DestroyImmediate(texture);
         Object.DestroyImmediate(source);
-
-        AssetDatabase.ImportAsset(path);
-        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-        importer.textureType = TextureImporterType.Sprite;
-        importer.spriteImportMode = SpriteImportMode.Single;
-        importer.alphaIsTransparency = true;
-        importer.mipmapEnabled = false;
-        importer.wrapMode = TextureWrapMode.Clamp;
-        importer.filterMode = FilterMode.Bilinear;
-        importer.textureCompression = TextureImporterCompression.Uncompressed;
-        var settings = new TextureImporterSettings();
-        importer.ReadTextureSettings(settings);
-        settings.spriteAlignment = (int)SpriteAlignment.Custom;
-        settings.spritePivot = pivot;
-        importer.SetTextureSettings(settings);
-        importer.SaveAndReimport();
+        string path = WriteSprite("Finger", texture, Vector4.zero, pivot);
         return $"손가락 {outW}×{FingerHeight}px · 손끝 pivot ({pivot.x:0.000}, {pivot.y:0.000}) · 원본 여백 자름 [{minX}..{maxX}]×[{minY}..{maxY}] → {path} ({new FileInfo(path).Length:N0}바이트)";
     }
 
@@ -218,6 +204,12 @@ public static class SpriteBuilder
             }
         }
         texture.SetPixels32(pixels);
+        WriteSprite(name, texture, Vector4.one * border, null);
+    }
+
+    // PNG로 쓰고(텍스처는 지움) UI 스프라이트로 임포트한다. pivot이 없으면 가운데 — Save · BuildFinger 공용(2026-11-13 리뷰 7)
+    private static string WriteSprite(string name, Texture2D texture, Vector4 border, Vector2? pivot)
+    {
         string path = $"{Folder}/{name}.png";
         File.WriteAllBytes(path, texture.EncodeToPNG());
         Object.DestroyImmediate(texture);
@@ -231,7 +223,16 @@ public static class SpriteBuilder
         importer.wrapMode = TextureWrapMode.Clamp;
         importer.filterMode = FilterMode.Bilinear;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
-        importer.spriteBorder = Vector4.one * border;
+        importer.spriteBorder = border;
+        if (pivot.HasValue)
+        {
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteAlignment = (int)SpriteAlignment.Custom;
+            settings.spritePivot = pivot.Value;
+            importer.SetTextureSettings(settings);
+        }
         importer.SaveAndReimport();
+        return path;
     }
 }

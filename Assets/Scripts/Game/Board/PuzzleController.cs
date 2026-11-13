@@ -34,6 +34,7 @@ namespace ColoringBoot.Game
         private const int HintLimit = 200000;     // 힌트 탐색 상한(상태 하나당) — 지금 스테이지 최악 4만여 개(2026-10-07 에디터 실측 327 ms)
         private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
         private const string HintNotFound = "힌트를 찾지 못했어요";
+        private const string WrongCellText = "손가락이 있는 칸에서 끌어 주세요";
         private const float GoalPulseScale = 0.12f;   // 따라 하기 1 클리어: 목표 그림이 커졌다 작아지는 정도 · 한 번 걸리는 초
         private const float GoalPulseCycle = 1f;
         private const float MaxCountedFrame = 1f;     // 이보다 긴 프레임은 앱이 뒤로 갔다 온 것 — 걸린 시간에 넣지 않는다(2026-11-10 Android 실측: 복귀 첫 프레임에 나가 있던 시간이 통째로 들어옴)
@@ -208,9 +209,11 @@ namespace ColoringBoot.Game
         {
             if (_session == null || _session.IsSolved) return;
             // 따라 하기: 손가락이 가리킨 칸 · 방향만 긋는다(혼자 풀기 레슨은 아무 획이나). 아니면 안내를 다시 보인다
-            if (_lesson >= 0 && !TutorialLessons.IsFree(_lesson) && !LessonAllows(cell, dir))
+            if (_lesson >= 0 && !TutorialLessons.IsFree(_lesson) && !LessonAllows(cell, dir, out bool guideCell))
             {
+                // 같은 줄 다른 칸에서 끌면 미리보기는 같아 보이니, 왜 받지 않았는지 알린다(2026-11-13 리뷰 1). 방향만 틀리면 원래 안내 문구가 방향을 말해 준다
                 ShowLessonGuide();
+                if (!guideCell) ShowGuideText(WrongCellText);
                 return;
             }
             int count = _session.Trace(cell, dir, _path, _pathBrushes);
@@ -374,10 +377,13 @@ namespace ColoringBoot.Game
         }
 
         // 손가락이 가리킨 칸 · 방향인가 — 결과는 같은 줄 어느 칸이든 같지만, "가운데에서 끌어도 줄 끝부터"를 직접 겪도록 그 칸에서 시작한 획만 받는다(2026-11-13)
-        private bool LessonAllows(int cell, HexDirection dir)
+        // guideCell: 손가락 칸에서 시작했는가(안내가 없으면 true — 따로 알릴 것이 없다)
+        private bool LessonAllows(int cell, HexDirection dir, out bool guideCell)
         {
+            guideCell = true;
             if (_session.IsDead || !TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return false;
-            return dir == guide.Direction && _session.Board.CoordOf(cell).Equals(guide.Cell);
+            guideCell = _session.Board.CoordOf(cell).Equals(guide.Cell);
+            return guideCell && dir == guide.Direction;
         }
 
         // 힌트 버튼 — 보상형 광고 자리를 거친다(지금은 바로). 횟수 제한 없음 · "완벽"과 무관 (GDD §5 · §6, 2026-10-07)
