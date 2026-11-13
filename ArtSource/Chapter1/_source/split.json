@@ -1,0 +1,45 @@
+{
+ "image": "original.png",
+ "lineL": 68,
+ "colors": {
+  "sky": [90, 198, 252],
+  "path": [250, 202, 145],
+  "basket": [249, 178, 89],
+  "hill": [119, 161, 32],
+  "green": [100, 215, 20],
+  "grape": [188, 43, 179],
+  "yellow": [254, 205, 4],
+  "paleyellow": [255, 230, 80],
+  "orange": [253, 135, 7],
+  "brown": [154, 62, 23],
+  "pink": [253, 110, 165]
+ },
+ "rules": [
+  {"color": "green", "area": [0, 0, 1, 0.52], "step": "leaf"},
+  {"color": "green", "step": "field"},
+  {"color": "hill", "step": "field"},
+  {"color": "yellow", "area": [0.75, 0, 1, 0.2], "step": "sun"},
+  {"color": "yellow", "step": "bee"},
+  {"color": "paleyellow", "step": "bee"},
+  {"color": "orange", "step": "beehive"},
+  {"color": "brown", "step": "vine"},
+  {"color": "pink", "step": "butterfly"},
+  {"color": "sky", "step": "sky"},
+  {"color": "path", "step": "path"},
+  {"color": "basket", "step": "basket"},
+  {"color": "grape", "step": "grape"}
+ ],
+ "steps": [
+  {"id": "basket", "label": "바구니", "memo": "아래 가운데"},
+  {"id": "leaf", "label": "잎", "memo": "위쪽 덩굴의 잎"},
+  {"id": "beehive", "label": "벌집", "memo": "오른쪽 위 덩굴에 매달림 (입구는 선화)"},
+  {"id": "sky", "label": "하늘", "memo": "위쪽 배경"},
+  {"id": "path", "label": "길", "memo": "오른쪽 아래에서 언덕 쪽으로"},
+  {"id": "bee", "label": "벌", "memo": "가운데 3마리"},
+  {"id": "field", "label": "언덕 · 풀밭", "memo": "뒤쪽 언덕(올리브) + 앞쪽 풀밭 · 덤불(연두)"},
+  {"id": "sun", "label": "해", "memo": "오른쪽 위 모서리"},
+  {"id": "butterfly", "label": "나비", "memo": "좌우 2마리"},
+  {"id": "vine", "label": "덩굴 줄기", "memo": "위쪽 덩굴 · 벌집 고리"},
+  {"id": "grape", "label": "포도", "memo": "덩굴 3송이 + 바구니 속 포도"}
+ ]
+}

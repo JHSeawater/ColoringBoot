@@ -23,67 +23,67 @@ MonoBehaviour:
   _steps:
   - _sprite: {fileID: 21300000, guid: 6a69df4e04008c74e8203392e4243d8c, type: 3}
     _rect:
-      x: 310
-      y: 882
-      width: 456
-      height: 472
+      x: 162
+      y: 853
+      width: 548
+      height: 500
   - _sprite: {fileID: 21300000, guid: 3b89f498be0e31044b6a570e8074e6a1, type: 3}
     _rect:
       x: -2
       y: -2
-      width: 888
-      height: 1096
+      width: 1084
+      height: 584
   - _sprite: {fileID: 21300000, guid: 3505eaf746f39f444970c212adccdfeb, type: 3}
     _rect:
-      x: 812
-      y: 267
-      width: 240
-      height: 304
+      x: 766
+      y: 270
+      width: 264
+      height: 292
   - _sprite: {fileID: 21300000, guid: 9468d0ad28c642645a6f563ede5d669c, type: 3}
     _rect:
       x: -2
       y: -2
       width: 1084
-      height: 740
+      height: 844
   - _sprite: {fileID: 21300000, guid: a0b62ba6b485734488aae12485e6e961, type: 3}
     _rect:
-      x: 65
-      y: 822
-      width: 996
-      height: 532
+      x: 541
+      y: 871
+      width: 416
+      height: 484
   - _sprite: {fileID: 21300000, guid: 6cd7388ca6c24024d80a666a8eb71b3f, type: 3}
     _rect:
-      x: 415
-      y: 426
-      width: 292
-      height: 268
+      x: 326
+      y: 370
+      width: 532
+      height: 380
   - _sprite: {fileID: 21300000, guid: 2f536d9786afa1949aa5c193117d89b1, type: 3}
     _rect:
       x: -2
-      y: 600
+      y: 705
       width: 1084
-      height: 752
+      height: 648
   - _sprite: {fileID: 21300000, guid: e8af5aa2561f0a34ba0d4f0b9e75b893, type: 3}
     _rect:
-      x: 827
+      x: 865
       y: -2
-      width: 256
-      height: 232
+      width: 220
+      height: 188
   - _sprite: {fileID: 21300000, guid: 4ca2c0415fd2e2f4cb1a2e0121aab377, type: 3}
     _rect:
-      x: 664
-      y: 657
-      width: 352
-      height: 464
+      x: 64
+      y: 793
+      width: 940
+      height: 208
   - _sprite: {fileID: 21300000, guid: 19519de53c1ecb443a62162ac269b3fc, type: 3}
     _rect:
-      x: 108
-      y: -2
-      width: 976
-      height: 1112
+      x: -2
+      y: 8
+      width: 1004
+      height: 472
   - _sprite: {fileID: 21300000, guid: 3009425dca39ca6448969dd1f178d124, type: 3}
     _rect:
-      x: 34
-      y: 128
-      width: 700
-      height: 1032
+      x: 9
+      y: 163
+      width: 688
+      height: 996

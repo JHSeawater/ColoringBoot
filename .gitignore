@@ -128,8 +128,8 @@ InitTestScene*.unity*
 # Python 캐시 (AgentScripts 그림 도구)
 __pycache__/
 
-# 원본 그림 폴더 안의 개인 작업 도구 (그림 파일만 커밋)
-ArtSource/*/_tools/
+# 원본 그림 폴더 안의 개인 작업 도구 (그림 파일만 커밋) — 보관 폴더(_archive/ChapterN-…) 안까지
+ArtSource/**/_tools/
 
 # Apps in Toss SDK - 자동 보호 패턴
 **/AITCredentials.asset

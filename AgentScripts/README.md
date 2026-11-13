@@ -26,6 +26,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
 | `StageOrder.cs` | 챕터 N의 `StageCatalog` 순서 · 시험 목록 `LabCatalog`(`?lab`) · 따라 하기 `TutorialCatalog`(레슨 i ↔ `TutorialLessons`) — 시험 · 따라 하기 목록 에셋은 없으면 만듦 | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder`(args=[챕터 번호]) · `SetLabOrder` · `SetTutorialOrder` |
 | `EndlessPoolBuilder.cs` | 무한 모드 퍼즐 묶음 `Assets/Data/Endless/{Easy,Normal,Hard}.txt`(한 줄에 스테이지 코드, 같은 시드면 같은 묶음) — 난이도별 임시 기준은 파일 안. 난이도마다 다른 시드(쉬움 1 · 보통 2 · 어려움 3), 다른 묶음과 거의 같은 퍼즐(모양 같고 목표 80% 이상)은 거름 | 기준을 바꾸거나 개수를 늘릴 때 → 뒤에 `BuildScene`(묶음 연결은 그대로라 파일만 바뀌면 다시 안 돌려도 됨) | `Build`(args=["Easy", 300, 1] · ["Normal", 300, 2] · ["Hard", 300, 3] — 난이도 · 개수 · 시드, 이 순서로) |
+| `ArtSplit.py` | 완성 그림 한 장 → `ArtSource/ChapterN/`의 선화 · 단계 레이어 · `reference.png` · `steps.md`(+ 사람이 볼 색칠 과정 `Builds/ArtSplit/ChapterN_progress.png`). 진한 픽셀 = 선, 선으로 닫힌 영역은 색을 하나로 평탄화하고 `_source/split.json`의 기준 색 + 위치 규칙으로 단계를 정한다. 결과 레이어는 손으로 고치지 않고 `split.json`을 고쳐 다시 실행(2026-11-13) | 레이어 없이 완성 그림만 받았을 때 → 뒤에 `ArtCheck.py` → `ChapterArtExport.py` → `ChapterArtBuilder` | `python … ArtSource/ChapterN`(원본 · 설정은 `ArtSource/ChapterN/_source/` — `original.png` · `split.json`) |
 | `ArtCheck.py` | (읽기 전용) 그림 파일 규격 점검 — `Docs/ArtSpec.md` §6 | 그림을 받았을 때 | `python … [원본 폴더]`(없으면 `ArtSource/Chapter1`) |
 | `ChapterArtExport.py` | 점검 → 절반 크기 · 여백 자르기 → `Assets/Art/Chapters/Chapter1` + `layout.json` | 챕터 그림을 바꿀 때(다음 줄과 차례로) | `python … [원본 폴더] [출력 폴더]` |
 | `ChapterArtBuilder.cs` | 스프라이트 설정(WebGL은 ASTC — 선화 4×4 · 단계 6×6, 2026-10-11) · `Assets/Data/Chapters/ChapterN/ChapterArt.asset`(그림 조각은 `Assets/Art/Chapters/ChapterN/`) | `ChapterArtExport.py` 바로 뒤 | `Build`(args=[챕터 번호]) |
@@ -75,7 +76,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `Phase8Chapter1Pairing.cs` | 챕터 1 스테이지 ↔ 그림 소재 다시 짝짓기 — 스테이지 파일을 소재 이름으로 옮김(GUID 그대로) · 빠진 6개는 시험 목록으로(2026-10-11, `Preview` → `Apply` → `StageOrder`) |
 | `Phase8TempChapter2.cs` | 임시 챕터 2 — 시험 목록의 옛 챕터 판을 `Chapters/Chapter2/Stages/Temp01~11`로 복사 · 목록 · `Chapter` 에셋(그림 = 임시 도안). 주소 `?chapters`일 때만 게임에 들어감(2026-10-11, 순서: `ChapterArtExport.py ArtSource/_archive/Chapter1-temp Assets/Art/Chapters/Chapter2` → `Apply` → `ChapterArtBuilder.Build(2)` → `Apply` → `StageOrder.SetOrder(2)`) |
 | `Phase9AndroidSettings.cs` | Android 패키지 이름 · 회사 이름 · 세로 고정(2026-11-10, `Preview` → `Apply`) |
-| `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용 · 2026-10-11부터 임시 챕터 2 그림) |
+| `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용 · 2026-10-11부터 임시 챕터 2 그림). 그 폴더는 2026-11-13 지움(사용자) — 게임의 임시 챕터 2 조각(`Assets/Art/Chapters/Chapter2`)은 그대로이고, 원본이 다시 필요하면 이 스크립트로 만든다 |
 
 ## 옛 이름 (2026-10-04 정리 전에는 모두 `AgentScripts/` 바로 아래)
 
@@ -88,5 +89,6 @@ Docs/Task.md · Docs/DevelopLog.md의 지난 기록은 옛 이름 그대로다.
 | `Phase4Palettes.cs` | `Build/PaletteBuilder.cs` |
 | `Phase4Stages.cs` | `Build/StageOrder.cs` |
 | 그 밖의 파일 | 이름 그대로 `Build/` · `QA/` · `Tools/` · `Setup/` 중 한 곳 |
-| `ArtSource/chapter1_test/` | `ArtSource/Chapter1/`(지금 챕터 1 그림) |
-| `ArtSource/Chapter1/`(임시 도안) | `ArtSource/_archive/Chapter1-temp/` |
+| `ArtSource/chapter1_test/` | `ArtSource/Chapter1/` → 2026-11-13 `ArtSource/_archive/Chapter1-v1/`(옛 챕터 1 그림 보관) |
+| `ArtSource/Chapter1/`(임시 도안) | `ArtSource/_archive/Chapter1-temp/` → 2026-11-13 삭제(`Setup/TempChapterArt.py`로 다시 만듦) |
+| `ArtSource/Chapter1.png`(새 챕터 1 완성 그림) | `ArtSource/Chapter1/_source/original.png`(2026-11-13) |

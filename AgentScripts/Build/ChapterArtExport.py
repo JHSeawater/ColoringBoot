@@ -56,5 +56,5 @@ def export(source, target):
 
 
 if __name__ == '__main__':
-    # 챕터 1 게임 그림 = ArtSource/Chapter1(사용자 시험 그림, Phase 7.2). 임시 도안은 ArtSource/_archive/Chapter1-temp에 보관(2026-10-04)
+    # 챕터 1 게임 그림 = ArtSource/Chapter1(2026-11-13 새 그림 — ArtSplit.py로 나눔). 옛 그림은 ArtSource/_archive/Chapter1-v1에 보관
     export(sys.argv[1] if len(sys.argv) > 1 else 'ArtSource/Chapter1', sys.argv[2] if len(sys.argv) > 2 else 'Assets/Art/Chapters/Chapter1')

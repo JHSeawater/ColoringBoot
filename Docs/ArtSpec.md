@@ -1,6 +1,6 @@
 # 챕터 그림 전달 규격 (ColoringBoot · 모든 챕터)
 
-> 버전 0.3 (2026-10-04 — 모든 챕터 공용 · 게임 쪽 가공 · 용량 설명을 실제에 맞춤) · 0.2 (2026-10-03 — 세계관 · 아트 스타일 추가) · 0.1 초안 (2026-10-02). 정본은 이 파일이고, 아트 담당용 공유 페이지는 같은 내용이다.
+> 버전 0.4 (2026-11-13 — 선 두께 권장을 지금 챕터 1 그림에 맞춤 · 완성 그림 한 장만 보내도 됨 · 원본 위치) · 0.3 (2026-10-04 — 모든 챕터 공용 · 게임 쪽 가공 · 용량 설명을 실제에 맞춤) · 0.2 (2026-10-03 — 세계관 · 아트 스타일 추가) · 0.1 초안 (2026-10-02). 정본은 이 파일이고, 아트 담당용 공유 페이지는 같은 내용이다.
 > 이 문서는 사람(아트 담당)과 AI(이미지 생성 AI · 코드를 쓰는 AI) 모두에게 그대로 줄 수 있게 썼다. AI에게 줄 때는 문서 전체를 붙여 넣고 "§7의 방법 ○로 만들어 줘"처럼 요청한다.
 
 ---
@@ -21,7 +21,9 @@
 | `01_<소재>.png` … `NN_<소재>.png` | 색칠 단계 레이어. 그 소재의 색 영역만 있고 나머지는 투명. 번호 = 칠해지는 순서 | 필수 |
 | `steps.md` | 단계 목록 표(§5 양식) | 필수 |
 | `reference.png` | 완성 그림(모든 단계 + 선화를 합친 모습) | 권장 |
-| 원본(PSD · SVG 등) | 나중에 고칠 때 쓰는 원본. 게임에는 넣지 않는다 | 있으면 |
+| 원본(PSD · SVG · 완성 그림 한 장 등) | 나중에 고칠 때 쓰는 원본. 게임에는 넣지 않는다(게임 쪽은 `ArtSource/ChapterN/_source/`에 보관) | 있으면 |
+
+- 레이어로 나누기 어려우면 **완성 그림 한 장**(§3 스타일 · 4:5, 선이 영역을 닫음)만 보내도 된다. 게임 쪽이 §8의 도구로 나눈다.
 
 - `<소재>`는 영어 소문자 · 숫자 · 하이픈만 쓴다. 예: `04_grape.png`, `11_sky.png`
 - 번호는 두 자리(`01`~)이고 빠지는 번호가 없다.
@@ -41,7 +43,7 @@
 
 ### 선화 (`00_line.png`)
 - 선 색은 진한 한 가지 색(검정 · 진한 갈색 등). 선 밖은 완전 투명.
-- 선 두께 **8 px 이상, 권장 10~14 px**(게임 크기에서 그 절반). 작은 미리보기에서도 형태가 읽혀야 한다.
+- 선 두께 **8 px 이상, 권장 18~24 px**(게임 크기에서 그 절반 — 지금 챕터 1 그림은 약 22 px). 작은 미리보기에서도 형태가 읽혀야 한다.
 - 영역은 선으로 닫혀 있게 그린다. 선화만 봐도 무엇을 그린 그림인지 알 수 있어야 한다(색칠 전 화면이 선화뿐이다).
 - 선화는 항상 모든 색 위에 그려진다.
 
@@ -92,6 +94,8 @@
 3. 소재마다 영역을 선택해(자동 선택 · 영역 채우기 선택) 단계 레이어로 나눠 내보낸다.
 4. §6 체크리스트로 점검한다.
 
+2~4는 게임 쪽 도구(§8)가 대신할 수 있다 — 1의 완성 그림만 보내도 된다.
+
 프롬프트 틀 (영어가 결과가 안정적이다):
 ```text
 A children's coloring book illustration, portrait 4:5, of {THEME}.
@@ -110,7 +114,7 @@ AI에게 줄 지시:
 ```text
 Write one SVG file, viewBox="0 0 2160 2700", no background rectangle.
 Structure:
-  <g id="line">  — all outlines only: stroke dark (#2B2622), stroke-width 12, fill="none", round joins.
+  <g id="line">  — all outlines only: stroke dark (#2B2622), stroke-width 20, fill="none", round joins.
   <g id="step-01-{subject}"> … <g id="step-NN-{subject}"> — filled shapes only (no stroke), one group per subject,
      containing EVERY region of that subject in the picture.
 Rules: groups must not overlap except within 6px under outlines — background groups (sky, ground) must leave holes
@@ -126,6 +130,7 @@ Draw the line group last (on top). Subjects in order: {SUBJECTS_IN_ORDER}. Theme
 
 ## 8. 게임 쪽에서 하는 일 (아트 담당이 할 필요 없음)
 
+- 완성 그림 한 장만 받으면 나누기 도구(`AgentScripts/Build/ArtSplit.py`)가 진한 선을 선화로, 선으로 닫힌 영역을 색 · 위치 규칙에 따라 소재별 단계 레이어로 나눈다(영역마다 색을 하나로 평탄화). 선과 같은 진한 색으로 칠한 곳(입구 · 눈 등)은 선화에 들어가 처음부터 보인다.
 - 받은 파일은 점검 스크립트(`AgentScripts/Build/ArtCheck.py`)로 §6의 크기 · 이름 · 번호 · 빈 레이어 · 바탕 · 겹침 · reference 항목을 자동으로 확인한다. 걸리면 위치(픽셀 좌표)와 함께 알려 드린다.
 - 레이어마다 빈 여백을 잘라 내고 게임 크기(절반)로 줄인다(빌더).
 - 색칠 연출(서서히 나타남 · 완성 강조)과 종이색 바탕은 게임이 그린다.

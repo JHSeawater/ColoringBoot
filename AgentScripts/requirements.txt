@@ -1,4 +1,6 @@
-# AgentScripts Python 도구(ArtCheck · ChapterArtExport · TempChapterArt) — pip install -r AgentScripts/requirements.txt
-# 2026-10-04 이 PC에서 확인한 버전: Pillow 11.3.0 · numpy 2.2.6
+# AgentScripts Python 도구(ArtCheck · ChapterArtExport · ArtSplit · TempChapterArt) — pip install -r AgentScripts/requirements.txt
+# 2026-10-04 이 PC에서 확인한 버전: Pillow 11.3.0 · numpy 2.2.6 · 2026-11-13 opencv-python 4.11.0 · scipy 1.15.3(ArtSplit)
 Pillow>=11
 numpy>=2
+opencv-python>=4.11
+scipy>=1.15
