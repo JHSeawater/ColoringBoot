@@ -150,7 +150,9 @@ namespace ColoringBoot.Game
             Vector2 size = view.rect.size, pivot = view.pivot;
             Vector2 min = Vector2.Max(step.anchorMin, Vector2.zero), max = Vector2.Min(step.anchorMax, Vector2.one);
             Vector2 span = max - min;
-            float zoom = Mathf.Clamp(FocusFill / Mathf.Max(span.x, span.y), 1f, _focusZoom);
+            float extent = Mathf.Max(span.x, span.y);
+            if (extent <= 0f) return 1f;   // 그림 밖이거나 크기가 0인 조각 — 확대하지 않는다
+            float zoom = Mathf.Clamp(FocusFill / extent, 1f, _focusZoom);
             if (zoom <= 1f) return 1f;
             Vector2 target = Vector2.Scale((min + max) * 0.5f - pivot, size);
             Vector2 center = Vector2.Scale(new Vector2(0.5f, 0.5f) - pivot, size);

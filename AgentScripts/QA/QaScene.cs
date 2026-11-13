@@ -64,7 +64,7 @@ public static class QaScene
         var flow = Object.FindAnyObjectByType<GameFlow>();
         CheckRefs(flow, Expect, "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
-            "_selectPicture", "_paintCard", "_paintPicture", "_paintProgress", "_paintCardCenter","_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
+            "_selectPicture", "_paintCard", "_paintPicture", "_paintProgress", "_paintCardCenter", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
             "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
         foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Picture", "ChapterScreen/Picture", "BoardScreen/ClearBanner/PaintCard/PictureMask/Picture" })

@@ -254,7 +254,7 @@ namespace ColoringBoot.Game
                 _lesson = -1;
                 _data.TutorialSeen = true;
             }
-            int justPainted = !_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown ? _current : -1;
+            int justPainted = PaintPending ? _current : -1;
             _puzzle.Close();
             _current = -1;
             _endlessTier = -1;
@@ -304,15 +304,24 @@ namespace ColoringBoot.Game
         // 챕터를 완성한 클리어는 칠하지 않고 남겨 둔다 — "다음"이 큰 그림 화면에서 완성 연출(Next)
         private void PaintOnBoard()
         {
-            if (_lab || _current < 0 || !_puzzle.FirstClear || _paintShown || _data.Progress.IsComplete(_stages)) return;
+            // 되돌린 뒤 다시 풀었다 — 카드는 켜진 채 띠와 함께 다시 보이므로 그사이 바뀐 보드 영역에 다시 맞춘다
+            if (_paintCard.activeSelf) PlacePaintCard();
+            if (!PaintPending || _data.Progress.IsComplete(_stages)) return;
             _paintShown = true;
             bool[] painted = UpdatePainted();
-            _paintProgress.text = $"색칠 {_data.Progress.ClearedCount(_stages)} / {painted.Length}";
-            // 카드는 띠의 자식(띠와 함께 켜지고 꺼짐)이라 자리만 보드 영역 가운데로 옮긴다 — 영역 높이는 화면 비율 · 안전영역에 따라 다르다
-            _paintCard.transform.position = _paintCardCenter.TransformPoint(_paintCardCenter.rect.center);
+            _paintProgress.text = PaintCaption(painted.Length);
+            PlacePaintCard();
             _paintCard.SetActive(true);
             _paintPicture.Show(CurrentChapter.Art, painted, _current);
         }
+
+        // 본편 첫 클리어인데 아직 칠하지 않았다(띠 위 카드 · 목록의 작은 그림 · 큰 그림 화면 중 한 곳에서 한 번만 칠한다)
+        private bool PaintPending => !_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown;
+
+        private string PaintCaption(int total) => $"색칠 {_data.Progress.ClearedCount(_stages)} / {total}";
+
+        // 카드는 띠의 자식(띠와 함께 켜지고 꺼짐)이라 자리만 보드 영역 가운데로 옮긴다 — 영역 높이는 화면 비율 · 안전영역에 따라 다르다
+        private void PlacePaintCard() => _paintCard.transform.position = _paintCardCenter.TransformPoint(_paintCardCenter.rect.center);
 
         // 클리어 띠의 "다음" — 챕터를 막 완성했으면 그림 화면에서 완성 연출 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
@@ -330,7 +339,7 @@ namespace ColoringBoot.Game
                 else ShowSelect();
                 return;
             }
-            if (!_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown)
+            if (PaintPending)
             {
                 ShowPicture(_current);
                 return;
@@ -346,10 +355,9 @@ namespace ColoringBoot.Game
             _boardScreen.SetActive(false);
             _chapterScreen.SetActive(true);
             bool[] painted = UpdatePainted();
-            int count = _data.Progress.ClearedCount(_stages);
             bool complete = _data.Progress.IsComplete(_stages);
             _toNextChapter = complete && _chapterIndex + 1 < _chapterList.Length;
-            _chapterCaption.text = complete ? CompleteText : $"색칠 {count} / {painted.Length}";
+            _chapterCaption.text = complete ? CompleteText : PaintCaption(painted.Length);
             _chapterNextLabel.text = _toNextChapter ? NextChapterText : step + 1 < _stages.Length ? NextText : ListText;
             _chapterPicture.Show(CurrentChapter.Art, painted, step, complete);
         }
