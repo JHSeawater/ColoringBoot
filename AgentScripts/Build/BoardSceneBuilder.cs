@@ -501,10 +501,9 @@ public static class BoardSceneBuilder
     }
 
     // 클리어 띠의 그림 카드(2026-11-12): 챕터 그림(4:5) · 색칠 진행. 띠의 자식이라 띠와 함께 켜지고 꺼진다 — 처음 클리어한 판만 GameFlow가 켜고 보드 영역 가운데로 옮긴다.
-    // 보드를 가린다(클리어 뒤라 보드 입력은 잠겨 있음). 막 칠한 단계를 확대해 칠한 뒤 전체로 물러난다 — 확대가 카드 밖으로 넘치지 않게 그림을 RectMask2D 안에 둔다
+    // 보드를 가린다(클리어 뒤라 보드 입력은 잠겨 있음). 막 칠한 단계를 확대해 칠한 뒤 전체로 물러난다 — 확대 · 잘라내기는 ChapterView가 그림 층만(_focusZoom > 1, 테두리는 그대로)
     private static GameObject PaintCard(GameObject banner, out ChapterView picture, out TMP_Text progress)
     {
-        const float Outset = 7f;   // 그림 테두리가 그림 밖으로 나오는 폭(ChapterView._frameOutset)
         var card = NewUI("PaintCard", banner);
         var rect = (RectTransform)card.transform;
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
@@ -512,25 +511,8 @@ public static class BoardSceneBuilder
         rect.sizeDelta = new Vector2(480f, 650f);   // 그림 440×550 — 280×350은 휴대폰에서 칠해진 게 잘 안 보였다(2026-11-12 사용자)
         RoundImage(card, "RoundFill", T.Surface).raycastTarget = false;
         AddImage("Outline", card, "RoundRing", Lead, 0f, 1f).type = Image.Type.Sliced;
-        var mask = NewUI("PictureMask", card);
-        var maskRect = (RectTransform)mask.transform;
-        maskRect.anchorMin = maskRect.anchorMax = maskRect.pivot = new Vector2(0.5f, 1f);
-        maskRect.anchoredPosition = new Vector2(0f, -20f);
-        maskRect.sizeDelta = new Vector2(440f, 550f);
-        mask.AddComponent<RectMask2D>();
-        picture = Picture(mask, 0f, new Vector2(440f, 550f), false);
+        picture = Picture(card, -20f, new Vector2(440f, 550f));
         SetValues(picture, ("_paintScale", 1.15f), ("_focusZoom", 3f));
-        // 테두리는 그림(확대됨) 밖 마스크 위에 따로 둔다 — 그림 안에 두면 함께 커져 마스크 밖으로 밀려나 확대하는 동안 사라진다(2026-11-13 리뷰)
-        var frame = NewUI("Frame", card);
-        var frameRect = (RectTransform)frame.transform;
-        frameRect.anchorMin = frameRect.anchorMax = frameRect.pivot = new Vector2(0.5f, 1f);
-        frameRect.anchoredPosition = new Vector2(0f, -20f + Outset);
-        frameRect.sizeDelta = new Vector2(440f + 2f * Outset, 550f + 2f * Outset);
-        Image frameImage = frame.AddComponent<Image>();
-        frameImage.sprite = Sprite("FrameRing");
-        frameImage.type = Image.Type.Sliced;
-        frameImage.color = Lead;
-        frameImage.raycastTarget = false;
         var line = NewUI("Progress", card);
         var lineRect = (RectTransform)line.transform;
         lineRect.anchorMin = new Vector2(0f, 0f);
@@ -544,8 +526,8 @@ public static class BoardSceneBuilder
         return card;
     }
 
-    // 챕터 그림 자리 — 위쪽 가운데, size는 캔버스 비율(4:5)로. frame=false면 그림이 테두리를 그리지 않는다(카드는 테두리를 따로 둠)
-    private static ChapterView Picture(GameObject parent, float y, Vector2 size, bool frame = true)
+    // 챕터 그림 자리 — 위쪽 가운데, size는 캔버스 비율(4:5)로
+    private static ChapterView Picture(GameObject parent, float y, Vector2 size)
     {
         var go = NewUI("Picture", parent);
         var rect = (RectTransform)go.transform;
@@ -553,7 +535,7 @@ public static class BoardSceneBuilder
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = size;
         var view = go.AddComponent<ChapterView>();
-        if (frame) SetRefs(view, ("_frame", Sprite("FrameRing")));
+        SetRefs(view, ("_frame", Sprite("FrameRing")));
         SetValues(view, ("_frameColor", Lead));
         return view;
     }

@@ -304,14 +304,11 @@ namespace ColoringBoot.Game
         // 챕터를 완성한 클리어는 칠하지 않고 남겨 둔다 — "다음"이 큰 그림 화면에서 완성 연출(Next)
         private void PaintOnBoard()
         {
-            // 되돌린 뒤 다시 풀었다 — 카드는 켜진 채 띠와 함께 다시 보이므로 그사이 바뀐 보드 영역에 다시 맞춘다
-            if (_paintCard.activeSelf) PlacePaintCard();
             if (!PaintPending || _data.Progress.IsComplete(_stages)) return;
             _paintShown = true;
             bool[] painted = UpdatePainted();
             _paintProgress.text = PaintCaption(painted.Length);
-            PlacePaintCard();
-            _paintCard.SetActive(true);
+            _paintCard.SetActive(true);   // 자리는 LateUpdate가 맞춘다
             _paintPicture.Show(CurrentChapter.Art, painted, _current);
         }
 
@@ -320,8 +317,6 @@ namespace ColoringBoot.Game
 
         private string PaintCaption(int total) => $"색칠 {_data.Progress.ClearedCount(_stages)} / {total}";
 
-        // 카드는 띠의 자식(띠와 함께 켜지고 꺼짐)이라 자리만 보드 영역 가운데로 옮긴다 — 영역 높이는 화면 비율 · 안전영역에 따라 다르다
-        private void PlacePaintCard() => _paintCard.transform.position = _paintCardCenter.TransformPoint(_paintCardCenter.rect.center);
 
         // 클리어 띠의 "다음" — 챕터를 막 완성했으면 그림 화면에서 완성 연출 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
@@ -390,15 +385,18 @@ namespace ColoringBoot.Game
 
         private void ShowOptions() => _options.Show(_data);
 
-#if UNITY_ANDROID
-        // 화면 상태와 상관없이 매 프레임 읽는다 — wasPressedThisFrame은 처음 호출할 때만 아주 빠른 입력을 놓칠 수 있다(Input System)
-        // LateUpdate인 이유: PuzzleController.Update도 같은 키를 읽는다. 이쪽이 먼저 옵션을 닫으면 보드 선택까지 풀린다(2026-11-11)
         private void LateUpdate()
         {
+            // 띠 위 그림 카드: 보이는 동안 매 프레임 보드 영역 가운데에 맞춘다 — 카드는 띠의 자식(띠와 함께 켜지고 꺼짐)이라 자리만 따로 맞춘다.
+            // 영역은 화면 비율 · 안전영역 · 회전 · 창 크기에 따라 바뀐다. 띠는 PuzzleController(Update · 코루틴)가 띄우므로 첫 프레임부터 제자리
+            if (_paintCard.activeInHierarchy) _paintCard.transform.position = _paintCardCenter.TransformPoint(_paintCardCenter.rect.center);
+#if UNITY_ANDROID
+            // 화면 상태와 상관없이 매 프레임 읽는다 — wasPressedThisFrame은 처음 호출할 때만 아주 빠른 입력을 놓칠 수 있다(Input System)
+            // LateUpdate인 이유: PuzzleController.Update도 같은 키를 읽는다. 이쪽이 먼저 옵션을 닫으면 보드 선택까지 풀린다(2026-11-11)
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame) HandleBack();
-        }
 #endif
+        }
 
         // 시스템 뒤로가기 (Android, 2026-11-10) — 위에 덮인 것부터 빠져나간다. 타이틀이면 앱을 끝낸다(붓질마다 저장해 잃는 것이 없다)
         private void HandleBack()

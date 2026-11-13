@@ -67,8 +67,17 @@ public static class QaScene
             "_selectPicture", "_paintCard", "_paintPicture", "_paintProgress", "_paintCardCenter", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
             "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
-        foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Picture", "ChapterScreen/Picture", "BoardScreen/ClearBanner/PaintCard/PictureMask/Picture" })
-            Expect(safeArea.Find(picture)?.GetComponent<ChapterView>() != null, $"{picture} ChapterView");
+        foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Picture", "ChapterScreen/Picture", "BoardScreen/ClearBanner/PaintCard/Picture" })
+        {
+            var view = safeArea.Find(picture)?.GetComponent<ChapterView>();
+            Expect(view != null, $"{picture} ChapterView");
+            if (view == null) continue;
+            // 테두리 · 확대(2026-11-13): 세 그림 모두 테두리, 확대는 띠 위 카드만(목록 · 큰 그림은 1 — 잘라내기 없음)
+            var viewSo = new SerializedObject(view);
+            float zoom = viewSo.FindProperty("_focusZoom").floatValue;
+            Expect(viewSo.FindProperty("_frame").objectReferenceValue != null, $"{picture} 테두리 연결");
+            Expect(picture.Contains("PaintCard") ? zoom > 1f : zoom <= 1f, $"{picture} 확대 배율 {zoom}");
+        }
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice",
             "_prevChapterButton", "_nextChapterButton");
         CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");

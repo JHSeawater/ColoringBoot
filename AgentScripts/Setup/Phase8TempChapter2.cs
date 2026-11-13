@@ -6,7 +6,8 @@ using UnityEditor;
 // 임시 챕터 2 (2026-10-11 사용자 결정 — 진짜 챕터 2 전에 여러 챕터 흐름을 확인, 게임에는 주소에 ?chapters가 있을 때만 들어감 · GameFlow._testChapters)
 // 스테이지 = 시험 목록의 옛 챕터 판을 Temp01~11로 복사(파일 이름 = 진행 기록의 키라 시험 목록과 겹치지 않게 — 내용 · 화면 이름은 그대로),
 // 그림 = 임시 도안(ArtSource/_archive/Chapter1-temp — 옛 챕터 1 순서로 그린 것이라 단계 소재가 옛 판과 맞음. 3번 벌은 옛 벌집 판이 챕터 1로 가서 하늘과 언덕)
-// 실행: python AgentScripts/Build/ChapterArtExport.py ArtSource/_archive/Chapter1-temp Assets/Art/Chapters/Chapter2
+// 실행: python AgentScripts/Setup/TempChapterArt.py(그 폴더는 2026-11-13 지움 — 먼저 다시 만든다)
+//   → python AgentScripts/Build/ChapterArtExport.py ArtSource/_archive/Chapter1-temp Assets/Art/Chapters/Chapter2
 //   → run_script(file=AgentScripts/Setup/Phase8TempChapter2.cs, entry=Phase8TempChapter2.Apply) → ChapterArtBuilder.Build(2) → Apply 다시(그림 연결) → StageOrder.SetOrder(2)
 // 진짜 챕터 2를 만들 때 이 폴더를 갈아 끼우고 BoardSceneBuilder의 챕터 목록으로 옮긴다
 public static class Phase8TempChapter2

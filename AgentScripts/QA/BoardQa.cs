@@ -179,7 +179,7 @@ public static class BoardQa
             if (Active("ClearBanner")) text += $" · 띠: {screen.Find("ClearBanner/Label").GetComponent<TMPro.TMP_Text>().text} [{screen.Find("ClearBanner/NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
             // 띠 위 그림 카드(2026-11-12): 처음 클리어한 판만 — 진행 글자 · 칠한 단계 수
             Transform card = screen.Find("ClearBanner/PaintCard");
-            if (Active("ClearBanner") && card != null && card.gameObject.activeSelf) text += $" · 카드: {card.Find("Progress").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(card.Find("PictureMask/Picture"))} · 확대 {card.Find("PictureMask/Picture").localScale.x:0.00}";
+            if (Active("ClearBanner") && card != null && card.gameObject.activeSelf) text += $" · 카드: {card.Find("Progress").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(card.Find("Picture"))} · 확대 {card.Find("Picture/Clip/Content")?.localScale.x:0.00}";
             if (Active("StuckBanner")) text += " · 막힘 띠";
             // 따라 하기 · 힌트 안내(2026-10-07): 안내 띠 문구 · 손가락 표시 · 힌트 버튼
             if (Active("GuideBanner")) text += $" · 안내: {screen.Find("GuideBanner/Label").GetComponent<TMPro.TMP_Text>().text}";
@@ -228,10 +228,14 @@ public static class BoardQa
         return Flow();
     }
 
-    // 그림에서 보이는 단계 번호들 (Step01 …)
-    private static string Painted(Transform picture) =>
-        string.Join(",", Enumerable.Range(0, picture.childCount).Select(picture.GetChild)
+    // 그림에서 보이는 단계 번호들 (Step01 …) — 단계는 Picture/Clip/Content 아래(2026-11-13 — 확대는 그 층만). 아직 Show 전이면 빈 글자
+    private static string Painted(Transform picture)
+    {
+        Transform content = picture.Find("Clip/Content");
+        if (content == null) return "";
+        return string.Join(",", Enumerable.Range(0, content.childCount).Select(content.GetChild)
             .Where(c => c.name.StartsWith("Step") && c.gameObject.activeSelf).Select(c => c.name.Substring(4)));
+    }
 
     private static bool Active(string banner) => GameObject.Find("Canvas/SafeArea/BoardScreen").transform.Find(banner).gameObject.activeSelf;
 

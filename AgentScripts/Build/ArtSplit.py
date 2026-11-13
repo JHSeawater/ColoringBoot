@@ -14,6 +14,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # 프로젝트 루트 — 미리보기 위치의 기준
 W, H = 2160, 2700      # ArtSpec §3
 MIN_AREA = 60          # 이보다 작은 영역은 색으로 정하지 않고 둘레 영역으로 채운다
 WARN_DIST = 20         # 영역 색이 기준 색에서 이만큼(LAB) 넘게 떨어지면 알린다 — 규칙이 맞는지 사람이 본다
@@ -34,6 +35,14 @@ def fit(img, interp, scale=1):
     return r[y:y + H * scale, x:x + W * scale]
 
 
+def stop_if(fails):
+    if fails:
+        print('실패:')
+        for f in fails:
+            print(' - ' + f)
+        sys.exit(1)
+
+
 def split(chapter_dir):
     sys.stdout.reconfigure(encoding='utf-8')
     source = os.path.join(chapter_dir, '_source')
@@ -46,7 +55,12 @@ def split(chapter_dir):
 
     steps = [s['id'] for s in cfg['steps']]
     refs = {k: lab(v) for k, v in cfg['colors'].items()}
-    fails = []
+    # 설정 오류는 영역을 보기 전에 규칙마다 한 번씩 알린다
+    fails = [f'규칙 {n}: 단계 {r["step"]}가 steps에 없음' for n, r in enumerate(cfg['rules'], 1) if r['step'] not in steps]
+    fails += [f'규칙 {n}: 기준 색 {r["color"]}가 colors에 없음' for n, r in enumerate(cfg['rules'], 1) if r['color'] not in refs]
+    if not line.any():
+        fails.append(f'선 픽셀 없음 — lineL {line_l}보다 어두운 픽셀이 없다')
+    stop_if(fails)
 
     count, regions, stats, _ = cv2.connectedComponentsWithStats((~line).astype(np.uint8), connectivity=4)
     step_of = np.zeros(count, np.int32)          # 영역 → 단계 번호(1~), 0 = 둘레로 채움
@@ -57,9 +71,12 @@ def split(chapter_dir):
         if area < MIN_AREA:
             small += 1
             continue
-        mask = regions == i
+        # 영역 상자만 잘라 본다 — 여유 2픽셀(5×5 erode가 보는 폭)이면 그림 전체로 본 결과와 같다
+        x0, y0, x1, y1 = max(x - 2, 0), max(y - 2, 0), min(x + w + 2, w0), min(y + h + 2, h0)
+        mask = regions[y0:y1, x0:x1] == i
         inner = cv2.erode(mask.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
-        color = np.median(rgb[inner] if inner.sum() > 10 else rgb[mask], axis=0).astype(np.uint8)
+        box = rgb[y0:y1, x0:x1]
+        color = np.median(box[inner] if inner.sum() > 10 else box[mask], axis=0).astype(np.uint8)
         name, dist = min(((k, np.linalg.norm(lab(color.tolist()) - v)) for k, v in refs.items()), key=lambda t: t[1])
         cx, cy = (x + w / 2) / w0, (y + h / 2) / h0
         rule = next((r for r in cfg['rules'] if r['color'] == name
@@ -68,18 +85,11 @@ def split(chapter_dir):
         if rule is None:
             fails.append(f'{where}: 기준 색 {name}에 맞는 규칙 없음')
             continue
-        if rule['step'] not in steps:
-            fails.append(f'규칙의 단계 {rule["step"]}가 steps에 없음')
-            continue
         if dist > WARN_DIST:
             print(f'확인: {where} → {name} (거리 {dist:.0f}) → {rule["step"]}')
         step_of[i] = steps.index(rule['step']) + 1
         color_of[i] = color
-    if fails:
-        print('실패:')
-        for f in fails:
-            print(' - ' + f)
-        sys.exit(1)
+    stop_if(fails)
 
     # 선 · 작은 조각 밑을 가장 가까운 영역으로
     owner = np.where(step_of[regions] > 0, regions, 0)
@@ -87,12 +97,15 @@ def split(chapter_dir):
     owner = owner[nearest[0], nearest[1]]
     owner = fit(owner.astype(np.float32), cv2.INTER_NEAREST).astype(np.int32)
     step_map, color_map = step_of[owner], color_of[owner]
+    # 파일을 쓰기 전에 모든 검사를 끝낸다 — 실패하면 원본 폴더를 건드리지 않는다
+    stop_if([f'{n:02d}_{step}: 이 단계에 배정된 영역 없음' for n, step in enumerate(steps, 1) if not (step_map == n).any()])
 
-    # 선화: 2배 크기에서 선을 그리고 줄여 가장자리 알파를 만든다. 선 색 = 가장 어두운 쪽의 중앙값
+    # 선화: 2배 크기에서 선을 그리고 줄여 가장자리 알파를 만든다. 선 색 = 가장 어두운 쪽의 중앙값(그런 픽셀이 없으면 선 전체의 중앙값 — 덜 어두운 색 선)
     big = fit(light, cv2.INTER_CUBIC, SUPER) < line_l
     alpha = cv2.resize(big.astype(np.float32), (W, H), interpolation=cv2.INTER_AREA)
     line_rgba = np.zeros((H, W, 4), np.uint8)
-    line_rgba[..., :3] = np.median(rgb[light < line_l * 0.75], axis=0).astype(np.uint8)
+    darkest = light < line_l * 0.75
+    line_rgba[..., :3] = np.median(rgb[darkest if darkest.any() else line], axis=0).astype(np.uint8)
     line_rgba[..., 3] = np.round(np.clip(alpha, 0, 1) * 255).astype(np.uint8)
 
     written = ['00_line.png']
@@ -101,8 +114,6 @@ def split(chapter_dir):
     layers = []
     for n, step in enumerate(steps, 1):
         mask = step_map == n
-        if not mask.any():
-            fails.append(f'{n:02d}_{step}: 이 단계에 배정된 영역 없음')
         layer = np.zeros((H, W, 4), np.uint8)
         layer[mask, :3] = color_map[mask]
         layer[mask, 3] = 255
@@ -127,7 +138,7 @@ def split(chapter_dir):
             f.write(f'| {n:02d} | {n:02d}_{s["id"]}.png | {s["label"]} | {s.get("memo", "")} |\n')
 
     # 사람이 볼 색칠 과정(선화만 → 1단계 → … → 완성) — Builds/는 git이 무시한다
-    preview = os.path.join('Builds', 'ArtSplit', f'{os.path.basename(os.path.normpath(chapter_dir))}_progress.png')
+    preview = os.path.join(ROOT, 'Builds', 'ArtSplit', f'{os.path.basename(os.path.normpath(chapter_dir))}_progress.png')
     os.makedirs(os.path.dirname(preview), exist_ok=True)
     tw, th = 270, 338
     cols = 4
@@ -144,11 +155,6 @@ def split(chapter_dir):
 
     if small:
         print(f'작은 조각 {small}개는 둘레 영역으로 채움')
-    if fails:
-        print('실패:')
-        for f in fails:
-            print(' - ' + f)
-        sys.exit(1)
     print(f'{len(steps)}단계 + 선화 → {os.path.normpath(chapter_dir)} · 색칠 과정 미리보기 {preview}')
 
 
