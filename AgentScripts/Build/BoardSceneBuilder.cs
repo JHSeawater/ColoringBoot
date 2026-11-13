@@ -425,10 +425,11 @@ public static class BoardSceneBuilder
         }
         CenterText(screen, "Title", -820f, 200f, 160f, Strong).text = "컬러링붓";
         CenterText(screen, "Subtitle", -960f, 70f, 48f, Muted).text = "붓으로 칠하는 육각 퍼즐";
+        // [시작]은 무한 모드 버튼이 있든 없든 늘 위 자리 (2026-11-14 사용자 결정 — 읽는 순서대로 시작이 먼저, 버튼이 생겨도 자리가 바뀌지 않게)
         start = BottomButton(screen, "StartButton", "시작", 0f, 460f, true);
-        // 무한 모드 (2026-10-07) — 시작 위, 따라 하기를 본 뒤에 GameFlow가 켠다
+        ((RectTransform)start.transform).anchoredPosition = new Vector2(0f, 310f);
+        // 무한 모드 (2026-10-07) — 시작 아래, 따라 하기를 본 뒤에 GameFlow가 켠다
         endless = BottomButton(screen, "EndlessButton", "무한 모드", 0f, 460f, false);
-        ((RectTransform)endless.transform).anchoredPosition = new Vector2(0f, 310f);
         endless.gameObject.SetActive(false);
         screen.SetActive(false);
         return screen;
