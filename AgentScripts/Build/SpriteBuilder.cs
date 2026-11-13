@@ -6,6 +6,7 @@ using UnityEngine;
 // 실행: run_script(file=AgentScripts/Build/SpriteBuilder.cs, entry=SpriteBuilder.Build) — 여러 번 실행해도 같은 결과(덮어씀)
 // Phase 4.3 아이콘 2종(자물쇠 · 별, 스테이지 선택 화면): entry=SpriteBuilder.BuildIcons — 작게(128px) 만든다
 // Phase 7.1 버튼 모양(디자인 시안 A): entry=SpriteBuilder.BuildRound — 둥근 사각형 바탕 · 외곽선(9-slice) · 얇은 육각 외곽선
+// 2026-11-13 따라 하기 · 힌트 손가락: entry=SpriteBuilder.BuildFinger — 사용자 그림(ArtSource/UI/finger2.png)을 줄이고 손끝을 pivot으로(색 그대로)
 public static class SpriteBuilder
 {
     private const string Folder = "Assets/Art/Sprites";
@@ -20,6 +21,9 @@ public static class SpriteBuilder
     private const int FrameSize = 48;        // 그림 테두리 스프라이트
     private const float FrameRadius = 12f;
     private const float HexLineWidth = 0.055f; // 스테이지 버튼 외곽선 — 반지름 대비
+    private const string FingerSource = "ArtSource/UI/finger2.png";  // 손가락 표시 원본(사용자 그림 — 2026-11-13 finger.png에서 바꿈)
+    private const int FingerHeight = 256;    // 손가락 스프라이트 높이(픽셀)
+    private const byte AlphaCut = 128;       // 여백 · 손끝을 찾을 때 불투명으로 보는 알파
 
     public static string Build()
     {
@@ -71,6 +75,78 @@ public static class SpriteBuilder
         Vector2[] inner = Hexagon(HexRadius * (1f - HexLineWidth));
         Save("HexLine", p => Inside(hex, p) && !Inside(inner, p));
         return $"버튼 모양 4종(RoundFill · RoundRing 반지름 {RoundRadius} · FrameRing 반지름 {FrameRadius} · 선 {RoundLine} · HexLine) → {Folder}";
+    }
+
+    // 따라 하기 · 힌트 손가락 표시(2026-11-13): 사용자 그림 ArtSource/UI/finger2.png(원본은 그대로)를 여백을 잘라 높이 FingerHeight로 줄이고,
+    // 손끝(검지 끝 둥근 부분의 가운데)을 pivot으로 둔다 — BoardView가 pivot을 칸 가운데에 맞춘다. 색은 그림 그대로(코드가 입히지 않음)
+    public static string BuildFinger()
+    {
+        var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        source.LoadImage(File.ReadAllBytes(FingerSource));
+        int w = source.width, h = source.height;
+        Color32[] src = source.GetPixels32();   // 아래 줄부터
+        int minX = w, maxX = -1, minY = h, maxY = -1;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                if (src[y * w + x].a < AlphaCut) continue;
+                minX = Mathf.Min(minX, x); maxX = Mathf.Max(maxX, x);
+                minY = Mathf.Min(minY, y); maxY = Mathf.Max(maxY, y);
+            }
+        // 손끝: 맨 위에서 조금 내려간 줄의 불투명 구간 = 검지 굵기 → 가운데 x, 위 끝에서 굵기 절반 아래
+        int probe = maxY - (maxY - minY) / 20, left = -1, right = -1;
+        for (int x = minX; x <= maxX; x++)
+        {
+            if (src[probe * w + x].a < AlphaCut) continue;
+            if (left < 0) left = x;
+            right = x;
+        }
+        float cropW = maxX - minX + 1, cropH = maxY - minY + 1;
+        var pivot = new Vector2(((left + right) * 0.5f - minX) / cropW, (maxY - (right - left) * 0.5f - minY) / cropH);
+
+        int outW = Mathf.RoundToInt(cropW * FingerHeight / cropH);
+        var texture = new Texture2D(outW, FingerHeight, TextureFormat.RGBA32, false);
+        var pixels = new Color32[outW * FingerHeight];
+        for (int y = 0; y < FingerHeight; y++)
+            for (int x = 0; x < outW; x++)
+            {
+                // 4×4 표본 평균(알파 가중 — 가장자리가 검게 번지지 않게)
+                Vector3 rgb = Vector3.zero;
+                float alpha = 0f;
+                for (int sy = 0; sy < Samples; sy++)
+                    for (int sx = 0; sx < Samples; sx++)
+                    {
+                        float u = (minX + (x + (sx + 0.5f) / Samples) * cropW / outW) / w;
+                        float v = (minY + (y + (sy + 0.5f) / Samples) * cropH / FingerHeight) / h;
+                        Color c = source.GetPixelBilinear(u, v);
+                        rgb += new Vector3(c.r, c.g, c.b) * c.a;
+                        alpha += c.a;
+                    }
+                Color result = alpha > 0f ? new Color(rgb.x / alpha, rgb.y / alpha, rgb.z / alpha, alpha / (Samples * Samples)) : Color.clear;
+                pixels[y * outW + x] = result;
+            }
+        texture.SetPixels32(pixels);
+        string path = $"{Folder}/Finger.png";
+        File.WriteAllBytes(path, texture.EncodeToPNG());
+        Object.DestroyImmediate(texture);
+        Object.DestroyImmediate(source);
+
+        AssetDatabase.ImportAsset(path);
+        var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.wrapMode = TextureWrapMode.Clamp;
+        importer.filterMode = FilterMode.Bilinear;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
+        var settings = new TextureImporterSettings();
+        importer.ReadTextureSettings(settings);
+        settings.spriteAlignment = (int)SpriteAlignment.Custom;
+        settings.spritePivot = pivot;
+        importer.SetTextureSettings(settings);
+        importer.SaveAndReimport();
+        return $"손가락 {outW}×{FingerHeight}px · 손끝 pivot ({pivot.x:0.000}, {pivot.y:0.000}) · 원본 여백 자름 [{minX}..{maxX}]×[{minY}..{maxY}] → {path} ({new FileInfo(path).Length:N0}바이트)";
     }
 
     // line = 0이면 채운 둥근 사각형, 아니면 그 두께의 외곽선만

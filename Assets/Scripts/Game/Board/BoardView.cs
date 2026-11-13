@@ -27,7 +27,7 @@ namespace ColoringBoot.Game
         private const float GuideCycle = 1.2f;       // 안내 손가락 표시 한 번(초): 끌기 → 흐려짐
         private const float GuideMovePart = 0.7f;    // 그중 움직이는 비율
         private const float GuideDistance = 1.7f;    // 움직이는 거리
-        private const float GuideSize = 0.6f;        // 표시 지름
+        private const float GuideSize = 1.5f;        // 표시 높이(칸 반지름 배) — 너비는 그림 비율대로
 
         [SerializeField] private CellView _cellPrefab;
         [SerializeField] private Button _directionButtonPrefab;
@@ -93,6 +93,7 @@ namespace ColoringBoot.Game
 
         // 안내 손가락 표시 (튜토리얼 · 힌트, 2026-10-07)
         private Image _guide;
+        private float _guideAspect = 1f;   // 손가락 그림 너비 / 높이
         private Coroutine _guideRoutine;
         private int _guideCell;
         private HexDirection _guideDirection;
@@ -169,7 +170,7 @@ namespace ColoringBoot.Game
                 _buttons[d] = (RectTransform)button.transform;
             }
 
-            // 안내 손가락 표시: 맨 위(방향 버튼 다음)에 그린다
+            // 안내 손가락 표시: 맨 위(방향 버튼 다음)에 그린다. 스프라이트 pivot(손끝)이 칸 가운데에 오게 한다
             _guide = null;
             if (_guideSprite != null)
             {
@@ -178,6 +179,8 @@ namespace ColoringBoot.Game
                 _guide = guide.GetComponent<Image>();
                 _guide.sprite = _guideSprite;
                 _guide.raycastTarget = false;
+                _guide.rectTransform.pivot = _guideSprite.pivot / _guideSprite.rect.size;
+                _guideAspect = _guideSprite.rect.width / _guideSprite.rect.height;
                 guide.SetActive(false);
             }
             _layoutDirty = true;

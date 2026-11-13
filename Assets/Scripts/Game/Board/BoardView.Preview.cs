@@ -49,7 +49,7 @@ namespace ColoringBoot.Game
                 float move = Mathf.Clamp01(k / GuideMovePart);
                 float fade = k <= GuideMovePart ? 1f : 1f - (k - GuideMovePart) / (1f - GuideMovePart);
                 rect.anchoredPosition = _centers[_guideCell] + _directionVectors[(int)_guideDirection] * (move * GuideDistance * _radius);
-                rect.sizeDelta = Vector2.one * (GuideSize * _radius);
+                rect.sizeDelta = new Vector2(_guideAspect, 1f) * (GuideSize * _radius);
                 Color color = _guideColor;
                 color.a *= fade;
                 _guide.color = color;

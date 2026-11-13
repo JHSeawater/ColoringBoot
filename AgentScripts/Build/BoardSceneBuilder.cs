@@ -257,8 +257,8 @@ public static class BoardSceneBuilder
         SetRefs(boardView, ("_cellPrefab", cellPrefab), ("_directionButtonPrefab", buttonPrefab));
         SetValues(boardView, ("_emptyColor", T.EmptyCell), ("_emptyTrailColor", new Color(Lead.r, Lead.g, Lead.b, 0.55f)));
         SetRefs(boardView, ("_motion", LoadOrCreate<MotionSettings>(MotionPath)));   // 플레이 보드만 연출(목표 썸네일 · 레벨 에디터는 없음)
-        SetRefs(boardView, ("_guideSprite", Sprite("Circle")));                        // 따라 하기 · 힌트 손가락 표시도 플레이 보드만
-        SetValues(boardView, ("_guideColor", new Color(Lead.r, Lead.g, Lead.b, 0.6f)));
+        SetRefs(boardView, ("_guideSprite", Sprite("Finger")));                        // 따라 하기 · 힌트 손가락 표시도 플레이 보드만(SpriteBuilder.BuildFinger, 2026-11-13)
+        SetValues(boardView, ("_guideColor", Color.white));                             // 손가락 그림 색 그대로
 
         // 안내 띠 (아래 버튼 위). 클리어 안내에는 다음 버튼, 막힘 안내에는 되돌리기 버튼을 함께 둔다
         GameObject clearBanner = Banner(boardScreen, "ClearBanner", Strong, "", 300f);

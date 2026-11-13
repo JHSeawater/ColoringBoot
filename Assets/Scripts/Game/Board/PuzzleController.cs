@@ -207,7 +207,7 @@ namespace ColoringBoot.Game
         private void OnBrushRequested(int cell, HexDirection dir)
         {
             if (_session == null || _session.IsSolved) return;
-            // 따라 하기: 안내한 줄 · 방향만 긋는다(같은 줄의 어느 칸이든 — 혼자 풀기 레슨은 아무 획이나). 아니면 안내를 다시 보인다
+            // 따라 하기: 손가락이 가리킨 칸 · 방향만 긋는다(혼자 풀기 레슨은 아무 획이나). 아니면 안내를 다시 보인다
             if (_lesson >= 0 && !TutorialLessons.IsFree(_lesson) && !LessonAllows(cell, dir))
             {
                 ShowLessonGuide();
@@ -373,11 +373,11 @@ namespace ColoringBoot.Game
             ShowGuideText(guide.Caption);
         }
 
-        // 안내한 줄 · 방향인가 — 같은 줄이면 어느 칸에서 그어도 결과가 같다(CLAUDE.md §3)
+        // 손가락이 가리킨 칸 · 방향인가 — 결과는 같은 줄 어느 칸이든 같지만, "가운데에서 끌어도 줄 끝부터"를 직접 겪도록 그 칸에서 시작한 획만 받는다(2026-11-13)
         private bool LessonAllows(int cell, HexDirection dir)
         {
             if (_session.IsDead || !TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return false;
-            return dir == guide.Direction && _session.Board.CoordOf(cell).LineKey(dir) == guide.Cell.LineKey(dir);
+            return dir == guide.Direction && _session.Board.CoordOf(cell).Equals(guide.Cell);
         }
 
         // 힌트 버튼 — 보상형 광고 자리를 거친다(지금은 바로). 횟수 제한 없음 · "완벽"과 무관 (GDD §5 · §6, 2026-10-07)
