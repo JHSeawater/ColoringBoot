@@ -15,3 +15,5 @@ MonoBehaviour:
   _palettes:
   - {fileID: 11400000, guid: 3c5496d62728997479a011923ca2e2d6, type: 2}
   - {fileID: 11400000, guid: 7e780f8461af25846bfabdfb3e07ea80, type: 2}
+  - {fileID: 11400000, guid: 33bcf39a8c6bd324c8fb3254f10eb8fa, type: 2}
+  - {fileID: 11400000, guid: 508b7c975ad757b45aac5c4bc699e23d, type: 2}

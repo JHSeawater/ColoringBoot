@@ -191,6 +191,7 @@ public static class QaScene
 
         // 팔레트 목록: 첫 칸 = 기본(default) · 이름이 비지 않고 겹치지 않음 · 팔레트마다 7색 · 알파 1
         var palettes = AssetDatabase.LoadAssetAtPath<PaletteCatalog>("Assets/Data/Palettes/PaletteCatalog.asset");
+        var theme = AssetDatabase.LoadAssetAtPath<UiTheme>("Assets/Data/Settings/UiTheme.asset");
         Expect(palettes != null && palettes.Palettes.Count >= 2 && palettes.Palettes.All(p => p != null), "팔레트 목록 2개 이상 · 빈 칸 없음");
         Expect(palettes.Default.Id == "default", "첫 팔레트 = default");
         Expect(palettes.Palettes.Select(p => p.Id).Distinct().Count() == palettes.Palettes.Count && palettes.Palettes.All(p => !string.IsNullOrWhiteSpace(p.Id)), "팔레트 이름 겹침 · 빈 이름 없음");
@@ -198,6 +199,12 @@ public static class QaScene
         {
             var colors = new SerializedObject(each).FindProperty("_colors");
             Expect(colors.arraySize == 7 && Enumerable.Range(0, 7).All(i => colors.GetArrayElementAtIndex(i).colorValue.a == 1f), $"팔레트 {each.Id} 7색 · 알파 1");
+            // 색 구분(GDD §2.3, 2026-11-13): 팔레트 안 색끼리 · 빈칸과 CIEDE2000 20 이상, 7번(세 색 섞임)이 가장 어두움(Lab L*)
+            Color[] shown = Enumerable.Range(1, 7).Select(v => each.Get((PaintColor)v)).Prepend(theme.EmptyCell).ToArray();
+            for (int a = 0; a < shown.Length; a++)
+                for (int b = a + 1; b < shown.Length; b++)
+                    Expect(DeltaE2000(shown[a], shown[b]) >= 20f, $"팔레트 {each.Id} {(a == 0 ? "빈칸" : a.ToString())}-{b} 색 구분(CIEDE2000 {DeltaE2000(shown[a], shown[b]):F1} < 20)");
+            Expect(Enumerable.Range(1, 6).All(v => Lab(shown[v])[0] > Lab(shown[7])[0]), $"팔레트 {each.Id} 7번이 가장 어두움");
         }
         foreach (TextAsset stage in chapterStages.Concat(lab.Stages).Concat(tutorial.Stages))
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
@@ -224,6 +231,38 @@ public static class QaScene
         float margin = so.FindProperty("_fitMargin").floatValue;
         expect(target ? margin < 1f : Mathf.Approximately(margin, 1.8f), $"{view.name} _fitMargin");
         expect(so.FindProperty("_cellPrefab").objectReferenceValue != null && so.FindProperty("_directionButtonPrefab").objectReferenceValue != null, $"{view.name} 프리팹 참조");
+    }
+
+    // sRGB → CIE Lab(D65)
+    private static float[] Lab(Color c)
+    {
+        double F(double v) => v > 0.04045 ? System.Math.Pow((v + 0.055) / 1.055, 2.4) : v / 12.92;
+        double T(double v) => v > 0.008856 ? System.Math.Pow(v, 1.0 / 3) : 7.787 * v + 16.0 / 116;
+        double r = F(c.r), g = F(c.g), b = F(c.b);
+        double x = T((r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047), y = T(r * 0.2126 + g * 0.7152 + b * 0.0722), z = T((r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883);
+        return new[] { (float)(116 * y - 16), (float)(500 * (x - y)), (float)(200 * (y - z)) };
+    }
+
+    // 색차 CIEDE2000 (Sharma 2005 식)
+    private static float DeltaE2000(Color c1, Color c2)
+    {
+        float[] p = Lab(c1), q = Lab(c2);
+        double Rad(double d) => d * System.Math.PI / 180;
+        double Deg(double r) => r * 180 / System.Math.PI;
+        double cBar = (System.Math.Sqrt(p[1] * p[1] + p[2] * p[2]) + System.Math.Sqrt(q[1] * q[1] + q[2] * q[2])) / 2;
+        double g = 0.5 * (1 - System.Math.Sqrt(System.Math.Pow(cBar, 7) / (System.Math.Pow(cBar, 7) + System.Math.Pow(25, 7))));
+        double a1 = (1 + g) * p[1], a2 = (1 + g) * q[1];
+        double c1p = System.Math.Sqrt(a1 * a1 + p[2] * p[2]), c2p = System.Math.Sqrt(a2 * a2 + q[2] * q[2]);
+        double h1 = (Deg(System.Math.Atan2(p[2], a1)) + 360) % 360, h2 = (Deg(System.Math.Atan2(q[2], a2)) + 360) % 360;
+        double dh = c1p * c2p == 0 ? 0 : h2 - h1 > 180 ? h2 - h1 - 360 : h2 - h1 < -180 ? h2 - h1 + 360 : h2 - h1;
+        double dL = q[0] - p[0], dC = c2p - c1p, dH = 2 * System.Math.Sqrt(c1p * c2p) * System.Math.Sin(Rad(dh / 2));
+        double lBar = (p[0] + q[0]) / 2, cBarP = (c1p + c2p) / 2;
+        double hBar = c1p * c2p == 0 ? h1 + h2 : System.Math.Abs(h1 - h2) <= 180 ? (h1 + h2) / 2 : h1 + h2 < 360 ? (h1 + h2 + 360) / 2 : (h1 + h2 - 360) / 2;
+        double t = 1 - 0.17 * System.Math.Cos(Rad(hBar - 30)) + 0.24 * System.Math.Cos(Rad(2 * hBar)) + 0.32 * System.Math.Cos(Rad(3 * hBar + 6)) - 0.2 * System.Math.Cos(Rad(4 * hBar - 63));
+        double rc = 2 * System.Math.Sqrt(System.Math.Pow(cBarP, 7) / (System.Math.Pow(cBarP, 7) + System.Math.Pow(25, 7)));
+        double sl = 1 + 0.015 * (lBar - 50) * (lBar - 50) / System.Math.Sqrt(20 + (lBar - 50) * (lBar - 50)), sc = 1 + 0.045 * cBarP, sh = 1 + 0.015 * cBarP * t;
+        double rt = -System.Math.Sin(Rad(2 * 30 * System.Math.Exp(-System.Math.Pow((hBar - 275) / 25, 2)))) * rc;
+        return (float)System.Math.Sqrt(System.Math.Pow(dL / sl, 2) + System.Math.Pow(dC / sc, 2) + System.Math.Pow(dH / sh, 2) + rt * (dC / sc) * (dH / sh));
     }
 
     private static void CheckRefs(Object target, System.Action<bool, string> expect, params string[] fields)

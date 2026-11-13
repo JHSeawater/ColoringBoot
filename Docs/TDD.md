@@ -33,7 +33,7 @@
 
 ## 3. 팔레트
 
-* 구현(2026-09-30): `ColorPalette._id`(스테이지 JSON의 이름 — `default` · `pastel`) · `PaletteCatalog`(`Assets/Data/Palettes/PaletteCatalog.asset`, 첫 칸 = 기본). 이름이 없으면 기본, 모르는 이름이면 기본 + 경고. 기호 글자색은 칸 색의 밝기(`Color.grayscale` > 0.6이면 어두운 글자).
+* 구현(2026-09-30): `ColorPalette._id`(스테이지 JSON의 이름 — `default` · `pastel` · `garden` · `spring`(2026-11-13 챕터 2용, 색은 GDD §2.3)) · `PaletteCatalog`(`Assets/Data/Palettes/PaletteCatalog.asset`, 첫 칸 = 기본). 이름이 없으면 기본, 모르는 이름이면 기본 + 경고. 기호 글자색은 칸 색의 밝기(`Color.grayscale` > 0.6이면 어두운 글자).
 
 ## 4. 스테이지 데이터 · 저장 형식
 

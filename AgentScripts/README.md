@@ -12,7 +12,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 
 - **스크립트끼리 서로 참조할 수 없다**(한 파일씩 컴파일). 공통 코드가 필요하면 각 파일에 둔다.
 - **이 빌더들이 정본이다** — 보드 씬 · 레벨 에디터 씬 · 프리팹 · 스프라이트 · 폰트 · 팔레트 · 챕터 그림 에셋. 에디터나 MCP로 직접 고친 값은 다음 빌드 때 사라진다 → 빌더를 고쳐 다시 실행한다(급히 직접 고쳤다면 빌더에도 같은 수정).
-- **에셋을 옮기거나 이름을 바꾸면 빌더의 경로 상수도 함께 바꾼다.** `UiTheme` · `MotionSettings` · 파스텔 팔레트는 없으면 기본값으로 새로 만들므로(사람이 고친 값 유지용), 경로가 어긋나면 기본값 에셋이 조용히 하나 더 생긴다.
+- **에셋을 옮기거나 이름을 바꾸면 빌더의 경로 상수도 함께 바꾼다.** `UiTheme` · `MotionSettings` · 파스텔 · 정원 · 봄볕 팔레트는 없으면 기본값으로 새로 만들므로(사람이 고친 값 유지용), 경로가 어긋나면 기본값 에셋이 조용히 하나 더 생긴다.
 - **폰트 빌더는 `Assets/Scripts/Game` · `Assets/Data`(모든 스테이지 JSON)를 하위 폴더까지 읽고 챕터 에셋(`Chapter`)의 제목 · 부제도 모으며, 로그 · 예외 메시지 · `[Tooltip]` · `[Header]` 줄은 뺀다**(2026-10-05). 화면 글자가 폰트에 없으면 게임에 □로 나온다 — `QaScene`이 씬 글자 · 스테이지 이름을 점검한다.
 - Python: `pip install -r AgentScripts/requirements.txt`. Windows 표준 출력은 cp949라 스크립트가 `sys.stdout.reconfigure(encoding='utf-8')`를 부른다.
 
@@ -23,7 +23,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` (목록 순서는 `StageOrder` — 옛 `BuildCatalog`는 챕터 1 다시 짝짓기 때 지움, 2026-10-11) |
 | `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘 — `Finger`만 사용자 그림 색 그대로, 코드는 흐려짐만) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) · `BuildFinger`(따라 하기 · 힌트 손가락 — 사용자 그림 `ArtSource/UI/finger2.png`를 높이 256px로 줄이고 손끝을 pivot으로, 색 그대로. 2026-11-13) |
 | `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
-| `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 팔레트 · `PaletteCatalog` | 파스텔 색 · 팔레트 목록을 바꿀 때(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
+| `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 · 정원 · 봄볕 팔레트 · `PaletteCatalog` | 팔레트 색 · 목록을 바꾸거나 더할 때(뒤에 `QaScene`으로 색 구분 검사)(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
 | `StageOrder.cs` | 챕터 N의 `StageCatalog` 순서 · 시험 목록 `LabCatalog`(`?lab`) · 따라 하기 `TutorialCatalog`(레슨 i ↔ `TutorialLessons`) — 시험 · 따라 하기 목록 에셋은 없으면 만듦 | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder`(args=[챕터 번호]) · `SetLabOrder` · `SetTutorialOrder` |
 | `EndlessPoolBuilder.cs` | 무한 모드 퍼즐 묶음 `Assets/Data/Endless/{Easy,Normal,Hard}.txt`(한 줄에 스테이지 코드, 같은 시드면 같은 묶음) — 난이도별 임시 기준은 파일 안. 난이도마다 다른 시드(쉬움 1 · 보통 2 · 어려움 3), 다른 묶음과 거의 같은 퍼즐(모양 같고 목표 80% 이상)은 거름 | 기준을 바꾸거나 개수를 늘릴 때 → 뒤에 `BuildScene`(묶음 연결은 그대로라 파일만 바뀌면 다시 안 돌려도 됨) | `Build`(args=["Easy", 300, 1] · ["Normal", 300, 2] · ["Hard", 300, 3] — 난이도 · 개수 · 시드, 이 순서로) |
 | `ArtSplit.py` | 완성 그림 한 장 → `ArtSource/ChapterN/`의 선화 · 단계 레이어 · `reference.png` · `steps.md`(+ 사람이 볼 색칠 과정 `Builds/ArtSplit/ChapterN_progress.png`). 진한 픽셀 = 선, 선으로 닫힌 영역은 색을 하나로 평탄화하고 `_source/split.json`의 기준 색 + 위치 규칙으로 단계를 정한다. 결과 레이어는 손으로 고치지 않고 `split.json`을 고쳐 다시 실행(2026-11-13). 검사(규칙 · 영역 · 단계마다 영역 · 선)가 모두 통과해야 파일을 쓴다 — 실패하면 폴더는 그대로 | 레이어 없이 완성 그림만 받았을 때 → 뒤에 `ArtCheck.py` → `ChapterArtExport.py` → `ChapterArtBuilder` | `python … ArtSource/ChapterN`(원본 · 설정은 `ArtSource/ChapterN/_source/` — `original.png` · `split.json`) |
