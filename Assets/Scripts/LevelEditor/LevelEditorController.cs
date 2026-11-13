@@ -43,6 +43,7 @@ namespace ColoringBoot.LevelEditor
         private static readonly double[] _trapSteps = { 0, 0.2, 0.4, 0.6 };
         private const int MetricsLimit = 200000;      // 난이도 지표의 상태 수 상한(넘으면 "모름")
         private static readonly Regex _fileNamePattern = new Regex("^[A-Za-z][A-Za-z0-9_]*$");
+        private const string DataRoot = "Assets/Data";   // 스테이지 파일 이름(진행 기록 키)이 겹치면 안 되는 범위
 
         [SerializeField] private PaintGridView _grid;
         [SerializeField] private BoardView _recordTemplate;
@@ -144,7 +145,7 @@ namespace ColoringBoot.LevelEditor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("획 긋기 시작")) StartRecording();
             if (GUILayout.Button("시험 플레이")) StartPlay();
-            if (GUILayout.Button("풀이 검사")) _status = Describe(Solve(BuildStage(null)));
+            if (GUILayout.Button("풀이 검사") && HasEnoughCells()) _status = Describe(Solve(BuildStage(null)));
             if (GUILayout.Button("모두 지우기"))
             {
                 _cells.Clear();
@@ -223,11 +224,7 @@ namespace ColoringBoot.LevelEditor
         // 획 기록: 지금 시작 상태로 게임 보드를 띄운다(목표 없음 — 마커 · 막힘 표시 끔)
         private void StartRecording()
         {
-            if (_cells.Count < 2)
-            {
-                _status = "칸이 두 개 이상 필요해요.";
-                return;
-            }
+            if (!HasEnoughCells()) return;
             var stage = new Stage(_name, _cells.Select(c => new StageCell(c.Key, c.Value.start, PaintColor.Empty)).ToArray());
             OpenBoard(stage, _recordTemplate, false);
         }
@@ -235,11 +232,7 @@ namespace ColoringBoot.LevelEditor
         // 시험 플레이: 지금 칠한 시작 · 목표 그대로 게임 보드를 띄운다(목표 마커 · 막힘 표시). 풀 수 없으면 열지 않는다
         private void StartPlay()
         {
-            if (_cells.Count < 2)
-            {
-                _status = "칸이 두 개 이상 필요해요.";
-                return;
-            }
+            if (!HasEnoughCells()) return;
             Stage stage = BuildStage(null);
             SolveResult result = Solve(stage);
             if (!result.Solved || result.Path.Count == 0)
@@ -249,6 +242,14 @@ namespace ColoringBoot.LevelEditor
             }
             _playMinMoves = result.Path.Count;
             OpenBoard(stage, _playTemplate, true);
+        }
+
+        // 스테이지를 만드는 버튼 공용 — 칸이 두 개 미만이면 Stage 생성자 예외 대신 상태 줄에 알린다
+        private bool HasEnoughCells()
+        {
+            if (_cells.Count >= 2) return true;
+            _status = "칸이 두 개 이상 필요해요.";
+            return false;
         }
 
         // 칠하기 격자 대신 게임 보드 원본을 복제해 띄운다 (획 기록 · 시험 플레이 공용)
@@ -332,7 +333,7 @@ namespace ColoringBoot.LevelEditor
                 _status = "조건에 맞는 스테이지를 찾지 못했어요. 목표 수를 줄이거나 순서 조건을 완화해 보세요.";
                 return;
             }
-            SetStage(generated.Stage);
+            if (!SetStage(generated.Stage)) return;
             _name = "랜덤";
             _fileName = $"Random{seed}";
             _loadedFile = null;
@@ -343,6 +344,7 @@ namespace ColoringBoot.LevelEditor
         // 그림 맵 (GDD §5 · §8): 지금 칠한 목표 그림은 두고, 시작 색 칸 배치를 시간 안에서 찾는다 — 시작 색 칸 수 · 목표 수(~ +2) · 순서 · 색(섞인 색 포함이면 시작 색도 섞인 색 허용) 조건
         private void FindSeeds()
         {
+            if (!HasEnoughCells()) return;
             var options = new SeedSearchOptions
             {
                 Seeds = _genSeeds,
@@ -370,7 +372,7 @@ namespace ColoringBoot.LevelEditor
                 _status = $"{GenerateSeconds}초 안에 {options.MinMoves}~{options.MaxMoves}수로 풀리는 배치를 찾지 못했어요. 시작 색 칸을 늘리거나 목표 수 · 순서 조건을 완화해 보세요(다시 누르면 다른 배치를 찾아요).";
                 return;
             }
-            SetStage(found.Stage);
+            if (!SetStage(found.Stage)) return;
             string order = found.Order.HasValue ? $", 순서 {found.Order.Value.Succeeded}/{found.Order.Value.Total}" : "";
             _status = $"시작 칸 {options.Seeds}개를 찾았어요: 최소 {found.Stage.MinMoves}수{order} (시드 {seed}). {MetricsText(found.Stage)}";
         }
@@ -409,8 +411,9 @@ namespace ColoringBoot.LevelEditor
             {
                 Stage stage = Stage.Parse(code);
                 int palette = _palettes.IndexOf(stage.Palette);
+                if (!SetStage(stage)) return false;
                 _paletteIndex = Math.Max(palette, 0);
-                SetStage(stage);
+                RenderGrid();   // 팔레트를 바꾼 뒤 다시 그린다(열지 못하면 팔레트도 그대로 둔다)
                 _name = stage.Name;
                 label ??= stage.Name;
                 _status = palette >= 0 ? $"'{label}'을(를) 불러왔어요." : $"'{label}'을(를) 불러왔어요 — 팔레트 '{stage.Palette}'가 목록에 없어 기본으로 바꿨어요.";
@@ -423,17 +426,27 @@ namespace ColoringBoot.LevelEditor
             }
         }
 
-        // 편집 범위(반지름 4) 안으로 옮겨 담는다 — 프로토타입 fromLevel과 같은 가운데 맞춤
-        private void SetStage(Stage stage)
+        // 편집 범위(반지름 4) 안으로 옮겨 담는다 — 프로토타입 fromLevel과 같은 가운데 맞춤.
+        // 옮겨도 범위를 넘거나 칸이 40개를 넘으면 열지 않는다(격자에 안 보이는 칸이 그대로 저장되므로) — 상태 줄에 알리고 false
+        private bool SetStage(Stage stage)
         {
             int minQ = stage.Cells.Min(c => c.Coord.Q), maxQ = stage.Cells.Max(c => c.Coord.Q);
             int minR = stage.Cells.Min(c => c.Coord.R), maxR = stage.Cells.Max(c => c.Coord.R);
             int centerQ = (int)Math.Floor((minQ + maxQ) / 2.0 + 0.5), centerR = (int)Math.Floor((minR + maxR) / 2.0 + 0.5);
+            HexCoord[] coords = stage.Cells.Select(c => new HexCoord(c.Coord.Q - centerQ, c.Coord.R - centerR)).ToArray();
+            int outside = coords.Count(c => Math.Max(Math.Abs(c.Q), Math.Max(Math.Abs(c.R), Math.Abs(c.Q + c.R))) > PaintGridView.Radius);
+            if (stage.Cells.Count > MaxCells || outside > 0)
+            {
+                _status = $"열지 않았어요 — '{stage.Name}' {stage.Cells.Count}칸"
+                    + (stage.Cells.Count > MaxCells ? $", 칸은 {MaxCells}개까지예요 (GDD §6)" : "")
+                    + (outside > 0 ? $", 가운데로 옮겨도 {outside}칸이 편집 범위(반지름 {PaintGridView.Radius})를 넘어요" : "") + ".";
+                return false;
+            }
             _cells.Clear();
-            foreach (StageCell cell in stage.Cells)
-                _cells[new HexCoord(cell.Coord.Q - centerQ, cell.Coord.R - centerR)] = (cell.Start, cell.Target);
+            for (int i = 0; i < coords.Length; i++) _cells[coords[i]] = (stage.Cells[i].Start, stage.Cells[i].Target);
             _targetLayer = false;
             RenderGrid();
+            return true;
         }
 
         // 칸 순서는 프로토타입 toLevel과 같이 r → q
@@ -465,11 +478,7 @@ namespace ColoringBoot.LevelEditor
         // 저장: 솔버가 minMoves를 채우고, JSON을 쓰고, 목록에 없으면 끝에 등록한다. 풀이를 확인하지 못하면(풀 수 없음 · 탐색 상한) 저장하지 않는다
         private void Save()
         {
-            if (_cells.Count < 2)
-            {
-                _status = "칸이 두 개 이상 필요해요.";
-                return;
-            }
+            if (!HasEnoughCells()) return;
             if (!_fileNamePattern.IsMatch(_fileName))
             {
                 _status = "파일 이름은 영문자로 시작하는 영문 · 숫자 · _ 만 써요 (예: Grape2).";
@@ -478,6 +487,16 @@ namespace ColoringBoot.LevelEditor
             // 목록 에셋과 같은 챕터 폴더의 Stages/에 저장한다(Assets/Data/Chapters/ChapterN/ — 2026-10-07)
             string folder = Path.GetDirectoryName(AssetDatabase.GetAssetPath(_catalog)).Replace(Path.DirectorySeparatorChar, '/') + "/Stages";
             string path = $"{folder}/{_fileName}.json";
+            // 파일 이름은 진행 기록의 키라 챕터 · 따라 하기 · 시험 목록 전체에서 겹치면 안 된다(ContentRegressionTests.FileNames_AreUnique와 같은 범위 · 대소문자 무시)
+            string other = Directory.GetFiles(DataRoot, "*.json", SearchOption.AllDirectories)
+                .Select(p => p.Replace(Path.DirectorySeparatorChar, '/'))
+                .FirstOrDefault(p => string.Equals(Path.GetFileNameWithoutExtension(p), _fileName, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+            if (other != null)
+            {
+                _status = $"'{other}'와 파일 이름이 겹쳐요(진행 기록 키). 다른 파일 이름을 쓰세요.";
+                return;
+            }
             if (File.Exists(path) && _fileName != _loadedFile)
             {
                 _status = $"'{_fileName}.json'이 이미 있어요. 다른 파일 이름을 쓰거나, 그 스테이지를 불러온 뒤 저장하세요.";
