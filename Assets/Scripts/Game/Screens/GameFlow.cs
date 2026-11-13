@@ -43,7 +43,11 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _nextLabel;
         [Header("챕터 그림 (Phase 5)")]
         [SerializeField] private ChapterView _selectPicture;   // 선택 화면 위쪽(작게)
-        [SerializeField] private GameObject _chapterScreen;    // 처음 클리어한 뒤 크게 칠하는 화면
+        [SerializeField] private GameObject _paintCard;        // 클리어 띠 위 작은 그림 — 처음 클리어하면 그 자리에서 칠한다(2026-11-12)
+        [SerializeField] private ChapterView _paintPicture;
+        [SerializeField] private TMP_Text _paintProgress;
+        [SerializeField] private RectTransform _paintCardCenter;   // 카드를 놓는 곳(보드 영역) — 어차피 보드를 가리니 한가운데에(2026-11-12 사용자)
+        [SerializeField] private GameObject _chapterScreen;    // 챕터를 완성한 클리어 뒤 크게 칠하는 화면
         [SerializeField] private ChapterView _chapterPicture;
         [SerializeField] private TMP_Text _chapterCaption;
         [SerializeField] private Button _chapterNextButton;
@@ -151,6 +155,7 @@ namespace ColoringBoot.Game
             _select.ChapterStepped += StepChapter;
             _options.Changed += ApplySettings;
             _options.TutorialRequested += StartTutorial;
+            _puzzle.ClearShown += PaintOnBoard;
         }
 
         private void OnDisable()
@@ -170,6 +175,7 @@ namespace ColoringBoot.Game
             _select.ChapterStepped -= StepChapter;
             _options.Changed -= ApplySettings;
             _options.TutorialRequested -= StartTutorial;
+            _puzzle.ClearShown -= PaintOnBoard;
         }
 
         // 타이틀의 [시작] — 따라 하기를 아직 안 봤으면 그것부터, 봤으면 목록. 여는 챕터는 아직 완성하지 않은 첫 챕터(2026-10-11 사용자 결정)
@@ -194,6 +200,7 @@ namespace ColoringBoot.Game
             _lesson = lesson;
             _endlessTier = -1;
             _skipButton.gameObject.SetActive(false);
+            _paintCard.SetActive(false);
             if (!_puzzle.OpenLesson(_tutorialCatalog.Stages[lesson], lesson, _data))
             {
                 ShowSelect();
@@ -283,6 +290,7 @@ namespace ColoringBoot.Game
             _lesson = -1;
             _endlessTier = -1;
             _skipButton.gameObject.SetActive(false);
+            _paintCard.SetActive(false);
             if (!_puzzle.Open(_list.Stages[index], index + 1, _data, _paletteOverride))
             {
                 ShowSelect();
@@ -292,7 +300,21 @@ namespace ColoringBoot.Game
             _nextLabel.text = index + 1 < _stages.Length ? NextText : ListText;
         }
 
-        // 클리어 띠의 "다음" — 처음 클리어했으면 그림 화면에서 그 단계를 칠한 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
+        // 클리어 띠가 떴다 — 본편 첫 클리어면 띠 위 작은 그림에서 그 단계를 칠한다("다음"은 바로 다음 스테이지 — 그림 화면을 거치면 호흡이 끊긴다, 2026-11-12 사용자).
+        // 챕터를 완성한 클리어는 칠하지 않고 남겨 둔다 — "다음"이 큰 그림 화면에서 완성 연출(Next)
+        private void PaintOnBoard()
+        {
+            if (_lab || _current < 0 || !_puzzle.FirstClear || _paintShown || _data.Progress.IsComplete(_stages)) return;
+            _paintShown = true;
+            bool[] painted = UpdatePainted();
+            _paintProgress.text = $"색칠 {_data.Progress.ClearedCount(_stages)} / {painted.Length}";
+            // 카드는 띠의 자식(띠와 함께 켜지고 꺼짐)이라 자리만 보드 영역 가운데로 옮긴다 — 영역 높이는 화면 비율 · 안전영역에 따라 다르다
+            _paintCard.transform.position = _paintCardCenter.TransformPoint(_paintCardCenter.rect.center);
+            _paintCard.SetActive(true);
+            _paintPicture.Show(CurrentChapter.Art, painted, _current);
+        }
+
+        // 클리어 띠의 "다음" — 챕터를 막 완성했으면 그림 화면에서 완성 연출 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
         private void Next()
         {
             if (_endlessTier >= 0)
@@ -478,6 +500,7 @@ namespace ColoringBoot.Game
             _puzzle.Open(pool[index], $"Endless{EndlessKeys[tier]}{index:D4}", $"{EndlessNames[tier]} {index + 1}번", _data, _paletteOverride);
             _nextLabel.text = NextText;
             _skipButton.gameObject.SetActive(true);
+            _paintCard.SetActive(false);
         }
 
         // 풀린 판을 떠나면(다음 · 목록) 다음 퍼즐로 넘기고 푼 수를 센다

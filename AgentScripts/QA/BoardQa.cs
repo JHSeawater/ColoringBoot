@@ -177,6 +177,9 @@ public static class BoardQa
             Transform screen = safe.Find("BoardScreen");
             text += $" | {screen.Find("StageName").GetComponentInChildren<TMPro.TMP_Text>().text} · {screen.Find("MoveCounter").GetComponentInChildren<TMPro.TMP_Text>().text}";
             if (Active("ClearBanner")) text += $" · 띠: {screen.Find("ClearBanner/Label").GetComponent<TMPro.TMP_Text>().text} [{screen.Find("ClearBanner/NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
+            // 띠 위 그림 카드(2026-11-12): 처음 클리어한 판만 — 진행 글자 · 칠한 단계 수
+            Transform card = screen.Find("ClearBanner/PaintCard");
+            if (Active("ClearBanner") && card.gameObject.activeSelf) text += $" · 카드: {card.Find("Progress").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(card.Find("PictureMask/Picture"))} · 확대 {card.Find("PictureMask/Picture").localScale.x:0.00}";
             if (Active("StuckBanner")) text += " · 막힘 띠";
             // 따라 하기 · 힌트 안내(2026-10-07): 안내 띠 문구 · 손가락 표시 · 힌트 버튼
             if (Active("GuideBanner")) text += $" · 안내: {screen.Find("GuideBanner/Label").GetComponent<TMPro.TMP_Text>().text}";

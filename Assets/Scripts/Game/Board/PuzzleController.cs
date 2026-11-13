@@ -59,6 +59,9 @@ namespace ColoringBoot.Game
         // 이번에 연 판에서 처음 클리어했는가 — 그림 칠하기 연출(GameFlow, Phase 5). 되돌렸다 다시 풀어도 유지
         public bool FirstClear { get; private set; }
 
+        // 클리어 연출이 끝나 클리어 띠를 띄웠다 — GameFlow가 띠 위 작은 그림에서 그 단계를 칠한다(2026-11-12)
+        public event Action ClearShown;
+
         // 스테이지를 연다(같은 보드 화면을 다시 쓴다). 스테이지 코드를 읽지 못하면 false.
         // paletteOverride: 주소 ?palette= (QA — 모든 스테이지를 그 팔레트로), 없으면 스테이지의 palette
         public bool Open(TextAsset asset, int number, SaveData data, string paletteOverride = null)
@@ -240,6 +243,7 @@ namespace ColoringBoot.Game
                 yield return Wait(_boardView.PlayClear());
                 _clearBanner.SetActive(true);
                 if (_lesson >= 0 && TutorialLessons.PointsAtGoal(_lesson)) _goalPulse = StartCoroutine(PulseGoal());
+                ClearShown?.Invoke();
             }
             else
             {

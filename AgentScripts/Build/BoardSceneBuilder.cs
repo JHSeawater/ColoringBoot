@@ -270,6 +270,7 @@ public static class BoardSceneBuilder
         clearLabel.fontSizeMin = 32f;
         clearLabel.fontSizeMax = 52f;
         Button nextButton = BannerButton(clearBanner, "NextButton", "다음", Strong);
+        GameObject paintCard = PaintCard(clearBanner, out ChapterView paintPicture, out TMP_Text paintProgress);
         GameObject stuckBanner = Banner(boardScreen, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
         Button stuckUndoButton = BannerButton(stuckBanner, "UndoButton", "되돌리기", Warn);
         // 따라 하기 · 힌트 안내 한 줄 (2026-10-07) — 막힘 띠와 같은 자리, 길면 글자를 줄인다
@@ -345,6 +346,10 @@ public static class BoardSceneBuilder
             ("_nextButton", nextButton),
             ("_nextLabel", nextButton.GetComponentInChildren<TMP_Text>()),
             ("_selectPicture", selectPicture),
+            ("_paintCard", paintCard),
+            ("_paintPicture", paintPicture),
+            ("_paintProgress", paintProgress),
+            ("_paintCardCenter", (RectTransform)boardArea.transform),
             ("_chapterScreen", chapterScreen),
             ("_chapterPicture", chapterPicture),
             ("_chapterCaption", chapterCaption),
@@ -493,6 +498,39 @@ public static class BoardSceneBuilder
         next = BottomButton(screen, "NextButton", "다음", 0f, 460f, true);
         screen.SetActive(false);
         return screen;
+    }
+
+    // 클리어 띠의 그림 카드(2026-11-12): 챕터 그림(4:5) · 색칠 진행. 띠의 자식이라 띠와 함께 켜지고 꺼진다 — 처음 클리어한 판만 GameFlow가 켜고 보드 영역 가운데로 옮긴다.
+    // 보드를 가린다(클리어 뒤라 보드 입력은 잠겨 있음). 막 칠한 단계를 확대해 칠한 뒤 전체로 물러난다 — 확대가 카드 밖으로 넘치지 않게 그림을 RectMask2D 안에 둔다
+    private static GameObject PaintCard(GameObject banner, out ChapterView picture, out TMP_Text progress)
+    {
+        const float Outset = 7f;   // 그림 테두리가 그림 밖으로 나오는 폭(ChapterView._frameOutset) — 마스크에 잘리지 않게
+        var card = NewUI("PaintCard", banner);
+        var rect = (RectTransform)card.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(480f, 650f);   // 그림 440×550 — 280×350은 휴대폰에서 칠해진 게 잘 안 보였다(2026-11-12 사용자)
+        RoundImage(card, "RoundFill", T.Surface).raycastTarget = false;
+        AddImage("Outline", card, "RoundRing", Lead, 0f, 1f).type = Image.Type.Sliced;
+        var mask = NewUI("PictureMask", card);
+        var maskRect = (RectTransform)mask.transform;
+        maskRect.anchorMin = maskRect.anchorMax = maskRect.pivot = new Vector2(0.5f, 1f);
+        maskRect.anchoredPosition = new Vector2(0f, -20f + Outset);
+        maskRect.sizeDelta = new Vector2(440f + 2f * Outset, 550f + 2f * Outset);
+        mask.AddComponent<RectMask2D>();
+        picture = Picture(mask, -Outset, new Vector2(440f, 550f));
+        SetValues(picture, ("_paintScale", 1.15f), ("_focusZoom", 3f));
+        var line = NewUI("Progress", card);
+        var lineRect = (RectTransform)line.transform;
+        lineRect.anchorMin = new Vector2(0f, 0f);
+        lineRect.anchorMax = new Vector2(1f, 0f);
+        lineRect.pivot = new Vector2(0.5f, 0f);
+        lineRect.anchoredPosition = new Vector2(0f, 12f);
+        lineRect.sizeDelta = new Vector2(0f, 56f);
+        progress = Label(line, "", 40f);
+        progress.color = Muted;
+        card.SetActive(false);
+        return card;
     }
 
     // 챕터 그림 자리 — 위쪽 가운데, size는 캔버스 비율(4:5)로

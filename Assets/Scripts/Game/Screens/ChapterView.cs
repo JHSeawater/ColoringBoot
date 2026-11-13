@@ -17,10 +17,18 @@ namespace ColoringBoot.Game
         [SerializeField] private Sprite _frame;          // 그림 테두리(9-slice, Phase 7.1) — 없으면 안 그림
         [SerializeField] private Color _frameColor = Color.black;
         [SerializeField] private float _frameOutset = 7f; // 그림 밖으로 넓히는 폭 = 테두리 선 두께
+        [Header("막 칠한 단계 확대 (2026-11-12 — 클리어 띠 위 카드만, 부모에 RectMask2D)")]
+        [SerializeField] private float _focusZoom = 1f;       // 최대 확대 배율 — 1 이하면 확대하지 않는다
+        [SerializeField] private float _focusHold = 0.25f;    // 칠한 뒤 확대한 채로 머무는 초
+        [SerializeField] private float _zoomOutSeconds = 0.5f;
+
+        private const float FocusFill = 0.8f;   // 확대했을 때 단계가 그림 칸에서 차지하는 비율
 
         private readonly List<Image> _steps = new List<Image>();
         private ChapterArt _art;
         private Coroutine _routine;
+        private Vector2 _homePosition;   // 확대 전 자리 — 처음 Show 때 잡는다
+        private bool _homeKnown;
 
         // painted[i] = i번째 단계를 칠했는가. animateStep: 막 칠한 단계(-1이면 연출 없음). complete: 그 뒤 완성 연출
         public void Show(ChapterArt art, IReadOnlyList<bool> painted, int animateStep = -1, bool complete = false)
@@ -28,7 +36,7 @@ namespace ColoringBoot.Game
             if (art != _art) Build(art);
             if (_routine != null) StopCoroutine(_routine);
             _routine = null;
-            transform.localScale = Vector3.one;
+            ResetZoom();
             for (int i = 0; i < _steps.Count; i++)
             {
                 _steps[i].gameObject.SetActive(i < painted.Count && painted[i]);
@@ -93,6 +101,13 @@ namespace ColoringBoot.Game
         private IEnumerator Paint(Image step, bool complete)
         {
             Transform t = step.transform;
+            var view = (RectTransform)transform;
+            float zoom = FocusOn((RectTransform)t, out Vector2 offset);
+            if (zoom > 1f)
+            {
+                view.localScale = Vector3.one * zoom;
+                view.anchoredPosition = _homePosition + offset;
+            }
             for (float time = 0f; time < _paintSeconds; time += Time.unscaledDeltaTime)
             {
                 float k = time / _paintSeconds;
@@ -102,6 +117,18 @@ namespace ColoringBoot.Game
             }
             step.color = Color.white;
             t.localScale = Vector3.one;
+            if (zoom > 1f)
+            {
+                for (float time = 0f; time < _focusHold; time += Time.unscaledDeltaTime) yield return null;
+                for (float time = 0f; time < _zoomOutSeconds; time += Time.unscaledDeltaTime)
+                {
+                    float k = Mathf.SmoothStep(0f, 1f, time / _zoomOutSeconds);
+                    view.localScale = Vector3.one * Mathf.Lerp(zoom, 1f, k);
+                    view.anchoredPosition = _homePosition + offset * (1f - k);
+                    yield return null;
+                }
+                ResetZoom();
+            }
             if (complete)
             {
                 for (float time = 0f; time < _completeSeconds; time += Time.unscaledDeltaTime)
@@ -114,13 +141,46 @@ namespace ColoringBoot.Game
             _routine = null;
         }
 
+        // 막 칠한 단계가 그림 칸의 FocusFill만큼 차도록 확대 배율(1 ~ _focusZoom)과 자리 옮김을 구한다. 그림 밖(빈 곳)은 보이지 않게 자리를 막는다
+        private float FocusOn(RectTransform step, out Vector2 offset)
+        {
+            offset = Vector2.zero;
+            if (_focusZoom <= 1f) return 1f;
+            var view = (RectTransform)transform;
+            Vector2 size = view.rect.size, pivot = view.pivot;
+            Vector2 min = Vector2.Max(step.anchorMin, Vector2.zero), max = Vector2.Min(step.anchorMax, Vector2.one);
+            Vector2 span = max - min;
+            float zoom = Mathf.Clamp(FocusFill / Mathf.Max(span.x, span.y), 1f, _focusZoom);
+            if (zoom <= 1f) return 1f;
+            Vector2 target = Vector2.Scale((min + max) * 0.5f - pivot, size);
+            Vector2 center = Vector2.Scale(new Vector2(0.5f, 0.5f) - pivot, size);
+            Vector2 low = -(zoom - 1f) * Vector2.Scale(Vector2.one - pivot, size);
+            Vector2 high = (zoom - 1f) * Vector2.Scale(pivot, size);
+            offset = Vector2.Max(low, Vector2.Min(high, center - target * zoom));
+            return zoom;
+        }
+
+        // 확대 · 완성 연출 전 크기로. 자리는 확대를 쓰는 그림만 건드린다(목록 그림은 레이아웃이 자리를 정한다)
+        private void ResetZoom()
+        {
+            transform.localScale = Vector3.one;
+            if (_focusZoom <= 1f) return;
+            var view = (RectTransform)transform;
+            if (!_homeKnown)
+            {
+                _homePosition = view.anchoredPosition;
+                _homeKnown = true;
+            }
+            view.anchoredPosition = _homePosition;
+        }
+
         // 화면을 떠나 연출이 끊기면 다 칠한 모습으로 둔다
         private void OnDisable()
         {
             if (_routine == null) return;
             StopCoroutine(_routine);
             _routine = null;
-            transform.localScale = Vector3.one;
+            ResetZoom();
             foreach (Image step in _steps)
             {
                 step.color = Color.white;
