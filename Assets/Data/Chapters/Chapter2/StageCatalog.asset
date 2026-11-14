@@ -12,4 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7babc3c5a5371641a14e53e076957f7, type: 3}
   m_Name: StageCatalog
   m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.StageCatalog
-  _stages: []
+  _stages:
+  - {fileID: 4900000, guid: 5fd860cb473b1bc4aab6a73ff57b8cec, type: 3}
+  - {fileID: 4900000, guid: 8d1ff2a0b2814154ea9f552e14d4bfe9, type: 3}
+  - {fileID: 4900000, guid: 4c99048c9543d2841a953f914babdc89, type: 3}
+  - {fileID: 4900000, guid: af574d8f44704154ea9bdb3602336110, type: 3}
+  - {fileID: 4900000, guid: 7af2a6da3e2e7644182e03de9254c672, type: 3}
+  - {fileID: 4900000, guid: d01af5f13531b1c4d987b413180361ba, type: 3}
+  - {fileID: 4900000, guid: 8fc6a77656acc7446999b06c4493a255, type: 3}
+  - {fileID: 4900000, guid: 45b52914bb485724fb15b3f5c2a8a799, type: 3}
+  - {fileID: 4900000, guid: 94dc6723156bb094880ce2d0bf200202, type: 3}
+  - {fileID: 4900000, guid: 9fa6c9372ca5cc345b20af600bf6acc1, type: 3}
+  - {fileID: 4900000, guid: 1dfa78dca0214494caf0ee05aa7675f7, type: 3}

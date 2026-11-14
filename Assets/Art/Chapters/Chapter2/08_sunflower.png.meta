@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: a98f553fb3590da42b5af77cb0af94c8
+guid: 30ac637b02f30d04b8dbea2e44fa1a66
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5994343242325264288
-    second: 06_path_0
+      213: 6827700294087948468
+    second: 08_sunflower_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 06_path_0
+      name: 08_sunflower_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 344
-        height: 580
+        width: 456
+        height: 348
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0a78f846b6f203350800000000000000
-      internalID: 5994343242325264288
+      spriteID: 4b831f52e3dd0ce50800000000000000
+      internalID: 6827700294087948468
       vertices: []
       indices: 
       edges: []

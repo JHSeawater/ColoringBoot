@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: b6a4a820c8ff50849aab875887469aee
+guid: 20a4cc1903e597f46a09636a1227f12a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5574552530798244782
-    second: 07_vine_0
+      213: 7092262949228577097
+    second: 01_pot_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 07_vine_0
+      name: 01_pot_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 456
-        height: 500
+        width: 508
+        height: 264
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 25c040c220633a2b0800000000000000
-      internalID: -5574552530798244782
+      spriteID: 9410f6e6397cc6260800000000000000
+      internalID: 7092262949228577097
       vertices: []
       indices: 
       edges: []

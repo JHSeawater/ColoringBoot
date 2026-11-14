@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Chapter
   m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.Chapter
   _title: "\uCC55\uD130 2"
-  _subtitle: "\uC784\uC2DC \uADF8\uB9BC"
+  _subtitle: "\uBD04 \uC815\uC6D0"
   _stages: {fileID: 11400000, guid: 598ad0195aa068d449705e5010a2f672, type: 2}
   _art: {fileID: 11400000, guid: a5f9b4c20dc5cf241bf1d718c22bcdec, type: 2}

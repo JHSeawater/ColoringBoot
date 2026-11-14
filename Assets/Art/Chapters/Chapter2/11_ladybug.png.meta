@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 281f15d62a87b1d43b70d5d17d93deca
+guid: 3a9526a60a52b2d408431a46774add53
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6975208025907595369
-    second: 08_fence_0
+      213: 4849932416088498129
+    second: 11_ladybug_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 08_fence_0
+      name: 11_ladybug_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 492
-        height: 280
+        width: 472
+        height: 736
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 797f255b145133f90800000000000000
-      internalID: -6975208025907595369
+      spriteID: 1df5b9d16db6e4340800000000000000
+      internalID: 4849932416088498129
       vertices: []
       indices: 
       edges: []

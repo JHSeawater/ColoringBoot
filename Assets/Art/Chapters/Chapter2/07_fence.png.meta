@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: eec5ae9b6b5a6e84daa4a3c1d5520a39
+guid: 6ae634ceb32ab024fbfd43460112c931
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4131452756909647970
-    second: 05_hill_0
+      213: 268664797038888805
+    second: 07_fence_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 05_hill_0
+      name: 07_fence_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1084
-        height: 672
+        width: 1024
+        height: 552
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 26868ed946ed55930800000000000000
-      internalID: 4131452756909647970
+      spriteID: 567c72f953d7ab300800000000000000
+      internalID: 268664797038888805
       vertices: []
       indices: 
       edges: []

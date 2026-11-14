@@ -58,16 +58,16 @@
   {"color": "canblue", "step": "can"}
  ],
  "steps": [
+  {"id": "pot", "label": "화분", "memo": "왼쪽 아래 3개"},
   {"id": "sky", "label": "하늘", "memo": "위쪽 하늘 + 울타리 뒤 노란 들판"},
   {"id": "lawn", "label": "잔디밭", "memo": "가운데 · 아래 연두 바닥"},
-  {"id": "stone", "label": "디딤돌", "memo": "가운데 길의 회색 돌"},
-  {"id": "fence", "label": "울타리 · 아치", "memo": "뒤쪽 나무 울타리 + 오른쪽 위 아치"},
-  {"id": "leaf", "label": "덤불 · 잎", "memo": "덤불 · 줄기 · 아치 잎"},
-  {"id": "tulip", "label": "튤립", "memo": "화분 · 오른쪽 튤립 + 아치 위 꽃"},
-  {"id": "sunflower", "label": "해바라기", "memo": "오른쪽 3송이"},
   {"id": "lavender", "label": "라벤더", "memo": "왼쪽 위 보라 꽃"},
-  {"id": "ladybug", "label": "무당벌레", "memo": "울타리 · 덤불 · 화분의 3마리"},
-  {"id": "pot", "label": "화분", "memo": "왼쪽 아래 3개"},
-  {"id": "can", "label": "물뿌리개", "memo": "오른쪽 아래"}
+  {"id": "tulip", "label": "튤립", "memo": "화분 · 오른쪽 튤립 + 아치 위 꽃"},
+  {"id": "leaf", "label": "덤불 · 잎", "memo": "덤불 · 줄기 · 아치 잎"},
+  {"id": "fence", "label": "울타리 · 아치", "memo": "뒤쪽 나무 울타리 + 오른쪽 위 아치"},
+  {"id": "sunflower", "label": "해바라기", "memo": "오른쪽 3송이"},
+  {"id": "can", "label": "물뿌리개", "memo": "오른쪽 아래"},
+  {"id": "stone", "label": "디딤돌", "memo": "가운데 길의 회색 돌"},
+  {"id": "ladybug", "label": "무당벌레", "memo": "울타리 · 덤불 · 화분의 3마리"}
  ]
 }

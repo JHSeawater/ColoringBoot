@@ -25,7 +25,16 @@ public static class StageOrder
             "Basket", "Leaf", "Beehive", "Sky", "Path", "Bee",
             "Field", "Sun", "Butterfly", "Vine", "Grape",
         },
-        // 챕터 2~5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md — 임시 챕터 2의 Temp01~11은 2026-11-15에 지움)
+        // 챕터 2 봄 정원 (2026-11-15 — 그림 단계 i의 소재 = i번째 스테이지, 임시 챕터 2의 Temp01~11은 같은 날 지움): 톱니 모양
+        // 대충 풀림(AgentScripts/Tools/ChapterSurvey.cs): 화분 100 · 하늘 100 → 잔디밭 36 · 라벤더 27 → 튤립 100(쉬어 가기) → 덤불 26 · 울타리 18
+        // → 해바라기 100(쉬어 가기) → 물뿌리개 26 · 디딤돌 18 · 무당벌레 15. 평균 최소 수 6.18 · 대충 풀림 51%(챕터 1은 5.82 · 54%)
+        // 화분 · 하늘 · 튤립 · 해바라기는 그림을 먼저 정한 판(SubjectLab.Picture — 해바라기 가운데 · 튤립 잎은 미리 칠한 칸), 나머지는 소재 맵(SubjectLab.Generate)
+        new[]
+        {
+            "GardenPot", "GardenSky", "GardenLawn", "GardenLavender", "GardenTulip", "GardenBush",
+            "GardenFence", "GardenSunflower", "GardenCan", "GardenStone", "GardenLadybug",
+        },
+        // 챕터 3~5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md)
     };
 
     public static string SetOrder(int chapter)

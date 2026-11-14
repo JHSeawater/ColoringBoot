@@ -8,7 +8,7 @@ using ColoringBoot.Core;
 
 // 소재 맵 후보 생성(2026-10-11 챕터 1 덩굴 · 언덕 · 하늘) — 게임 데이터는 쓰지 않는다. 고른 후보를 챕터 Stages/ 파일에 옮긴다
 // run_script(file=AgentScripts/Tools/SubjectLab.cs, entry=SubjectLab.Generate, args=["vine", 8, 1])
-//   — 소재(vine · hill · sky) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
+//   — 소재(vine · hill · sky · 챕터 2: lawn · stone · fence · bush · lavender · ladybug · can · sunflower) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
 // 소재 단서 = 맵 모양 + 목표 색 구성(GDD §5 2026-10-06). 시작 색 구성을 정해 두고 무작위 자리 · 무작위 획으로 목표를 만든 뒤
 // 목표 색 구성 · 막힐 수 있는 칸 비율(단색 채우기 거르기) · 최소 수 · 순서 민감도로 거른다
 public static class SubjectLab
@@ -16,6 +16,7 @@ public static class SubjectLab
     private const int TimeLimitMs = 45000;   // run_script 응답 한도(60초) 안에서
     private const int SolveLimit = 120000;
     private const int MetricsLimit = 200000;
+    private const int PictureSolveLimit = 30000;   // 그림 먼저 찾기: 풀이 없는 배치를 빨리 버린다(챕터 판은 상태 수천 개 안쪽)
     private const double MinTrapRatio = 0.3;
     private const double MaxOrderRatio = 0.34;   // 생성기 기본값과 같음
     private const string OutFolder = "Builds/SubjectLab";
@@ -59,7 +60,78 @@ public static class SubjectLab
             Targets = new[] { PaintColor.Blue, PaintColor.Purple }, Fill = 0.7, MinSolve = 7, MaxSolve = 7,
             Looks = t => Share(t, PaintColor.Blue) >= 0.6 && Count(t, PaintColor.Empty) >= 2,
         },
+
+        // ── 챕터 2 봄 정원 (2026-11-15) — 색 구성은 판마다 다르게: 포함(노랑 ⊂ 연두 등) · 겹침(보라 · 초록이 파랑을 나눠 씀) · 3단(노랑 ⊂ 초록 ⊂ 진갈색)
+        // 봄볕 spring: 1 분홍 · 2 밝은 노랑 · 3 나무색 · 4 하늘색 · 5 연보라 · 6 연두 · 7 회갈색 / 정원 garden: 1 빨강 · 2 샛노랑 · 3 귤색 · 4 파랑 · 5 보라 · 6 초록 · 7 진갈색
+        // 잔디밭: 넓은 판, 연두 + 먼 들판의 밝은 노랑
+        ["lawn"] = new Subject
+        {
+            Name = "잔디밭", Palette = "spring", Rows = Shape("xxxxx", "xxxxx", "xxxxx", "xxxxx"),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Green, PaintColor.Yellow }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Green) >= 0.6 && Count(t, PaintColor.Yellow) >= 3,
+        },
+        // 디딤돌: 지그재그로 놓인 길, 회갈색 돌 + 사이의 연두 잔디
+        ["stone"] = new Subject
+        {
+            Name = "디딤돌", Palette = "spring", Rows = Shape("xxx..", ".xxx.", "..xxx", ".xxx.", "xxx.."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Yellow, PaintColor.Blue, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Black, PaintColor.Green }, Fill = 0.85, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Count(t, PaintColor.Black) >= 4 && Share(t, PaintColor.Green) >= 0.35,
+        },
+        // 울타리: 낮고 넓은 판, 나무색 + 사이로 보이는 연두 덤불 · 노랑 조금
+        ["fence"] = new Subject
+        {
+            Name = "울타리", Palette = "spring", Rows = Shape("xxxxxx", "xxxxxx", "xxxxxx"),
+            Seeds = new[] { PaintColor.Red, PaintColor.Yellow, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Orange, PaintColor.Green, PaintColor.Yellow }, Fill = 0.85, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Orange) >= 0.5 && Count(t, PaintColor.Green) >= 3 && Count(t, PaintColor.Yellow) <= 2,
+        },
+        // 덤불 · 잎: 둥근 덩어리, 초록 + 곁의 보라 꽃
+        ["bush"] = new Subject
+        {
+            Name = "덤불", Palette = "garden", Rows = Shape(".xxxx.", "xxxxx.", "xxxxxx", "xxxxx."),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Yellow, PaintColor.Red },
+            Targets = new[] { PaintColor.Green, PaintColor.Purple }, Fill = 0.8, MinSolve = 6, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Green) >= 0.55 && Count(t, PaintColor.Purple) >= 2,
+        },
+        // 라벤더: 세로로 긴 판, 보라 꽃대 + 뒤의 파랑 하늘
+        ["lavender"] = new Subject
+        {
+            Name = "라벤더", Palette = "garden", Rows = Shape("xxxx", "xxxx", "xxxx", "xxxx", "xxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red },
+            Targets = new[] { PaintColor.Purple, PaintColor.Blue }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Purple) >= 0.5 && Count(t, PaintColor.Blue) >= 4,
+        },
+        // 무당벌레: 둥근 몸, 빨강 + 진갈색 점 · 머리
+        ["ladybug"] = new Subject
+        {
+            Name = "무당벌레", Palette = "garden", Rows = Shape(".xxx.", "xxxx.", "xxxxx", "xxxx.", ".xxx."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Red, PaintColor.Black }, Fill = 0.85, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Red) >= 0.5 && Count(t, PaintColor.Black) >= 2,
+        },
+        // 물뿌리개: 몸통 + 왼쪽으로 뻗은 주둥이, 하늘색 + 아래 연두 잔디
+        ["can"] = new Subject
+        {
+            Name = "물뿌리개", Palette = "spring", Rows = Shape("..xxx", "xxxxx", ".xxxx", ".xxxx", "xxxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Blue, PaintColor.Green }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Blue) >= 0.5 && Count(t, PaintColor.Green) >= 4,
+        },
+        // 해바라기: 둥근 꽃 + 줄기, 샛노랑 꽃잎 ⊂ 초록 줄기 · 잎 ⊂ 진갈색 가운데
+        ["sunflower"] = new Subject
+        {
+            Name = "해바라기", Palette = "garden", Rows = Shape(".xxx.", "xxxx.", "xxxxx", "xxxx.", ".xxx.", ".xx..", "..x.."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Blue, PaintColor.Red },
+            Targets = new[] { PaintColor.Yellow, PaintColor.Green, PaintColor.Black }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Yellow) >= 0.4 && Count(t, PaintColor.Black) >= 3 && Count(t, PaintColor.Green) >= 2,
+        },
     };
+
+    // 글자 그림 → 줄마다 q 범위. 'x' = 칸, 홀수 줄은 반 칸 오른쪽(q = 열 - 줄/2 내림) — 줄마다 칸이 이어져 있어야 한다
+    private static (int r, int q0, int q1)[] Shape(params string[] rows) =>
+        rows.Select((row, r) => (r, row.IndexOf('x') - (r - (r & 1)) / 2, row.LastIndexOf('x') - (r - (r & 1)) / 2)).ToArray();
 
     public static string Generate(string key, int count, int seed)
     {
@@ -121,6 +193,98 @@ public static class SubjectLab
         string path = $"{OutFolder}/{key}.json";
         File.WriteAllText(path, "[\n" + string.Join(",\n", found) + "\n]\n", new UTF8Encoding(false));
         return $"{subject.Name}({coords.Count}칸) 후보 {found.Count}개 / 시도 {tries}번(색 구성 탈락 {unlike} · 수 범위 밖 {unsolved} · 순서 쉬움 {ordered}) · {clock.ElapsedMilliseconds / 1000}초 → {path}\n{report}";
+    }
+
+    // 그림 먼저(2026-11-15, 챕터 2~) — 목표 그림을 글자로 정해 두고 시작 색 칸 배치만 무작위로 찾는다(그림 맵 · 배경 + 미리 칠한 소재 칸 공용).
+    // run_script(file=AgentScripts/Tools/SubjectLab.cs, entry=SubjectLab.Picture,
+    //   args=["파일 키", "화면 이름", "팔레트(default면 기본)", "rows", 시작 칸 최소, 최대, 최소 수 하한, 상한, 대충 풀림 하한 %, 상한 %, 후보 수, 시드])
+    // rows: 줄을 '/'로 나눈다. 글자 하나 = 칸 하나, 홀수 줄은 반 칸 오른쪽(q = 열 - 줄/2 내림). '.' 칸 없음 · 0~7 목표 색 · A~G 미리 칠한 칸(시작 = 목표 = 1~7).
+    // 시작 색은 그 칸 목표에 든 기본색만. 후보는 Builds/SubjectLab/<파일 키>.json(한 줄에 하나)에 쓴다 — 고른 것은 Phase8Chapters.AddStage로 챕터에 넣는다.
+    // 챕터 2에 넣은 판(2026-11-15 — 같은 인자로 다시 돌리면 같은 후보가 같은 번호로 나온다. 넣기는 Phase8Chapters.AddStages):
+    //   화분    Picture("GardenPot5", "화분", "garden", "..1../.11../33333/3333.", 3, 4, 4, 5, 90, 100, 8, 2) #6
+    //   하늘    Picture("GardenSky", "하늘", "spring", "44444/44444/44444/2222C", 2, 4, 4, 8, 0, 100, 16, 1) #10
+    //   튤립    Picture("GardenTulip", "튤립", "spring", ".111./1111./.111./.FF../.FFF./..F..", 1, 3, 3, 8, 0, 100, 12, 1) #2
+    //   해바라기 Picture("GardenSunflower", "해바라기", "garden", ".222./2GG2./2GGG2/2GG2./.222./.66../..6..", 2, 4, 5, 8, 0, 100, 16, 1) #3
+    //   잔디밭 Generate("lawn", 14, 1) #8 · 라벤더 Generate("lavender", 14, 1) #3 · 덤불 Generate("bush", 12, 2) #2 · 울타리 Generate("fence", 14, 1) #9
+    //   물뿌리개 Generate("can", 30, 2) #1 · 디딤돌 Generate("stone", 14, 1) #3 · 무당벌레 Generate("ladybug", 12, 2) #9
+    // 그림 먼저가 맞는 것: 색 하나짜리 띠 · 포함 관계(빨강 ⊂ 귤색) · 미리 칠한 칸으로 막아 둔 그림 — 5~7수 · 대충 풀림 100%가 나온다.
+    // 안 맞는 것: 틈이 있는 그림(줄이 끊겨 9~12수) · 기본색을 나눠 쓰지 않는 두 색 그림(분홍 꽃 + 연두 잎 — 8수 이상) → 소재 맵(Generate)으로
+    public static string Picture(string key, string name, string palette, string rows, int minSeeds, int maxSeeds, int minMoves, int maxMoves,
+        int minChance, int maxChance, int count, int seed)
+    {
+        var coords = new List<HexCoord>();
+        var target = new List<PaintColor>();
+        var fixedStart = new List<PaintColor>();
+        string[] lines = rows.Split('/');
+        for (int r = 0; r < lines.Length; r++)
+        {
+            for (int col = 0; col < lines[r].Length; col++)
+            {
+                char c = lines[r][col];
+                if (c == '.') continue;
+                bool pre = c >= 'A' && c <= 'G';
+                if (!pre && (c < '0' || c > '7')) return $"줄 {r} 열 {col}: 모르는 글자 '{c}'";
+                var color = (PaintColor)(pre ? c - 'A' + 1 : c - '0');
+                coords.Add(new HexCoord(col - (r - (r & 1)) / 2, r));
+                target.Add(color);
+                fixedStart.Add(pre ? color : PaintColor.Empty);
+            }
+        }
+        int n = coords.Count;
+        string paletteId = palette == "default" ? null : palette;
+        var paintable = Enumerable.Range(0, n).Where(i => target[i] != PaintColor.Empty && fixedStart[i] == PaintColor.Empty).ToList();
+        PaintColor needed = PaintColor.Empty, given = PaintColor.Empty;
+        foreach (PaintColor t in target) needed |= t;
+        foreach (PaintColor f in fixedStart) given |= f;
+        PaintColor[] primaries = { PaintColor.Red, PaintColor.Yellow, PaintColor.Blue };
+
+        var random = new SeededRandom((uint)seed);
+        var seen = new HashSet<string>();
+        var found = new List<string>();
+        var report = new StringBuilder();
+        var clock = Stopwatch.StartNew();
+        int tries = 0, uncovered = 0, unsolved = 0, range = 0, chanceOut = 0;
+        var outOfRange = new SortedDictionary<int, int>();   // 범위 밖이었던 최소 수 → 개수(범위를 고칠 때 본다)
+        while (clock.ElapsedMilliseconds < TimeLimitMs && found.Count < count)
+        {
+            tries++;
+            PaintColor[] start = fixedStart.ToArray();
+            PaintColor supplied = given;
+            int seeds = minSeeds + random.Next(maxSeeds - minSeeds + 1);
+            for (int k = 0; k < seeds; k++)
+            {
+                int pick;
+                do pick = paintable[random.Next(paintable.Count)]; while (start[pick] != PaintColor.Empty);
+                PaintColor[] choices = primaries.Where(p => (p & ~target[pick]) == PaintColor.Empty).ToArray();
+                start[pick] = choices[random.Next(choices.Length)];
+                supplied |= start[pick];
+            }
+            if ((needed & ~supplied) != PaintColor.Empty) { uncovered++; continue; }
+            if (!seen.Add(string.Join(",", start.Select(c => (int)c)))) continue;
+
+            Stage Build(int? moves) => new Stage(name, coords.Select((c, i) => new StageCell(c, start[i], target[i])).ToList(), paletteId, moves);
+            var board = new Board(Build(null));
+            SolveResult result = Solver.Solve(board, board.CreateStartState(), PictureSolveLimit);
+            if (!result.Solved) { unsolved++; continue; }
+            if (result.Path.Count < minMoves || result.Path.Count > maxMoves)
+            {
+                range++;
+                outOfRange[result.Path.Count] = outOfRange.TryGetValue(result.Path.Count, out int had) ? had + 1 : 1;
+                continue;
+            }
+            OrderSensitivity? order = Solver.MeasureOrder(board, board.CreateStartState(), result.Path);
+            Stage stage = Build(result.Path.Count);
+            StageMetrics m = StageMetrics.Measure(new Board(stage), 2000000);
+            if (!m.SolveChance.HasValue || m.SolveChance.Value * 100 < minChance || m.SolveChance.Value * 100 > maxChance) { chanceOut++; continue; }
+            string line = $"{result.Path.Count}수 · 시작 칸 {seeds} · 순서 {(order.HasValue ? $"{order.Value.Succeeded}/{order.Value.Total}" : "-")}"
+                + $" · 막힐 칸 {Percent(m.TrapRatio)} · 조용한 막다른 길 {Percent(m.SilentRatio)} · 대충 풀림 {Percent(m.SolveChance)} · 상태 {m.States}";
+            found.Add($"{{\"metrics\":\"{line}\",\"stage\":{StageWriter.ToJson(stage)}}}");
+            report.AppendLine($"#{found.Count} {line}");
+        }
+        Directory.CreateDirectory(OutFolder);
+        string path = $"{OutFolder}/{key}.json";
+        File.WriteAllText(path, "[\n" + string.Join(",\n", found) + "\n]\n", new UTF8Encoding(false));
+        return $"{name}({n}칸 · 칠할 칸 {paintable.Count}) 후보 {found.Count}개 / 시도 {tries}번(색 모자람 {uncovered} · 풀이 없음 {unsolved} · 수 범위 밖 {range}[{string.Join(" ", outOfRange.Select(p => $"{p.Key}수×{p.Value}"))}] · 대충 풀림 범위 밖 {chanceOut}) · {clock.ElapsedMilliseconds / 1000}초 → {path}\n{report}";
     }
 
     private static Stage Make(Subject subject, List<HexCoord> coords, PaintColor[] start, PaintColor[] target, int? minMoves) =>

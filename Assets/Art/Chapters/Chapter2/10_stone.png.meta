@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: df881bf5165ffde43a3921c6f4a78dbb
+guid: 72626e1a04a85114684cc5117f88f921
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7382583475150721314
-    second: 03_bee_0
+      213: -1987175281595403564
+    second: 10_stone_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 03_bee_0
+      name: 10_stone_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 496
-        height: 276
+        width: 664
+        height: 748
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 22117095e84347660800000000000000
-      internalID: 7382583475150721314
+      spriteID: 4d2b1122c922c64e0800000000000000
+      internalID: -1987175281595403564
       vertices: []
       indices: 
       edges: []

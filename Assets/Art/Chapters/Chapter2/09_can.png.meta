@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: fd7a56e30d4f063478e7ce6e02ac69f8
+guid: 8191fbbb151d3f645814378fb5d65f0d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2714853367181249374
-    second: 02_cloud_0
+      213: 6109230626039517692
+    second: 09_can_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 02_cloud_0
+      name: 09_can_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 604
-        height: 324
+        width: 496
+        height: 376
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e5b8c18e0c81da520800000000000000
-      internalID: 2714853367181249374
+      spriteID: cf1d504e2e858c450800000000000000
+      internalID: 6109230626039517692
       vertices: []
       indices: 
       edges: []
