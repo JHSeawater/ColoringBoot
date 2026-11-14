@@ -3,6 +3,8 @@ using System.Text;
 using ColoringBoot.Game;
 using UnityEditor;
 
+// [기록용 — 다시 실행하지 않는다] 2026-11-15 임시 챕터 삭제: Temp01~11 · GameFlow._testChapters · 주소 ?chapters를 뺐고 Chapters/Chapter2는 진짜 챕터 2가 쓴다
+//   (계획 Docs/plans/2026-11-14-chapters-2-5.md 4단계 — 새 챕터 데이터는 AgentScripts/Setup/Phase8Chapters.cs)
 // 임시 챕터 2 (2026-10-11 사용자 결정 — 진짜 챕터 2 전에 여러 챕터 흐름을 확인, 게임에는 주소에 ?chapters가 있을 때만 들어감 · GameFlow._testChapters)
 // 스테이지 = 시험 목록의 옛 챕터 판을 Temp01~11로 복사(파일 이름 = 진행 기록의 키라 시험 목록과 겹치지 않게 — 내용 · 화면 이름은 그대로),
 // 그림 = 임시 도안(ArtSource/_archive/Chapter1-temp — 옛 챕터 1 순서로 그린 것이라 단계 소재가 옛 판과 맞음. 3번 벌은 옛 벌집 판이 챕터 1로 가서 하늘과 언덕)

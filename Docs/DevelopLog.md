@@ -9,6 +9,61 @@
 
 ---
 
+### 📅 [2026-11-15] 챕터 2~5 계획 4단계 — 임시 챕터 2 정리 · `?unlock` · `?stats` 모든 챕터
+* **배경**: 사용자가 나눈 그림 4장과 난이도 목표를 승인("이대로 해도 좋다" — `DECISIONS.md` 2026-11-14 추가)한 뒤 4단계.
+* **작업**:
+  * `GameFlow`: `_testChapters` · `?chapters`를 빼고 `?unlock`(`_unlockAll`)을 더했다. 켜지면 목록의 챕터 잠금이 풀리고 스테이지가 모두 열린다(`StageSelectView.Show`의 `allOpen`). `Progress`는 건드리지 않는다. 다른 QA 쿼리와 같이 `qa &&`(`UrlQuery.IsQaHost`) 뒤에서만 읽는다.
+  * `?stats`: `StatsView.Show`가 목록 여러 개와 제목을 받는다. `GameFlow.ShowStats`가 모든 챕터를 넘기고 `?lab`이면 시험 목록을 뒤에 붙인다.
+  * `LevelEditorController`: 목록이 비면 ◀ ▶ · 불러오기만 숨긴다(전에는 빈 목록에서 `Stages[0]`을 읽어 매 프레임 예외).
+  * `BoardSceneBuilder`: `ChapterPath` 하나 → 챕터 번호 목록 `Chapters`(지금 `{ 1 }`). `BuildEditorScene(int chapter = 1)` — 레벨 에디터가 여는 챕터.
+  * `QaScene`: `_testChapters` 점검을 뺐다. `StageOrder`: Temp 순서를 뺐다. `BoardQa`: `TestChapters` → `UnlockAll` · `ClearChapter(챕터, 남길 판 수)`(게임의 `SaveData` · `Progress.RecordClear`로 기록).
+  * 임시 스테이지 `Chapters/Chapter2/Stages/Temp01~11`을 목록에서 빼고 지웠다. `Chapter.asset` · `StageCatalog.asset`(빈 목록) · `ChapterArt.asset`과 임시 그림 `Assets/Art/Chapters/Chapter2/`는 그대로다(그림은 5단계 ④에서 바뀜). 챕터 2는 아직 게임 챕터 목록에 없다.
+  * 새 `AgentScripts/Setup/Phase8Chapters.cs`(챕터 데이터 만들기 — 아직 실행하지 않음). `Phase8TempChapter2.cs` · `TempChapterArt.py`에 "기록용 — 다시 실행하지 않음".
+  * `FontBuilder.Build`(333자 · 2장, 빠진 글자는 전부터 있던 로그 문자열의 `✕`뿐) → `BuildPrefabs` → `BuildScene` → `BuildEditorScene`.
+  * 문서: `TDD.md` §2 · §5(임시 챕터 문장 · 주소 쿼리) · `CLAUDE.md` §5 QA 쿼리 목록(`?chapters` → `?unlock`) · `qa-scene` 스킬 · `AgentScripts/README.md`.
+* **검증 — 코드 · 테스트로 확인**: 컴파일 오류 0 · EditMode 186/186(임시 스테이지 11개분의 콘텐츠 테스트 22개가 빠진 수) · `QaScene.Check` 387항목 통과(챕터 1개) · `_testChapters` · `ChaptersQuery` · `TestChapterPath` · `TestChapters()` · `"Temp0…"`를 가리키는 코드는 기록용 `Phase8TempChapter2.cs` 말고 0곳.
+* **검증 — 에디터 화면으로 확인**:
+  * 보드 씬 플레이: 타이틀 [시작] → 목록(챕터 1 · 0/11, 1번만 열림) → 1번 바구니 5수 풀이 → 띠 "완벽! 최소 5수" · 카드 "색칠 1 / 11" → 목록(작은 그림 01 칠해짐). 잠긴 7번은 "앞 스테이지를 먼저 풀어 주세요". `BoardQa.UnlockAll()` 뒤에는 2~11번이 모두 열리고 7번 언덕이 열렸다. `ClearChapter(1, 1)` 뒤 목록 10/11.
+  * `GameFlow.ShowStats`를 직접 불러 기록 패널이 "플레이 기록 → 챕터 1 → 1. 바구니 — 클리어 5수(최소 5) …" 순으로 나오는 것을 확인.
+  * 레벨 에디터: 빈 목록인 챕터 2로 `BuildEditorScene(2)` → 플레이에서 콘솔 오류 0, [붙여넣기] · [저장]이 보임(캡처), 붙여넣기 경로(`Open`)로 판 하나를 넣고 저장 → `Chapters/Chapter2/Stages/ZzEditorTest.json`(최소 5수, 목록 1번째). 그 판은 `RemoveStage`로 지웠고 `BuildEditorScene()`으로 챕터 1에 되돌렸다(씬의 `_catalog` GUID 확인).
+  * 처음에 `BuildEditorScene`이 실패했다 — 목록 에셋을 씬을 열기 전에 불러 두면 씬을 여는 동안 참조가 사라진다. 쓰는 자리에서 불러오게 고쳤다.
+  * 에디터 저장 키: 시작할 때 따라 하기를 끝낸 기록이 있었다(사용자 플레이로 보임). QA 뒤 `Progress` · `PlayStats`를 그 값 그대로 되돌렸다.
+* **확인 못 한 것**: 주소 쿼리 자체(`?unlock` · `?stats`가 테스트 주소에서만 켜지는지)는 에디터에 주소가 없어 WebGL에서만 볼 수 있다 → 계획대로 챕터 2 배포(5단계 ⑥) 때 Chrome으로 확인한다.
+
+---
+
+### 📅 [2026-11-15] 챕터 2~5 계획 0~3단계 — `ArtSplit` 옵션 · 그림 4장 나누기 · `ChapterSurvey`
+* **배경**: 계획 `Docs/plans/2026-11-14-chapters-2-5.md` 승인 뒤 구현 시작(결정 `DECISIONS.md` 2026-11-14).
+* **작업**:
+  * 0단계: 결정을 `DECISIONS.md`에, 단계별 항목을 `Task.md` Phase 8에 옮겼다.
+  * 1단계: `ArtSplit.py` 규칙 옵션 `"step": null`(종이로 남김 — 선 밑 채우기에서는 주인으로 둠) · `"keep": true`(원본 픽셀 색, 가장자리와 선 밑은 가장 가까운 안쪽 픽셀 색). 미리보기 바탕을 게임 종이색 `#FBFAF7`로 맞췄다.
+  * 2단계: 챕터 3~5 원본을 `_source/`로 옮기고 `split.json` 4개를 써서 나눴다(모두 11단계, 순서는 임시 — 스테이지 순서가 정해지면 다시 나눈다). `ArtSpec.md` v0.5(흰 바탕 예외 · 옵션 설명). 공유 페이지는 사용자 그림 확인 뒤 같은 날 다시 게시했다(게시본의 Markdown을 이 파일로 바꾸고 머리 표시를 v0.5로 — 바뀐 줄은 버전 줄 · §4 예외 · §8 옵션 3곳).
+    * 챕터 2 봄 정원: 하늘 · 잔디밭 · 디딤돌 · 울타리와 아치 · 덤불과 잎 · 튤립 · 해바라기 · 라벤더 · 무당벌레 · 화분 · 물뿌리개. 하늘 단계는 `keep`(울타리 뒤 노란 들판이 하늘과 한 영역인 곳이 있음).
+    * 챕터 3 여름 바닷가: 하늘 · 바다 · 모래사장 · 해 · 야자수 · 갈매기 · 물고기 · 파라솔 · 게 · 조개와 불가사리 · 모래성. 갈매기(부리) · 물고기(배지느러미)는 `keep`.
+    * 챕터 4 가을 숲길: 노을 하늘 · 먼 산 · 단풍나무 · 풀밭과 덤불 · 오솔길 · 버섯 · 호박 · 다람쥐 · 도토리 · 낙엽 · 꽃. 색이 섞인 영역이 많아 모든 규칙이 `keep`.
+    * 챕터 5 눈 내린 밤: 밤하늘 · 먼 산 · 달 · 별 · 굴뚝 연기 · 지붕 · 집과 굴뚝 · 창문 불빛 · 전나무 · 눈사람 · 썰매. 흰 영역은 `null`(캔버스의 35.8%, 선 밖 기준 29.2%), 작은 눈사람 오른팔은 눈밭과 한 영역이라 그 영역만 `keep`으로 눈사람 단계에 넣었다.
+  * 3단계: `AgentScripts/Tools/ChapterSurvey.cs`(읽기 전용 챕터 표).
+* **검증 — 코드 · 도구로 확인**:
+  * 코드를 고치기 전과 뒤 모두 챕터 1을 사본 폴더에서 다시 나눈 14개 파일(레이어 12 · `reference.png` · `steps.md`)이 git 파일과 바이트 단위로 같다(Pillow 11.3.0 · numpy 2.2.6 · OpenCV 4.11.0 · scipy 1.15.3).
+  * 시험 설정(챕터 1의 길을 `null`, 하늘을 `keep`): 길 영역 272,667픽셀 중 칠해진 픽셀 0, 하늘 안쪽 픽셀은 원본과 차이 0. 없는 단계 이름을 쓰면 실패하고 파일을 쓰지 않는다.
+  * 네 장 모두 `ArtCheck` 통과. 원본(캔버스 크기로 맞춤)과 완성 그림의 LAB 색차 25 초과 픽셀(선 둘레 제외)은 네 장 모두 0.00%, 400픽셀 넘는 덩어리 0개.
+  * `ChapterSurvey.Table(1)`: 대충 풀림 100 · 100 · 39 · 38 · 100 · 33 · 28 · 100 · 29 · 16 · 15%로 `StageOrder` 주석과 같고, 최소 수는 파일 `minMoves`와 모두 같다. 평균 최소 수 5.82 · 대충 풀림 54% · 순서 성공률 8% · 막힐 칸 68% · 조용한 막다른 길 24% · 18.5칸. 실행 3.1초.
+* **용량 · 메모리 추정**(`ChapterArtExport`를 `Builds/ChapterPlan/`으로 돌려 조각 크기로 계산 — 실측 아님):
+
+  | 챕터 | ASTC(선 8 bpp · 단계 3.56 bpp) | RGBA로 풀면 | 게임용 PNG 합 |
+  |---|---:|---:|---:|
+  | 1(지금) | 3,346 KB | 22.4 MB | 891 KB |
+  | 2 | 3,983 KB | 28.0 MB | 1,425 KB |
+  | 3 | 2,928 KB | 18.8 MB | 845 KB |
+  | 4 | 4,011 KB | 28.2 MB | 2,224 KB |
+  | 5 | 3,008 KB | 19.5 MB | 835 KB |
+
+  * 챕터 1은 빌드를 압축 후 약 686 KB 늘렸다(ASTC 크기의 약 20%). 같은 비율이면 2~5는 약 0.8 · 0.6 · 0.8 · 0.6 MB인데, `keep` 레이어(챕터 4 전부 · 2의 하늘)는 평탄 색보다 압축이 덜 되어 더 클 수 있다(PNG 합이 그 신호 — 챕터 4는 챕터 1의 2.5배).
+  * ASTC를 지원하지 않는 PC 브라우저에서 5챕터를 모두 RGBA로 풀면 약 117 MB(밉맵 제외)다. 휴대폰(ASTC 그대로)은 약 17 MB. 9단계 실측 대상.
+* **확인 못 한 것**: 사용자의 그림 확인(소재 묶음 · 색 · 노을 · 흰 부분) · 게임 안에서의 모습(에셋으로 내보내지 않음) · 실제 빌드 용량 · 노을 ASTC 띠.
+
+---
+
 ### 📅 [2026-11-14] 타이틀 버튼 순서 — [시작] 위 · [무한 모드] 아래
 * **작업**: 사용자 결정(`DECISIONS.md` 2026-11-14)으로 `BoardSceneBuilder.TitleScreen`에서 [시작]을 처음부터 아래에서 310 자리에 고정하고, [무한 모드]를 150으로 옮겼다. 스테이지 목록의 [무한 모드]는 그대로다. 그다음 `BuildScene`을 다시 돌렸다.
 * **확인**: `QaScene` 427항목 통과.

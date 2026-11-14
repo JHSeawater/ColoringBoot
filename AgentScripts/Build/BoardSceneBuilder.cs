@@ -1,3 +1,4 @@
+using System.Linq;
 using ColoringBoot.Game;
 using ColoringBoot.LevelEditor;
 using TMPro;
@@ -20,12 +21,11 @@ public static class BoardSceneBuilder
     private const string OldScenePath = "Assets/Scenes/SampleScene.unity";
     private const string ScenePath = "Assets/Scenes/Board.unity";
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
-    // 게임이 여는 챕터(지금은 챕터 1) — 데이터는 챕터마다 Assets/Data/Chapters/ChapterN/ (2026-10-07)
-    private const string ChapterFolder = "Assets/Data/Chapters/Chapter1";
-    private const string ChapterPath = ChapterFolder + "/Chapter.asset";        // 제목 · 부제 · 목록 · 그림 — AgentScripts/Setup/Phase8ChapterFolders.cs가 만듦
-    // 임시 챕터 — 주소에 ?chapters가 있을 때만 게임에 들어감(2026-10-11, AgentScripts/Setup/Phase8TempChapter2.cs). 진짜 챕터 2가 생기면 위 챕터 목록으로
-    private const string TestChapterPath = "Assets/Data/Chapters/Chapter2/Chapter.asset";
-    private const string CatalogPath = ChapterFolder + "/StageCatalog.asset";
+    // 게임이 여는 챕터(차례대로) — 데이터는 챕터마다 Assets/Data/Chapters/ChapterN/ (2026-10-07). 챕터를 등록할 때 번호를 하나씩 더한다(2026-11-14)
+    private static readonly int[] Chapters = { 1 };
+    private static string ChapterFolder(int chapter) => $"Assets/Data/Chapters/Chapter{chapter}";
+    // 제목 · 부제 · 목록 · 그림 — AgentScripts/Setup/Phase8ChapterFolders.cs(챕터 1) · Phase8Chapters.cs(챕터 2~)가 만듦
+    private static string ChapterPath(int chapter) => ChapterFolder(chapter) + "/Chapter.asset";
     private const string LabCatalogPath = "Assets/Data/Lab/LabCatalog.asset";   // 시험 목록(?lab) — AgentScripts/Build/StageOrder.cs SetLabOrder 먼저
     private const string TutorialCatalogPath = "Assets/Data/Tutorial/TutorialCatalog.asset";   // 따라 하기 — StageOrder.SetTutorialOrder 먼저
     private const string PaletteCatalogPath = "Assets/Data/Palettes/PaletteCatalog.asset";
@@ -105,8 +105,9 @@ public static class BoardSceneBuilder
         return $"프리팹 → {CellPrefabPath}, {ButtonPrefabPath}";
     }
 
-    // 레벨 에디터 씬 (에디터 전용 — 빌드 씬 목록에 넣지 않는다). 다 만들면 보드 씬을 다시 연다
-    public static string BuildEditorScene()
+    // 레벨 에디터 씬 (에디터 전용 — 빌드 씬 목록에 넣지 않는다). 다 만들면 보드 씬을 다시 연다.
+    // chapter: 레벨 에디터가 여는 · 저장하는 챕터 목록(Chapters/ChapterN/Stages/) — 새 챕터를 만들 때 그 번호로, 끝나면 1로 되돌린다
+    public static string BuildEditorScene(int chapter = 1)
     {
         Scene scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(EditorScenePath) != null
             ? EditorSceneManager.OpenScene(EditorScenePath)
@@ -161,7 +162,7 @@ public static class BoardSceneBuilder
             ("_grid", grid),
             ("_recordTemplate", recordView),
             ("_playTemplate", playView),
-            ("_catalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(CatalogPath)),
+            ("_catalog", Asset<StageCatalog>(ChapterFolder(chapter) + "/StageCatalog.asset")),
             ("_palettes", AssetDatabase.LoadAssetAtPath<PaletteCatalog>(PaletteCatalogPath)),
             ("_gameFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath)));
 
@@ -330,8 +331,7 @@ public static class BoardSceneBuilder
         SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject);
 
         var game = new GameObject("Game", typeof(GameFlow));
-        SetArray(game.GetComponent<GameFlow>(), "_chapters", Asset<Chapter>(ChapterPath));
-        SetArray(game.GetComponent<GameFlow>(), "_testChapters", Asset<Chapter>(TestChapterPath));
+        SetArray(game.GetComponent<GameFlow>(), "_chapters", Chapters.Select(c => (Object)Asset<Chapter>(ChapterPath(c))).ToArray());
         SetRefs(game.GetComponent<GameFlow>(),
             ("_puzzle", controller),
             ("_sound", soundController),

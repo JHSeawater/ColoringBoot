@@ -87,14 +87,12 @@ public static class QaScene
         CheckRefs(Object.FindAnyObjectByType<SoundController>(), Expect, "_source", "_buttonClip", "_popClip", "_wrongClip", "_clearPopClip");
         SerializedProperty strokeClips = new SerializedObject(Object.FindAnyObjectByType<SoundController>()).FindProperty("_strokeClips");
         Expect(strokeClips.arraySize == 8 && Enumerable.Range(0, 8).All(i => strokeClips.GetArrayElementAtIndex(i).objectReferenceValue != null), "SoundController 획 소리 8개");
-        // 챕터 에셋(2026-10-07 · 여러 챕터 2026-10-11): 챕터 목록 1개 이상 + 임시 챕터(?chapters). 챕터마다 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 · 그림이 연결됨
+        // 챕터 에셋(2026-10-07 · 여러 챕터 2026-10-11): 챕터 목록 1개 이상. 챕터마다 제목 · 부제가 있고 글자가 폰트에 있음 · 목록 · 그림이 연결됨
         var flowSo = new SerializedObject(flow);
         Chapter[] mainChapters = Enumerable.Range(0, flowSo.FindProperty("_chapters").arraySize)
             .Select(i => flowSo.FindProperty("_chapters").GetArrayElementAtIndex(i).objectReferenceValue as Chapter).ToArray();
-        Chapter[] testChapters = Enumerable.Range(0, flowSo.FindProperty("_testChapters").arraySize)
-            .Select(i => flowSo.FindProperty("_testChapters").GetArrayElementAtIndex(i).objectReferenceValue as Chapter).ToArray();
-        Expect(mainChapters.Length >= 1 && mainChapters.Concat(testChapters).All(c => c != null), $"GameFlow 챕터 {mainChapters.Length}개 · 임시 {testChapters.Length}개 · 빈 칸 없음");
-        Chapter[] chapters = mainChapters.Concat(testChapters).Where(c => c != null).ToArray();
+        Expect(mainChapters.Length >= 1 && mainChapters.All(c => c != null), $"GameFlow 챕터 {mainChapters.Length}개 · 빈 칸 없음");
+        Chapter[] chapters = mainChapters.Where(c => c != null).ToArray();
         foreach (Chapter chapter in chapters)
         {
             Expect(!string.IsNullOrWhiteSpace(chapter.Title) && !string.IsNullOrWhiteSpace(chapter.Subtitle) && chapter.Stages != null && chapter.Art != null, $"챕터 '{chapter.Title}' · '{chapter.Subtitle}' 목록 · 그림 연결");

@@ -1,3 +1,4 @@
+# [기록용 — 다시 실행하지 않는다] 2026-11-15 임시 챕터 2를 지워 이 도안을 쓰는 곳이 없다(게임 조각 Assets/Art/Chapters/Chapter2는 진짜 챕터 2 그림을 내보낼 때 바뀐다)
 # 임시 챕터 1 도안 (Phase 5.2) — ArtSpec.md 규격의 파일을 만든다(진짜 그림이 오면 교체): python AgentScripts/Setup/TempChapterArt.py
 # 라벨 지도(픽셀마다 "단계 * 10 + 색 번호")를 뒤에서 앞으로 칠한다 → 레이어가 겹치지 않고, 선화는 라벨 경계에서 뽑아 모든 영역이 닫힌다
 import math

@@ -20,13 +20,13 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 
 | 파일 | 만드는 것 | 언제 다시 실행 | entry |
 |---|---|---|---|
-| `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene` (목록 순서는 `StageOrder` — 옛 `BuildCatalog`는 챕터 1 다시 짝짓기 때 지움, 2026-10-11) |
+| `BoardSceneBuilder.cs` | 칸 · 방향 버튼 프리팹, 보드 씬(`Board.unity`), 레벨 에디터 씬, 디자인 · 연출 값 에셋(없을 때만) | 화면 구성 · `UiTheme` 값을 바꿨을 때, 폰트를 다시 만든 뒤 | `BuildPrefabs` → `BuildScene` · `BuildEditorScene`(args=`[챕터 번호]` — 레벨 에디터가 여는 · 저장하는 챕터 목록, 생략하면 1. 새 챕터를 만들 때 그 번호로 만들고 끝나면 1로 되돌린다 — 2026-11-15) (목록 순서는 `StageOrder` — 옛 `BuildCatalog`는 챕터 1 다시 짝짓기 때 지움, 2026-10-11) |
 | `SpriteBuilder.cs` | `Assets/Art/Sprites` 흰색 스프라이트(색은 코드가 입힘 — `Finger`만 사용자 그림 색 그대로, 코드는 흐려짐만) | 모양을 바꿀 때 | `Build`(칸 · 테두리 · 원 · 화살표) · `BuildIcons`(자물쇠 · 별) · `BuildRound`(버튼 · 그림 테두리 · 육각 외곽선) · `BuildFinger`(따라 하기 · 힌트 손가락 — 사용자 그림 `ArtSource/UI/finger2.png`를 높이 256px로 줄이고 손끝을 pivot으로, 색 그대로. 2026-11-13) |
 | `FontBuilder.cs` | `Pretendard SDF` 고정 아틀라스(쓰는 글자만) | 화면 문구 · 스테이지 이름을 바꿨을 때 → 뒤에 `BuildPrefabs` → `BuildScene` | `Build` · `Preview`(읽기 전용 — 모을 글자만 보여 줌) |
 | `PaletteBuilder.cs` | 기본 팔레트 이름 · 파스텔 · 정원 · 봄볕 팔레트 · `PaletteCatalog` | 팔레트 색 · 목록을 바꾸거나 더할 때(뒤에 `QaScene`으로 색 구분 검사)(기본 팔레트 색은 `Setup/Phase1Assets.CreatePalette`) | `Build` |
 | `StageOrder.cs` | 챕터 N의 `StageCatalog` 순서 · 시험 목록 `LabCatalog`(`?lab`) · 따라 하기 `TutorialCatalog`(레슨 i ↔ `TutorialLessons`) — 시험 · 따라 하기 목록 에셋은 없으면 만듦 | 순서를 바꾸거나 스테이지를 더할 때 — 파일 안의 목록을 고친 뒤 | `SetOrder`(args=[챕터 번호]) · `SetLabOrder` · `SetTutorialOrder` |
 | `EndlessPoolBuilder.cs` | 무한 모드 퍼즐 묶음 `Assets/Data/Endless/{Easy,Normal,Hard}.txt`(한 줄에 스테이지 코드, 같은 시드면 같은 묶음) — 난이도별 임시 기준은 파일 안. 난이도마다 다른 시드(쉬움 1 · 보통 2 · 어려움 3), 다른 묶음과 거의 같은 퍼즐(모양 같고 목표 80% 이상)은 거름 | 기준을 바꾸거나 개수를 늘릴 때 → 뒤에 `BuildScene`(묶음 연결은 그대로라 파일만 바뀌면 다시 안 돌려도 됨) | `Build`(args=["Easy", 300, 1] · ["Normal", 300, 2] · ["Hard", 300, 3] — 난이도 · 개수 · 시드, 이 순서로) |
-| `ArtSplit.py` | 완성 그림 한 장 → `ArtSource/ChapterN/`의 선화 · 단계 레이어 · `reference.png` · `steps.md`(+ 사람이 볼 색칠 과정 `Builds/ArtSplit/ChapterN_progress.png`). 진한 픽셀 = 선, 선으로 닫힌 영역은 색을 하나로 평탄화하고 `_source/split.json`의 기준 색 + 위치 규칙으로 단계를 정한다. 결과 레이어는 손으로 고치지 않고 `split.json`을 고쳐 다시 실행(2026-11-13). 검사(규칙 · 영역 · 단계마다 영역 · 선)가 모두 통과해야 파일을 쓴다 — 실패하면 폴더는 그대로 | 레이어 없이 완성 그림만 받았을 때 → 뒤에 `ArtCheck.py` → `ChapterArtExport.py` → `ChapterArtBuilder` | `python … ArtSource/ChapterN`(원본 · 설정은 `ArtSource/ChapterN/_source/` — `original.png` · `split.json`) |
+| `ArtSplit.py` | 완성 그림 한 장 → `ArtSource/ChapterN/`의 선화 · 단계 레이어 · `reference.png` · `steps.md`(+ 사람이 볼 색칠 과정 `Builds/ArtSplit/ChapterN_progress.png`). 진한 픽셀 = 선, 선으로 닫힌 영역은 색을 하나로 평탄화하고 `_source/split.json`의 기준 색 + 위치 규칙으로 단계를 정한다. 결과 레이어는 손으로 고치지 않고 `split.json`을 고쳐 다시 실행(2026-11-13). 규칙 옵션(2026-11-15): `"step": null` = 종이로 남김(넓은 흰 바탕 — 어느 단계에도 안 넣음) · `"keep": true` = 평탄화하지 않고 원래 색 그대로(그라데이션 · 선 없이 색이 둘 이상인 영역). 검사(규칙 · 영역 · 단계마다 영역 · 선)가 모두 통과해야 파일을 쓴다 — 실패하면 폴더는 그대로 | 레이어 없이 완성 그림만 받았을 때 → 뒤에 `ArtCheck.py` → `ChapterArtExport.py` → `ChapterArtBuilder` | `python … ArtSource/ChapterN`(원본 · 설정은 `ArtSource/ChapterN/_source/` — `original.png` · `split.json`) |
 | `ArtCheck.py` | (읽기 전용) 그림 파일 규격 점검 — `Docs/ArtSpec.md` §6 | 그림을 받았을 때 | `python … [원본 폴더]`(없으면 `ArtSource/Chapter1`) |
 | `ChapterArtExport.py` | 점검 → 절반 크기 · 여백 자르기 → `Assets/Art/Chapters/Chapter1` + `layout.json` | 챕터 그림을 바꿀 때(다음 줄과 차례로) | `python … [원본 폴더] [출력 폴더]` |
 | `ChapterArtBuilder.cs` | 스프라이트 설정(WebGL은 ASTC — 선화 4×4 · 단계 6×6, 2026-10-11) · `Assets/Data/Chapters/ChapterN/ChapterArt.asset`(그림 조각은 `Assets/Art/Chapters/ChapterN/`) | `ChapterArtExport.py` 바로 뒤 | `Build`(args=[챕터 번호]) |
@@ -36,7 +36,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 하는 일 | entry |
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
-| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) · `TestChapters`(주소 `?chapters`처럼 임시 챕터를 붙임 — 2026-10-11) 등 |
+| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) · `UnlockAll`(주소 `?unlock`처럼 모든 챕터 · 스테이지를 엶) · `ClearChapter`(args=`[챕터 번호, 남길 판 수]` — 그 챕터를 깬 기록을 게임의 `SaveData`로 씀, 2026-11-15) 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 · 생성 조건 · 그림 → 시작 칸 찾기 · 붙여넣기 · 시험 플레이(2026-10-13) | `Paint` · `Record` · `Check` · `Save` · `GenerateWith` · `FindSeeds` · `Paste` · `Play` · `PlaySolve` · `PlayDeadMove` · `PlayUndo` 등 (시험 플레이 열기와 끌기는 다른 호출로) |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
 
@@ -45,7 +45,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 - 칸 탭 · 드래그 · 방향 버튼 · 되돌리기 · 처음부터 · 상태 — 실제 포인터 이벤트 경로를 탄다. 화면 흐름: `Flow`(지금 화면 · 선택 화면 버튼 상태) · `ChooseStage` · `Press`(버튼 경로).
 - 첫 화면은 타이틀이라 `Press("TitleScreen/StartButton")` → 선택 화면. 저장 키가 없으면 따라 하기 1이 열린다 — `Press("BoardScreen/BackButton")`으로 나가면 목록 · 봤음으로 저장된다. 보드 QA 전에 `ChooseStage(1)`.
 - 연속 플레이: `SolveByDrag`(솔버 풀이를 실제 끌기로) → 1.5초 기다린 뒤 다음 호출에서 `Press("BoardScreen/ClearBanner/NextButton")` 반복(`run_script` 한 번에 한 스테이지씩 확인).
-- 시험 목록(`?lab`)은 에디터에 주소가 없어 `Lab()`으로, 임시 챕터(`?chapters`)는 `TestChapters()`로 연다.
+- 시험 목록(`?lab`)은 에디터에 주소가 없어 `Lab()`으로, 모든 챕터 열기(`?unlock`)는 `UnlockAll()`로 켠다. 앞 챕터를 깬 상태가 필요하면 `ClearChapter(n)`(마지막 판만 남기려면 `ClearChapter(n, 1)`) — 타이틀이나 목록에서 부르고, 끝나면 저장 키를 지운다.
 - 호출 나누기 · 띠가 켜지는 때 · 끝난 뒤 저장 키 지우기는 `CLAUDE.md` §3 "에디터 플레이 확인".
 
 ## Tools/
@@ -55,6 +55,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `Refresh.cs` | 디스크에 직접 쓴 에셋을 임포트(`Refresh.All`) — 빌더가 참조하기 전에 |
 | `RemoveStage.cs` | 스테이지를 그 챕터 목록 · 파일에서 뺌(`RemoveStage.Remove`, args=`["파일 이름"]` — 챕터 폴더에서 찾음) → 뒤에 `FontBuilder.Build` → `BuildPrefabs` → `BuildEditorScene` → `BuildScene` |
 | `WebTemplate.cs` | gh-pages 웹 템플릿을 원본 `Setup/WebTemplate/ColoringBoot/`에서 `Assets/WebGLTemplates/ColoringBoot/`로 복사(`WebTemplate.Install`) — 앱인토스 SDK가 `Assets/WebGLTemplates/`를 git에서 빼므로(2026-10-11). 저장소를 새로 받았을 때 · 템플릿을 고친 뒤 · gh-pages 빌드 전 |
+| `ChapterSurvey.cs` | (읽기 전용) 챕터 표 — `ChapterSurvey.Table`, args=`[챕터 번호]`. 챕터 목록 순서대로 판마다 칸 수 · 팔레트 · 최소 수 · 순서 성공률 · 막힐 칸 · 조용한 막다른 길 · 대충 풀림 · 닿는 상태와 챕터 평균(Core `Solver` · `StageMetrics` 그대로). 값이 없는 칸은 "—"와 이유(8수 이상 · 상태 초과), 평균에서 빼고 뺀 판 수를 적는다. 대충 풀림이 상태 초과면 그 판만 상한 200만으로 다시 잰다. 결과는 응답과 `Builds/ChapterSurvey/ChapterN.md`(git이 무시). 챕터 1 11판 약 3초(2026-11-15) |
 | `SubjectLab.cs` | (읽기 전용) 소재 맵 후보 생성 — `SubjectLab.Generate`, args=`["vine"\|"hill"\|"sky", 후보 수, 시드]`. 소재마다 맵 모양 · 시작 색 구성 · 목표 색 구성(소재 단서)을 정해 두고 무작위 획으로 목표를 만든 뒤 막힐 수 있는 칸 30% 이상 · 최소 수 · 순서 민감도로 거름(후보마다 난이도 지표 한 줄 — 대충 풀림은 2026-10-11부터, 거르지는 않음). 결과는 `Builds/SubjectLab/<소재>.json`(git이 무시) — 고른 것을 챕터 `Stages/`에 쓴다(2026-10-11 챕터 1 덩굴 = vine 시드 1의 7번 · 언덕 = hill 시드 2의 4번 · 하늘 = sky 시드 2의 16번). 새 소재를 넣으려면 파일 안의 표에 더한다. 45초 동안 돌아 `run_script` 응답이 30초에 끊길 때가 있다 — 그래도 후보 파일은 끝까지 써진다(2026-10-11) |
 | `PrepaintLab.cs` | (읽기 전용) 배경 + 미리 칠한 소재 칸 후보(GDD §5 2026-10-19) — `PrepaintLab.Generate`, args=`["sky"\|"hill", 시드]` 또는 `[..., 시드, 칸 수]`(미리 칠할 칸 수 고정). 지금 챕터 판(하늘 · 언덕)의 목표 그림을 그대로 두고, 챕터 그림 속 소재 자리(앵커 — 벌 3마리 · 바구니)에서 칸 너비 1.6 안의 칸을 소재 색으로 미리 칠한 뒤(벌은 서로 떨어지게 · 바구니는 한 덩어리로) 나머지 시작 칸을 무작위로 찾고 6~7수 · 순서 ≤ 34% · 대충 풀림 ≤ 50%로 거름. 후보마다 그림 일치(앵커와의 평균 거리)를 적어 `Builds/PrepaintLab/<배경>_<시드>.json`(git이 무시). 2026-10-19 챕터 1 하늘 = sky 시드 1(벌 `(1,2) (-1,3) (2,3)`) · 언덕 = hill 시드 1(바구니 `(1,2) (2,1) (2,2)`). 새 배경은 파일 안의 표에 더한다. 45초 돌아 응답이 30초에 끊기지만 파일은 끝까지 써진다 |
 | `deploy-pages.sh` | `Builds/WebGL`을 gh-pages에 배포(`bash AgentScripts/Tools/deploy-pages.sh "메시지"`) — gh-pages는 커밋 하나만 두고 강제 push(`--force-with-lease`), 메시지에 빌드 바이트를 붙인다. `index.html`에 우리 템플릿 표식이 없으면(앱인토스 SDK 값이 남은 설정으로 빌드) 중단(2026-11-11) |
@@ -74,9 +75,10 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | `Phase8ChapterFolders.cs` | 데이터를 챕터 단위 폴더로 옮김 · 챕터 1 `Chapter` 에셋 만듦(2026-10-07, `Preview` → `Apply`) |
 | `Phase8ProjectWideActions.cs` | 안 쓰는 프로젝트 전체 입력(`InputSystem_Actions`) 등록 해제 · 삭제(2026-10-07, `Preview` → `Apply`) |
 | `Phase8Chapter1Pairing.cs` | 챕터 1 스테이지 ↔ 그림 소재 다시 짝짓기 — 스테이지 파일을 소재 이름으로 옮김(GUID 그대로) · 빠진 6개는 시험 목록으로(2026-10-11, `Preview` → `Apply` → `StageOrder`) |
-| `Phase8TempChapter2.cs` | 임시 챕터 2 — 시험 목록의 옛 챕터 판을 `Chapters/Chapter2/Stages/Temp01~11`로 복사 · 목록 · `Chapter` 에셋(그림 = 임시 도안). 주소 `?chapters`일 때만 게임에 들어감(2026-10-11, 순서: `Setup/TempChapterArt.py`(그 폴더는 2026-11-13 지움 — 먼저 다시 만든다) → `ChapterArtExport.py ArtSource/_archive/Chapter1-temp Assets/Art/Chapters/Chapter2` → `Apply` → `ChapterArtBuilder.Build(2)` → `Apply` → `StageOrder.SetOrder(2)`) |
+| `Phase8TempChapter2.cs` | (기록용 — 2026-11-15 임시 챕터를 지움, 다시 실행하지 않는다. `GameFlow._testChapters` · `?chapters`도 없음) 임시 챕터 2 — 시험 목록의 옛 챕터 판을 `Chapters/Chapter2/Stages/Temp01~11`로 복사 · 목록 · `Chapter` 에셋(그림 = 임시 도안). 주소 `?chapters`일 때만 게임에 들어감(2026-10-11, 순서: `Setup/TempChapterArt.py`(그 폴더는 2026-11-13 지움 — 먼저 다시 만든다) → `ChapterArtExport.py ArtSource/_archive/Chapter1-temp Assets/Art/Chapters/Chapter2` → `Apply` → `ChapterArtBuilder.Build(2)` → `Apply` → `StageOrder.SetOrder(2)`) |
+| `Phase8Chapters.cs` | 챕터 2~5 데이터 만들기 — `Phase8Chapters.Create`, args=`[챕터 번호, "부제"]`. `Assets/Data/Chapters/ChapterN/`에 `Stages/` · `StageCatalog` · `ChapterArt` · `Chapter`(제목 "챕터 N" · 부제)를 만든다. 이미 있으면 그대로 두고 제목 · 부제 · 연결만 맞춤(2026-11-15) |
 | `Phase9AndroidSettings.cs` | Android 패키지 이름 · 회사 이름 · 세로 고정(2026-11-10, `Preview` → `Apply`) |
-| `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용 · 2026-10-11부터 임시 챕터 2 그림). 그 폴더는 2026-11-13 지움(사용자) — 게임의 임시 챕터 2 조각(`Assets/Art/Chapters/Chapter2`)은 그대로이고, 원본이 다시 필요하면 이 스크립트로 만든다 |
+| `TempChapterArt.py` | 임시 도안 생성 → `ArtSource/_archive/Chapter1-temp`(보관용 · 2026-10-11부터 임시 챕터 2 그림). 그 폴더는 2026-11-13 지움(사용자) — 게임의 임시 챕터 2 조각(`Assets/Art/Chapters/Chapter2`)은 그대로이고, 원본이 다시 필요하면 이 스크립트로 만든다. 2026-11-15 임시 챕터를 지워 게임에서 쓰는 곳이 없다(기록용 — 다시 실행하지 않음) |
 
 ## 옛 이름 (2026-10-04 정리 전에는 모두 `AgentScripts/` 바로 아래)
 

@@ -12,7 +12,8 @@ using UnityEngine.UI;
 // 첫 화면은 타이틀(Phase 7.3) → Press("TitleScreen/StartButton")으로 선택 화면
 // 연속 플레이: ChooseStage(1) → SolveByDrag → Press("BoardScreen/ClearBanner/NextButton") 반복
 // 시험 목록(?lab): Lab() → 선택 화면(모두 열림) → 같은 방식
-// 여러 챕터(?chapters, 2026-10-11): TestChapters() → Press("SelectScreen/Body/PictureSlot/NextChapterButton") · PrevChapterButton
+// 여러 챕터: Press("SelectScreen/Body/PictureSlot/NextChapterButton") · PrevChapterButton. 모든 챕터 열기(?unlock, 2026-11-14): UnlockAll()
+// 앞 챕터를 깬 상태로: ClearChapter(n) — 마지막 판만 남기려면 ClearChapter(n, 1)
 // 따라 하기: 저장 키가 없으면 타이틀 [시작]이 레슨 1을 연다 → Drag로 안내한 획 → Press("BoardScreen/ClearBanner/NextButton"). 힌트: Press("BoardScreen/HintButton")
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
@@ -199,17 +200,34 @@ public static class BoardQa
         return Flow();
     }
 
-    // 주소 ?chapters와 같게 임시 챕터를 뒤에 붙이고 지금 챕터의 선택 화면을 연다 — 에디터에는 주소가 없어 GameFlow의 SetChapters를 직접 부른다 (2026-10-11)
-    public static string TestChapters()
+    // 주소 ?unlock과 같게 모든 챕터 · 스테이지를 열고 지금 챕터의 선택 화면을 연다 — 에디터에는 주소가 없어 GameFlow의 플래그를 직접 켠다 (2026-11-14)
+    public static string UnlockAll()
+    {
+        var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
+        const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
+        typeof(GameFlow).GetField("_unlockAll", Private).SetValue(flow, true);
+        typeof(GameFlow).GetMethod("ShowSelect", Private).Invoke(flow, null);
+        return Flow();
+    }
+
+    // 챕터 number의 판을 최소 수로 클리어한 기록을 쓴다(끝의 leave개는 남김) — 저장 형식을 손으로 쓰지 않고 게임의 SaveData · Progress로.
+    // 타이틀이나 목록에서 부른다. 끝나면 에디터 저장 키(ColoringBoot.*)를 지운다
+    public static string ClearChapter(int number, int leave = 0)
     {
         var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
         const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
         var chapters = (Chapter[])typeof(GameFlow).GetField("_chapters", Private).GetValue(flow);
-        var tests = (Chapter[])typeof(GameFlow).GetField("_testChapters", Private).GetValue(flow);
-        typeof(GameFlow).GetMethod("SetChapters", Private).Invoke(flow, new object[] { chapters.Concat(tests).ToArray() });
-        typeof(GameFlow).GetMethod("UseChapter", Private).Invoke(flow, new object[] { typeof(GameFlow).GetField("_chapterIndex", Private).GetValue(flow) });
-        typeof(GameFlow).GetMethod("ShowSelect", Private).Invoke(flow, null);
-        return Flow();
+        if (number < 1 || number > chapters.Length) return $"챕터 {number} 없음(1~{chapters.Length})";
+        var data = (SaveData)typeof(GameFlow).GetField("_data", Private).GetValue(flow);
+        var stages = chapters[number - 1].Stages.Stages;
+        int count = Mathf.Max(0, stages.Count - leave);
+        for (int i = 0; i < count; i++)
+        {
+            int moves = Stage.Parse(stages[i].text).MinMoves ?? 1;
+            data.Progress.RecordClear(stages[i].name, moves);
+        }
+        data.SaveProgress();
+        return $"챕터 {number}: {count}판 클리어 기록 · {stages.Count - count}판 남김";
     }
 
     // 선택 화면에서 number번 스테이지 버튼을 누른다

@@ -17,7 +17,7 @@ namespace ColoringBoot.Game
         private const string PaletteQuery = "palette"; // ?palette=<이름> — 모든 스테이지를 그 팔레트로(QA · 휴대폰 색 확인)
         private const string ResetQuery = "reset";   // ?reset — 진행 · 기록 지우기 (휴대폰 하나로 여러 명이 테스트할 때)
         private const string LabQuery = "lab";       // ?lab — 시험 목록(소재 맵 시험, 2026-10-06): 모두 열림 · 그림 화면 없음
-        private const string ChaptersQuery = "chapters";   // ?chapters — 임시 챕터(_testChapters)를 뒤에 붙인다(2026-10-11, 여러 챕터 흐름 확인)
+        private const string UnlockQuery = "unlock"; // ?unlock — 모든 챕터 · 스테이지를 연다(2026-11-14). 표시 · 판정만 바꾸고 해금 상태는 저장하지 않는다
         private const string LabTitle = "시험";
         private const string NextText = "다음";
         private const string NextChapterText = "다음 챕터";
@@ -29,7 +29,6 @@ namespace ColoringBoot.Game
         private static readonly string[] EndlessNames = { "쉬움", "보통", "어려움" };
 
         [SerializeField] private Chapter[] _chapters;       // 챕터 차례 — 앞 챕터를 완성하면 다음 챕터가 열린다(2026-10-07 결정 · 2026-10-11 여러 챕터)
-        [SerializeField] private Chapter[] _testChapters;   // 주소에 ?chapters가 있을 때만 뒤에 붙는 임시 챕터(진짜 챕터 2가 생기기 전 확인용)
         [SerializeField] private PuzzleController _puzzle;
         [SerializeField] private SoundController _sound;
         [SerializeField] private GameObject _boardScreen;
@@ -68,12 +67,13 @@ namespace ColoringBoot.Game
 
         private SaveData _data;
         private IAdService _ads;
-        private Chapter[] _chapterList;      // 이번 실행의 챕터 — _chapters(+ ?chapters면 _testChapters)
+        private Chapter[] _chapterList;      // 이번 실행의 챕터 — _chapters
         private string[][] _chapterStages;   // 챕터마다 스테이지 파일 이름(챕터 해금 · 지금 챕터 계산)
         private int _chapterIndex;
         private bool _toNextChapter;         // 그림 화면 버튼 = 다음 챕터(이 챕터를 막 완성했고 다음 챕터가 있음)
         private StageCatalog _list;  // 지금 여는 목록 — 지금 챕터 또는 시험 목록(_labCatalog)
         private bool _lab;
+        private bool _unlockAll;     // ?unlock — 잠긴 챕터 · 스테이지도 연다
         private int _lesson = -1;    // 따라 하기 중이면 레슨 번호
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
         private int?[] _minMoves;
@@ -213,7 +213,7 @@ namespace ColoringBoot.Game
         private void Start()
         {
             string url = Application.absoluteURL;
-            // QA 주소 기능(?reset · ?palette= · ?lab · ?stage= · ?stats)은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
+            // QA 주소 기능(?reset · ?palette= · ?unlock · ?lab · ?stage= · ?stats)은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
             bool qa = UrlQuery.IsQaHost(url);
             if (qa && UrlQuery.TryGet(url, ResetQuery, out _))
             {
@@ -222,11 +222,7 @@ namespace ColoringBoot.Game
             }
             ApplySettings();
             if (qa && UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
-            if (qa && UrlQuery.TryGet(url, ChaptersQuery, out _))
-            {
-                SetChapters(_chapters.Concat(_testChapters).ToArray());
-                UseChapter(_chapterIndex);
-            }
+            if (qa && UrlQuery.TryGet(url, UnlockQuery, out _)) _unlockAll = true;
             if (qa && UrlQuery.TryGet(url, LabQuery, out _)) UseList(_labCatalog, true);
 
             int start = -1;
@@ -242,7 +238,20 @@ namespace ColoringBoot.Game
             else if (_lab) ShowSelect();
             else ShowTitle();
 
-            if (qa && UrlQuery.TryGet(url, StatsQuery, out _)) _statsView.Show(_list, _tutorialCatalog, _data, EndlessKeys, EndlessNames);
+            if (qa && UrlQuery.TryGet(url, StatsQuery, out _)) ShowStats();
+        }
+
+        // 기록 보기(?stats) — 모든 챕터, ?lab과 함께면 그 뒤에 시험 목록도
+        private void ShowStats()
+        {
+            var catalogs = _chapterList.Select(c => c.Stages).ToList();
+            var titles = _chapterList.Select(c => c.Title).ToList();
+            if (_lab)
+            {
+                catalogs.Add(_labCatalog);
+                titles.Add(LabTitle);
+            }
+            _statsView.Show(catalogs, titles, _tutorialCatalog, _data, EndlessKeys, EndlessNames);
         }
 
         // 목록. 처음 클리어하고 그림 화면을 거치지 않고 왔으면(목록 버튼) 작은 그림에서 그 단계를 칠한다. 시험 목록에는 그림이 없다
@@ -263,8 +272,8 @@ namespace ColoringBoot.Game
             _chapterScreen.SetActive(false);
             _endless.gameObject.SetActive(false);
             _selectEndlessButton.gameObject.SetActive(!_lab && _data.TutorialSeen);
-            bool locked = !_lab && !_data.Progress.IsChapterUnlocked(_chapterStages, _chapterIndex);
-            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : CurrentChapter.Title, _lab ? null : CurrentChapter.Subtitle, _lab,
+            bool locked = !_lab && !_unlockAll && !_data.Progress.IsChapterUnlocked(_chapterStages, _chapterIndex);
+            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : CurrentChapter.Title, _lab ? null : CurrentChapter.Subtitle, _lab || _unlockAll,
                 locked, !_lab && _chapterIndex > 0, !_lab && _chapterIndex + 1 < _chapterList.Length);
             _selectPicture.gameObject.SetActive(!_lab);
             if (!_lab) _selectPicture.Show(CurrentChapter.Art, UpdatePainted(), justPainted);

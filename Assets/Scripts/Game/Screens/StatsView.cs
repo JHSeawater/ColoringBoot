@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace ColoringBoot.Game
 {
-    // 플레이테스트 기록 보기 (주소 ?stats) — 스테이지 목록 순서대로 첫 클리어까지의 기록, 그 아래 따라 하기 · 무한 모드 난이도별 합계(2026-10-07). 사진으로 찍어 모은다(GDD §9)
+    // 플레이테스트 기록 보기 (주소 ?stats) — 목록마다(모든 챕터 · ?lab이면 시험 목록까지, 2026-11-14) 스테이지 순서대로 첫 클리어까지의 기록, 그 아래 따라 하기 · 무한 모드 난이도별 합계(2026-10-07). 사진으로 찍어 모은다(GDD §9)
     public sealed class StatsView : MonoBehaviour
     {
         private const int SecondsPerMinute = 60;
@@ -19,11 +19,17 @@ namespace ColoringBoot.Game
         private void OnEnable() => _closeButton.onClick.AddListener(Hide);
         private void OnDisable() => _closeButton.onClick.RemoveListener(Hide);
 
-        public void Show(StageCatalog catalog, StageCatalog tutorial, SaveData data, IReadOnlyList<string> endlessKeys, IReadOnlyList<string> endlessNames)
+        // catalogs · titles: 차례로 보일 목록과 그 제목(같은 순서)
+        public void Show(IReadOnlyList<StageCatalog> catalogs, IReadOnlyList<string> titles, StageCatalog tutorial, SaveData data,
+            IReadOnlyList<string> endlessKeys, IReadOnlyList<string> endlessNames)
         {
             PlayStats stats = data.Stats;
             var text = new StringBuilder("플레이 기록\n");
-            for (int i = 0; i < catalog.Stages.Count; i++) AppendStage(text, i + 1, catalog.Stages[i], stats);
+            for (int c = 0; c < catalogs.Count; c++)
+            {
+                text.Append('\n').Append(titles[c]).Append('\n');
+                for (int i = 0; i < catalogs[c].Stages.Count; i++) AppendStage(text, i + 1, catalogs[c].Stages[i], stats);
+            }
             text.Append("\n따라 하기\n");
             for (int i = 0; i < tutorial.Stages.Count; i++) AppendStage(text, i + 1, tutorial.Stages[i], stats);
             text.Append("\n무한 모드\n");

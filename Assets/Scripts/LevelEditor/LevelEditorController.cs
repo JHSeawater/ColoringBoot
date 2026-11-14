@@ -188,10 +188,14 @@ namespace ColoringBoot.LevelEditor
 
             GUILayout.BeginHorizontal();
             int count = _catalog.Stages.Count;
-            if (GUILayout.Button("◀", GUILayout.Width(80f))) _catalogIndex = (_catalogIndex + count - 1) % count;
-            GUILayout.Label($"{_catalogIndex + 1}/{count} {_catalog.Stages[_catalogIndex].name}", GUILayout.Width(360f));
-            if (GUILayout.Button("▶", GUILayout.Width(80f))) _catalogIndex = (_catalogIndex + 1) % count;
-            if (GUILayout.Button("불러오기")) Load(_catalog.Stages[_catalogIndex]);
+            // 새 챕터의 빈 목록이면 넘기기 · 불러오기만 숨긴다 — 붙여넣기 · 저장은 그대로(2026-11-14)
+            if (count > 0)
+            {
+                if (GUILayout.Button("◀", GUILayout.Width(80f))) _catalogIndex = (_catalogIndex + count - 1) % count;
+                GUILayout.Label($"{_catalogIndex + 1}/{count} {_catalog.Stages[_catalogIndex].name}", GUILayout.Width(360f));
+                if (GUILayout.Button("▶", GUILayout.Width(80f))) _catalogIndex = (_catalogIndex + 1) % count;
+                if (GUILayout.Button("불러오기")) Load(_catalog.Stages[_catalogIndex]);
+            }
             if (GUILayout.Button("붙여넣기")) Paste();
             if (GUILayout.Button("저장")) Save();
             GUILayout.EndHorizontal();
