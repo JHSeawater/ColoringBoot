@@ -5,6 +5,9 @@
 # 방법: 어두운 픽셀(LAB 밝기 < lineL) = 선. 선으로 나뉜 영역마다 안쪽 색의 중앙값을 그 영역 색으로 쓰고(평탄화),
 # 가장 가까운 기준 색(colors) → rules의 첫 일치(색 + 영역 중심이 area 안 — 원본 크기에 대한 0~1 비율)로 단계를 정한다.
 # 선 · 작은 조각 밑은 가장 가까운 영역으로 채워 단계끼리 선 아래에서만 맞닿게 한다. 캔버스는 2160 × 2700을 덮도록 키워 가운데를 자른다
+# 규칙 옵션(2026-11-14): "step": null = 그 영역은 어느 단계에도 넣지 않고 종이로 남긴다(넓은 흰 바탕 — ArtSpec §4 예외).
+#   선 밑 채우기에서는 주인으로 두어 이웃 단계 색이 그쪽 선 밑으로 번지지 않는다.
+#   "keep": true = 중앙값 대신 원본 픽셀 색(노을 같은 그라데이션). 가장자리 2픽셀과 선 밑은 가장 가까운 안쪽 픽셀 색
 import json
 import os
 import sys
@@ -19,6 +22,8 @@ W, H = 2160, 2700      # ArtSpec §3
 MIN_AREA = 60          # 이보다 작은 영역은 색으로 정하지 않고 둘레 영역으로 채운다
 WARN_DIST = 20         # 영역 색이 기준 색에서 이만큼(LAB) 넘게 떨어지면 알린다 — 규칙이 맞는지 사람이 본다
 SUPER = 2              # 선 가장자리를 부드럽게: 2배로 그려 줄인다
+PAPER = -1             # 종이로 남기는 영역의 단계 번호
+PAPER_RGB = (251, 250, 247)   # 미리보기 바탕 = 게임 그림의 종이색(ChapterView._paper #FBFAF7)
 
 
 def lab(rgb):
@@ -56,15 +61,17 @@ def split(chapter_dir):
     steps = [s['id'] for s in cfg['steps']]
     refs = {k: lab(v) for k, v in cfg['colors'].items()}
     # 설정 오류는 영역을 보기 전에 규칙마다 한 번씩 알린다
-    fails = [f'규칙 {n}: 단계 {r["step"]}가 steps에 없음' for n, r in enumerate(cfg['rules'], 1) if r['step'] not in steps]
+    fails = [f'규칙 {n}: 단계 {r["step"]}가 steps에 없음' for n, r in enumerate(cfg['rules'], 1) if r['step'] is not None and r['step'] not in steps]
     fails += [f'규칙 {n}: 기준 색 {r["color"]}가 colors에 없음' for n, r in enumerate(cfg['rules'], 1) if r['color'] not in refs]
     if not line.any():
         fails.append(f'선 픽셀 없음 — lineL {line_l}보다 어두운 픽셀이 없다')
     stop_if(fails)
 
     count, regions, stats, _ = cv2.connectedComponentsWithStats((~line).astype(np.uint8), connectivity=4)
-    step_of = np.zeros(count, np.int32)          # 영역 → 단계 번호(1~), 0 = 둘레로 채움
+    step_of = np.zeros(count, np.int32)          # 영역 → 단계 번호(1~), 0 = 둘레로 채움, PAPER = 종이로 남김
     color_of = np.zeros((count, 3), np.uint8)
+    keep_of = np.zeros(count, bool)              # 원본 색 그대로 쓰는 영역
+    keep_px = np.zeros((h0, w0), bool)           # 그 영역의 색을 가져올 안쪽 픽셀
     small = 0
     for i in range(1, count):
         x, y, w, h, area = stats[i]
@@ -87,16 +94,27 @@ def split(chapter_dir):
             continue
         if dist > WARN_DIST:
             print(f'확인: {where} → {name} (거리 {dist:.0f}) → {rule["step"]}')
+        if rule['step'] is None:
+            step_of[i] = PAPER
+            continue
         step_of[i] = steps.index(rule['step']) + 1
         color_of[i] = color
+        if rule.get('keep'):
+            keep_of[i] = True
+            keep_px[y0:y1, x0:x1] |= inner if inner.sum() > 10 else mask
     stop_if(fails)
 
     # 선 · 작은 조각 밑을 가장 가까운 영역으로
-    owner = np.where(step_of[regions] > 0, regions, 0)
+    owner = np.where(step_of[regions] != 0, regions, 0)
     nearest = ndimage.distance_transform_edt(owner == 0, return_distances=False, return_indices=True)
     owner = owner[nearest[0], nearest[1]]
     owner = fit(owner.astype(np.float32), cv2.INTER_NEAREST).astype(np.int32)
     step_map, color_map = step_of[owner], color_of[owner]
+    if keep_of.any():
+        near_keep = ndimage.distance_transform_edt(~keep_px, return_distances=False, return_indices=True)
+        keep_rgb = fit(rgb[near_keep[0], near_keep[1]], cv2.INTER_LINEAR)
+        keep_map = keep_of[owner]
+        color_map[keep_map] = keep_rgb[keep_map]
     # 파일을 쓰기 전에 모든 검사를 끝낸다 — 실패하면 원본 폴더를 건드리지 않는다
     stop_if([f'{n:02d}_{step}: 이 단계에 배정된 영역 없음' for n, step in enumerate(steps, 1) if not (step_map == n).any()])
 
@@ -143,8 +161,8 @@ def split(chapter_dir):
     tw, th = 270, 338
     cols = 4
     frames = len(steps) + 1
-    sheet = Image.new('RGB', (cols * tw, -(-frames // cols) * th), (250, 245, 235))
-    canvas = Image.new('RGBA', (W, H), (250, 245, 235, 255))
+    sheet = Image.new('RGB', (cols * tw, -(-frames // cols) * th), PAPER_RGB)
+    canvas = Image.new('RGBA', (W, H), PAPER_RGB + (255,))
     for k in range(frames):
         if k > 0:
             canvas.alpha_composite(layers[k - 1])
@@ -155,6 +173,9 @@ def split(chapter_dir):
 
     if small:
         print(f'작은 조각 {small}개는 둘레 영역으로 채움')
+    paper = (step_map == PAPER).mean()
+    if paper:
+        print(f'종이로 남김("step": null): 캔버스의 {100 * paper:.1f}%')
     print(f'{len(steps)}단계 + 선화 → {os.path.normpath(chapter_dir)} · 색칠 과정 미리보기 {preview}')
 
 

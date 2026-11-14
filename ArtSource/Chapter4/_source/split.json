@@ -1,0 +1,471 @@
+{
+ "image": "original.png",
+ "lineL": 68,
+ "colors": {
+  "sky": [
+   251,
+   121,
+   130
+  ],
+  "sun": [
+   254,
+   232,
+   65
+  ],
+  "yellowleaf": [
+   254,
+   210,
+   22
+  ],
+  "hill": [
+   142,
+   103,
+   190
+  ],
+  "trunk": [
+   138,
+   64,
+   23
+  ],
+  "red": [
+   252,
+   49,
+   40
+  ],
+  "redorange": [
+   253,
+   76,
+   19
+  ],
+  "orange": [
+   253,
+   112,
+   8
+  ],
+  "pumpkin": [
+   253,
+   138,
+   3
+  ],
+  "amber": [
+   253,
+   156,
+   8
+  ],
+  "gold": [
+   253,
+   175,
+   9
+  ],
+  "squirrel": [
+   228,
+   104,
+   41
+  ],
+  "tail": [
+   214,
+   86,
+   33
+  ],
+  "path": [
+   251,
+   209,
+   147
+  ],
+  "cream": [
+   253,
+   225,
+   166
+  ],
+  "acorn": [
+   252,
+   179,
+   74
+  ],
+  "cap": [
+   153,
+   74,
+   28
+  ],
+  "bush": [
+   133,
+   175,
+   32
+  ],
+  "bushlight": [
+   172,
+   211,
+   32
+  ],
+  "grass": [
+   204,
+   228,
+   32
+  ],
+  "green": [
+   101,
+   185,
+   36
+  ],
+  "stem": [
+   77,
+   170,
+   28
+  ],
+  "purple": [
+   208,
+   78,
+   207
+  ]
+ },
+ "rules": [
+  {
+   "color": "sky",
+   "step": "sky",
+   "keep": true
+  },
+  {
+   "color": "sun",
+   "area": [
+    0.45,
+    0.2,
+    0.75,
+    0.4
+   ],
+   "step": "sky",
+   "keep": true
+  },
+  {
+   "color": "sun",
+   "step": "flower",
+   "keep": true
+  },
+  {
+   "color": "hill",
+   "step": "hill",
+   "keep": true
+  },
+  {
+   "color": "yellowleaf",
+   "step": "tree",
+   "keep": true
+  },
+  {
+   "color": "trunk",
+   "area": [
+    0.4,
+    0.5,
+    0.5,
+    0.58
+   ],
+   "step": "acorn",
+   "keep": true
+  },
+  {
+   "color": "trunk",
+   "area": [
+    0.55,
+    0.78,
+    0.65,
+    0.88
+   ],
+   "step": "acorn",
+   "keep": true
+  },
+  {
+   "color": "trunk",
+   "area": [
+    0,
+    0.42,
+    0.25,
+    0.5
+   ],
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "trunk",
+   "area": [
+    0.8,
+    0.42,
+    1,
+    0.5
+   ],
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "trunk",
+   "step": "tree",
+   "keep": true
+  },
+  {
+   "color": "red",
+   "area": [
+    0,
+    0.38,
+    0.25,
+    0.46
+   ],
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "red",
+   "area": [
+    0.8,
+    0.38,
+    1,
+    0.46
+   ],
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "red",
+   "area": [
+    0,
+    0,
+    1,
+    0.23
+   ],
+   "step": "tree",
+   "keep": true
+  },
+  {
+   "color": "redorange",
+   "area": [
+    0,
+    0,
+    1,
+    0.23
+   ],
+   "step": "tree",
+   "keep": true
+  },
+  {
+   "color": "orange",
+   "area": [
+    0,
+    0,
+    1,
+    0.23
+   ],
+   "step": "tree",
+   "keep": true
+  },
+  {
+   "color": "orange",
+   "area": [
+    0.6,
+    0.6,
+    0.8,
+    0.7
+   ],
+   "step": "pumpkin",
+   "keep": true
+  },
+  {
+   "color": "pumpkin",
+   "area": [
+    0.55,
+    0.45,
+    0.95,
+    0.72
+   ],
+   "step": "pumpkin",
+   "keep": true
+  },
+  {
+   "color": "red",
+   "step": "leaves",
+   "keep": true
+  },
+  {
+   "color": "redorange",
+   "step": "leaves",
+   "keep": true
+  },
+  {
+   "color": "orange",
+   "step": "leaves",
+   "keep": true
+  },
+  {
+   "color": "pumpkin",
+   "step": "leaves",
+   "keep": true
+  },
+  {
+   "color": "amber",
+   "step": "leaves",
+   "keep": true
+  },
+  {
+   "color": "gold",
+   "step": "leaves",
+   "keep": true
+  },
+  {
+   "color": "squirrel",
+   "step": "squirrel",
+   "keep": true
+  },
+  {
+   "color": "tail",
+   "step": "squirrel",
+   "keep": true
+  },
+  {
+   "color": "path",
+   "area": [
+    0,
+    0.42,
+    0.25,
+    0.5
+   ],
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "path",
+   "area": [
+    0.8,
+    0.42,
+    1,
+    0.5
+   ],
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "path",
+   "area": [
+    0.6,
+    0.85,
+    0.7,
+    0.95
+   ],
+   "step": "squirrel",
+   "keep": true
+  },
+  {
+   "color": "path",
+   "step": "path",
+   "keep": true
+  },
+  {
+   "color": "cream",
+   "step": "mushroom",
+   "keep": true
+  },
+  {
+   "color": "acorn",
+   "step": "acorn",
+   "keep": true
+  },
+  {
+   "color": "cap",
+   "step": "acorn",
+   "keep": true
+  },
+  {
+   "color": "bush",
+   "step": "grass",
+   "keep": true
+  },
+  {
+   "color": "bushlight",
+   "step": "grass",
+   "keep": true
+  },
+  {
+   "color": "grass",
+   "step": "grass",
+   "keep": true
+  },
+  {
+   "color": "green",
+   "area": [
+    0.6,
+    0.4,
+    0.95,
+    0.65
+   ],
+   "step": "pumpkin",
+   "keep": true
+  },
+  {
+   "color": "green",
+   "step": "flower",
+   "keep": true
+  },
+  {
+   "color": "stem",
+   "step": "pumpkin",
+   "keep": true
+  },
+  {
+   "color": "purple",
+   "step": "flower",
+   "keep": true
+  }
+ ],
+ "steps": [
+  {
+   "id": "sky",
+   "label": "노을 하늘",
+   "memo": "위쪽 하늘 그라데이션 + 지는 해"
+  },
+  {
+   "id": "hill",
+   "label": "먼 산",
+   "memo": "가운데 보라 산"
+  },
+  {
+   "id": "tree",
+   "label": "단풍나무",
+   "memo": "좌우 2그루 — 단풍 · 줄기"
+  },
+  {
+   "id": "grass",
+   "label": "풀밭 · 덤불",
+   "memo": "연두 풀밭 + 덤불"
+  },
+  {
+   "id": "path",
+   "label": "오솔길",
+   "memo": "가운데 구불구불한 길"
+  },
+  {
+   "id": "mushroom",
+   "label": "버섯",
+   "memo": "좌우 나무 밑 4개 + 흙더미"
+  },
+  {
+   "id": "pumpkin",
+   "label": "호박",
+   "memo": "오른쪽 3개"
+  },
+  {
+   "id": "squirrel",
+   "label": "다람쥐",
+   "memo": "2마리"
+  },
+  {
+   "id": "acorn",
+   "label": "도토리",
+   "memo": "풀밭 · 길 위 · 다람쥐 손"
+  },
+  {
+   "id": "leaves",
+   "label": "낙엽",
+   "memo": "하늘에 날리는 잎 + 바닥 낙엽"
+  },
+  {
+   "id": "flower",
+   "label": "꽃",
+   "memo": "좌우 아래 보라 꽃 · 잎"
+  }
+ ]
+}

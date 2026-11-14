@@ -1,0 +1,246 @@
+{
+ "image": "original.png",
+ "lineL": 68,
+ "colors": {
+  "sky": [
+   104,
+   113,
+   227
+  ],
+  "snow": [
+   254,
+   254,
+   254
+  ],
+  "mountain": [
+   197,
+   177,
+   250
+  ],
+  "mountainmix": [
+   208,
+   190,
+   251
+  ],
+  "yellow": [
+   254,
+   235,
+   115
+  ],
+  "smoke": [
+   205,
+   200,
+   232
+  ],
+  "roof": [
+   1,
+   138,
+   125
+  ],
+  "wall": [
+   240,
+   126,
+   87
+  ],
+  "wallmix": [
+   250,
+   148,
+   91
+  ],
+  "brick": [
+   197,
+   79,
+   55
+  ],
+  "window": [
+   254,
+   164,
+   2
+  ],
+  "tree": [
+   25,
+   119,
+   54
+  ],
+  "red": [
+   253,
+   71,
+   66
+  ],
+  "nose": [
+   250,
+   142,
+   1
+  ],
+  "twig": [
+   134,
+   41,
+   0
+  ],
+  "sled": [
+   252,
+   170,
+   89
+  ],
+  "sledleg": [
+   222,
+   134,
+   61
+  ]
+ },
+ "rules": [
+  {
+   "color": "sky",
+   "step": "sky"
+  },
+  {
+   "color": "snow",
+   "area": [0.58, 0.76, 0.62, 0.79],
+   "step": "snowman",
+   "keep": true
+  },
+  {
+   "color": "snow",
+   "step": null
+  },
+  {
+   "color": "mountain",
+   "step": "mountain"
+  },
+  {
+   "color": "mountainmix",
+   "step": "mountain"
+  },
+  {
+   "color": "yellow",
+   "area": [
+    0.1,
+    0.05,
+    0.25,
+    0.15
+   ],
+   "step": "moon"
+  },
+  {
+   "color": "yellow",
+   "step": "star"
+  },
+  {
+   "color": "smoke",
+   "step": "smoke"
+  },
+  {
+   "color": "roof",
+   "step": "roof"
+  },
+  {
+   "color": "wall",
+   "step": "house"
+  },
+  {
+   "color": "wallmix",
+   "step": "house"
+  },
+  {
+   "color": "brick",
+   "area": [
+    0,
+    0,
+    1,
+    0.4
+   ],
+   "step": "house"
+  },
+  {
+   "color": "brick",
+   "step": "tree"
+  },
+  {
+   "color": "window",
+   "step": "window"
+  },
+  {
+   "color": "tree",
+   "step": "tree"
+  },
+  {
+   "color": "red",
+   "step": "snowman"
+  },
+  {
+   "color": "nose",
+   "step": "snowman"
+  },
+  {
+   "color": "twig",
+   "step": "snowman"
+  },
+  {
+   "color": "sled",
+   "step": "sled",
+   "keep": true
+  },
+  {
+   "color": "sledleg",
+   "step": "sled",
+   "keep": true
+  }
+ ],
+ "steps": [
+  {
+   "id": "sky",
+   "label": "밤하늘",
+   "memo": "위쪽 남색 하늘"
+  },
+  {
+   "id": "mountain",
+   "label": "먼 산",
+   "memo": "마을 뒤 연보라 산"
+  },
+  {
+   "id": "moon",
+   "label": "달",
+   "memo": "왼쪽 위 초승달"
+  },
+  {
+   "id": "star",
+   "label": "별",
+   "memo": "하늘의 별 6개"
+  },
+  {
+   "id": "smoke",
+   "label": "굴뚝 연기",
+   "memo": "굴뚝 3개의 연기"
+  },
+  {
+   "id": "roof",
+   "label": "지붕",
+   "memo": "집 3채의 청록 지붕 (지붕 위 눈은 종이로 남김)"
+  },
+  {
+   "id": "house",
+   "label": "집 · 굴뚝",
+   "memo": "주황 벽 + 벽돌 굴뚝"
+  },
+  {
+   "id": "window",
+   "label": "창문 불빛",
+   "memo": "집 3채의 노란 창"
+  },
+  {
+   "id": "tree",
+   "label": "전나무",
+   "memo": "마을 사이 · 좌우 전나무 + 줄기 (나무 위 눈은 종이)"
+  },
+  {
+   "id": "snowman",
+   "label": "눈사람",
+   "memo": "털모자 · 목도리 · 당근 코 · 나뭇가지 팔 (몸은 종이로 남김)"
+  },
+  {
+   "id": "sled",
+   "label": "썰매",
+   "memo": "오른쪽 아래"
+  }
+ ]
+}
