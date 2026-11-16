@@ -47,7 +47,17 @@ public static class StageOrder
             "BeachSand", "BeachSun", "BeachSky", "BeachFish", "BeachGull", "BeachSea",
             "BeachCastle", "BeachShell", "BeachUmbrella", "BeachPalm", "BeachCrab",
         },
-        // 챕터 4~5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md)
+        // 챕터 4 가을 숲길 (2026-11-16): 그림을 뒤에서 앞으로 칠하는 순서 그대로(그림 단계 순서 = 처음 나눈 순서) — 톱니 모양
+        // 노을 100 → 먼 산 42 → 단풍나무 38 · 풀밭 25 → 오솔길 50(쉬어 가기 — 순서 14%) → 버섯 25 · 호박 33(8수) → 다람쥐 100(쉬어 가기 — 순서 12%)
+        // → 도토리 29 · 낙엽 11(8수) · 꽃 14. 수치는 ChapterSurvey.Table(4). 색은 판마다 색 규칙(DECISIONS 2026-11-16 — 그 소재의 색 + 이미 칠한 맞닿은 것의 색):
+        // 먼 산 = 보라 + 노을 분홍 · 풀밭 = 연두 + 산 보라 · 오솔길 = 살구 + 풀밭 연두, 나머지는 그 소재의 색만
+        // 노을 · 도토리는 그림을 먼저 정한 판(SubjectLab.Picture — 노을의 해 두 칸은 주황을 만드는 노랑 재료), 나머지는 소재 맵(SubjectLab.Generate)
+        new[]
+        {
+            "AutumnSky", "AutumnHill", "AutumnTree", "AutumnGrass", "AutumnPath", "AutumnMushroom",
+            "AutumnPumpkin", "AutumnSquirrel", "AutumnAcorn", "AutumnLeaves", "AutumnFlower",
+        },
+        // 챕터 5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md)
     };
 
     public static string SetOrder(int chapter)

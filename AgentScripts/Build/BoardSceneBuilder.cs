@@ -22,7 +22,7 @@ public static class BoardSceneBuilder
     private const string ScenePath = "Assets/Scenes/Board.unity";
     private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
     // 게임이 여는 챕터(차례대로) — 데이터는 챕터마다 Assets/Data/Chapters/ChapterN/ (2026-10-07). 챕터를 등록할 때 번호를 하나씩 더한다(2026-11-14)
-    private static readonly int[] Chapters = { 1, 2, 3 };
+    private static readonly int[] Chapters = { 1, 2, 3, 4 };
     private static string ChapterFolder(int chapter) => $"Assets/Data/Chapters/Chapter{chapter}";
     // 제목 · 부제 · 목록 · 그림 — AgentScripts/Setup/Phase8ChapterFolders.cs(챕터 1) · Phase8Chapters.cs(챕터 2~)가 만듦
     private static string ChapterPath(int chapter) => ChapterFolder(chapter) + "/Chapter.asset";

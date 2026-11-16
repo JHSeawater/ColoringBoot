@@ -24,6 +24,11 @@ public static class PaletteBuilder
         ("beach", "BeachPalette", new[] { "#FD4A32", "#FED404", "#FE8C02", "#01A6BB", "#BC62D3", "#0F9723", "#8A4B1E" }),
         // 물가: 조개 분홍 · 모래 · 모래성 · 하늘 · 연보라 · 얕은 물(민트) · 갈매기 회색(7번이라 그림보다 어둡게)
         ("shore", "ShorePalette", new[] { "#FCB0DE", "#F3DA8A", "#F0962A", "#8ED3FB", "#A98BEF", "#66DFC0", "#7D7B78" }),
+        // 챕터 4 가을 숲길(2026-11-16 — 그림 ArtSource/Chapter4 소재 색에 맞춤, 같은 기준)
+        // 단풍: 단풍 · 버섯 갓 빨강 · 노란 단풍 · 호박 주황 · 파랑(그림에 없음 — 섞는 재료) · 꽃 자주 · 덤불 · 줄기 초록 · 나무 줄기 갈색
+        ("autumn", "AutumnPalette", new[] { "#FC3128", "#FED216", "#FD8A03", "#4A74E8", "#D04ECF", "#65B924", "#8A4017" }),
+        // 노을: 노을 분홍 · 오솔길 살구 · 다람쥐 주황 · 푸른빛(섞는 재료) · 먼 산 보라 · 풀밭 연두 · 도토리 갓 밤색(7번이라 그림보다 어둡게)
+        ("dusk", "DuskPalette", new[] { "#FB7982", "#F8CC85", "#E06426", "#7FA6F2", "#8E67BE", "#C6E21C", "#7A3A14" }),
     };
 
     public static string Build()

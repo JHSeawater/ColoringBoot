@@ -212,6 +212,97 @@ public static class SubjectLab
             Targets = new[] { PaintColor.Orange, PaintColor.Yellow }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
             Looks = t => Share(t, PaintColor.Orange) >= 0.55 && Count(t, PaintColor.Yellow) >= 3,
         },
+
+        // ── 챕터 4 가을 숲길 (2026-11-16) — 단풍 autumn: 1 빨강(단풍 · 버섯 갓) · 2 노랑(노란 단풍) · 3 주황(호박) · 4 파랑(재료) · 5 자주(꽃) · 6 초록(덤불 · 줄기) · 7 갈색(나무 줄기)
+        // 노을 dusk: 1 분홍(노을) · 2 살구(오솔길) · 3 다람쥐 주황 · 4 푸른빛(재료) · 5 보라(먼 산) · 6 연두(풀밭) · 7 밤색(도토리 갓)
+        // 색 규칙(DECISIONS 2026-11-16): 목표 색은 그 소재의 색 + 그림에서 맞닿은 이미 칠한 것의 색. 아직 칠하지 않은 소재 자리는 빈칸
+        // 먼 산: 낮고 넓은 판, 아랫줄은 보라 능선 + 위로 이미 칠한 분홍 노을
+        ["duskhill"] = new Subject
+        {
+            Name = "먼 산", Palette = "dusk", Rows = Shape("xxxxxxx", "xxxxxx", "xxxxxxx"),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Blue },
+            Targets = new[] { PaintColor.Purple, PaintColor.Red }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            // 아랫줄(칸 13~19)은 모두 산, 노을은 그 위에만
+            Looks = t => Enumerable.Range(13, 7).All(i => t[i] == PaintColor.Purple) && Count(t, PaintColor.Red) >= 4,
+        },
+        // 단풍나무: 넓은 잎 덩어리 + 굵은 줄기, 빨강 · 주황 단풍 + 갈색 줄기
+        ["maple"] = new Subject
+        {
+            Name = "단풍나무", Palette = "autumn", Rows = Shape(".xxxx.", "xxxxxx", "xxxxxx", "..xx..", "..xx.."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Red, PaintColor.Orange, PaintColor.Black }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            // 줄기 아래 두 칸(칸 18 · 19)은 갈색, 갈색은 모두 일곱 칸까지(네 칸 모두 갈색을 요구하면 45초에 후보 2개뿐)
+            Looks = t => t[18] == PaintColor.Black && t[19] == PaintColor.Black && Count(t, PaintColor.Black) <= 7
+                && Count(t, PaintColor.Red) >= 4 && Count(t, PaintColor.Orange) >= 4,
+        },
+        // 풀밭: 넓은 판, 연두 + 너머의 이미 칠한 보라 산(둘이 푸른빛을 나눠 쓴다). 빈칸 = 아직 칠하지 않은 소재 자리
+        // 산 자리를 조건으로 걸면(윗줄 · 위 두 줄) 무작위 획 40만 번에 후보가 없다 — 색 구성만 거르고 산이 위쪽에 있는 후보를 눈으로 고른다
+        ["meadow"] = new Subject
+        {
+            Name = "풀밭", Palette = "dusk", Rows = Shape(".xxxxx", "xxxxxx", "xxxxxx", "xxxxx."),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Yellow, PaintColor.Red },
+            Targets = new[] { PaintColor.Green, PaintColor.Purple }, Fill = 0.8, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Green) >= 0.6 && Count(t, PaintColor.Purple) >= 2,
+        },
+        // 오솔길: 구불구불한 띠, 살구 길 + 양옆의 이미 칠한 연두 풀밭
+        ["trail"] = new Subject
+        {
+            Name = "오솔길", Palette = "dusk", Rows = Shape("..xxxx", ".xxxx.", "xxxx..", ".xxxx."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Yellow, PaintColor.Green }, Fill = 0.9, MinSolve = 5, MaxSolve = 6,
+            Looks = t => Count(t, PaintColor.Yellow) >= 6 && Count(t, PaintColor.Green) >= 4,
+        },
+        // 버섯: 둥근 갓 + 대, 빨강 갓 + 갈색 대 · 흙더미
+        ["mushroom"] = new Subject
+        {
+            Name = "버섯", Palette = "autumn", Rows = Shape(".xxx.", "xxxx.", "xxxxx", ".xx..", ".xx.."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Red, PaintColor.Black }, Fill = 0.85, MinSolve = 6, MaxSolve = 8,
+            // 맨 아래 두 칸(칸 14 · 15)은 갈색
+            Looks = t => Share(t, PaintColor.Red) >= 0.5 && t[14] == PaintColor.Black && t[15] == PaintColor.Black && Count(t, PaintColor.Black) >= 3,
+        },
+        // 호박: 넓은 타원 + 꼭지, 주황 + 초록(꼭지 · 뒤의 이미 칠한 덤불 — 둘이 노랑을 나눠 쓴다)
+        // 꼭지 칸이 초록이기를 조건으로 걸면 후보가 없다 — 색 구성만 거르고 초록이 위쪽에 있는 후보를 눈으로 고른다
+        ["pumpkin"] = new Subject
+        {
+            Name = "호박", Palette = "autumn", Rows = Shape("..xx..", ".xxxx.", "xxxxxx", "xxxxx.", ".xxxx."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Red, PaintColor.Blue },
+            Targets = new[] { PaintColor.Orange, PaintColor.Green }, Fill = 0.8, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Orange) >= 0.6 && Count(t, PaintColor.Green) >= 2,
+        },
+        // 다람쥐: 둥근 몸, 주황 + 살구 배
+        ["squirrel"] = new Subject
+        {
+            Name = "다람쥐", Palette = "dusk", Rows = Shape(".xx..", "xxxx.", "xxxxx", "xxxx.", ".xxx."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Red },
+            Targets = new[] { PaintColor.Orange, PaintColor.Yellow }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Orange) >= 0.6 && Count(t, PaintColor.Yellow) >= 2 && Count(t, PaintColor.Yellow) <= 5,
+        },
+        // 도토리: 넓은 갓 + 아래로 좁아지는 몸, 갈색 갓 + 주황 몸
+        // 갓 · 몸 자리를 조건으로 걸면 후보가 없다 — 색 구성만 거르고 갈색이 위쪽에 있는 후보를 눈으로 고른다
+        ["acorn"] = new Subject
+        {
+            Name = "도토리", Palette = "autumn", Rows = Shape(".xxxx.", "xxxxx.", ".xxxx.", ".xxx..", "..xx.."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Yellow, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Orange, PaintColor.Black }, Fill = 0.85, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Count(t, PaintColor.Orange) >= 6 && Count(t, PaintColor.Black) >= 4,
+        },
+        // 낙엽: 흩날리는 덩어리, 빨강 · 주황 · 노랑 잎
+        ["leaves"] = new Subject
+        {
+            Name = "낙엽", Palette = "autumn", Rows = Shape(".xxxx.", "xxxxxx", "xxxxx.", ".xxxx."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Red, PaintColor.Orange, PaintColor.Yellow }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Count(t, PaintColor.Red) >= 4 && Count(t, PaintColor.Yellow) >= 4 && Count(t, PaintColor.Orange) >= 4,
+        },
+        // 꽃: 자주 꽃잎 + 초록 잎(둘이 파랑을 나눠 쓴다) · 노랑 가운데는 있으면 좋고(0~3칸)
+        ["aster"] = new Subject
+        {
+            Name = "꽃", Palette = "autumn", Rows = Shape(".xxxx.", "xxxxx.", "xxxxxx", "xxxxx."),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Purple, PaintColor.Green, PaintColor.Yellow }, Fill = 0.8, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Count(t, PaintColor.Purple) >= 5 && Count(t, PaintColor.Green) >= 4 && Count(t, PaintColor.Yellow) <= 3,
+        },
     };
 
     // 글자 그림 → 줄마다 q 범위. 'x' = 칸, 홀수 줄은 반 칸 오른쪽(q = 열 - 줄/2 내림) — 줄마다 칸이 이어져 있어야 한다
@@ -301,6 +392,13 @@ public static class SubjectLab
     //   물고기 Generate("fish", 24, 1) #3 · 갈매기 Generate("gull", 24, 1) #8
     //   바다 Generate("sea", 30, 2) #5 · 모래성 Generate("castle", 24, 1) #23 · 조개 Generate("shell", 24, 1) #10 · 파라솔 Generate("umbrella", 30, 2) #9
     //   야자수 Generate("palm", 24, 1) #10
+    // 챕터 4에 넣은 판(2026-11-16 — 그림 단계 순서 그대로):
+    //   노을    Picture("DuskSkyG", "노을", "dusk", "111111/33333./.3BB3.", 1, 3, 4, 5, 0, 100, 12, 1) #4 (해 두 칸 B는 주황을 만드는 노랑 재료 — 큰 그림 19칸은 7~10수)
+    //   도토리  Picture("AcornB", "도토리", "autumn", ".777./7777./.333./.33../..3..", 3, 5, 5, 8, 0, 100, 12, 1) #2 (18칸 그림은 풀이 탐색 상한에 걸려 후보 없음)
+    //   먼 산 Generate("duskhill", 24, 1) #1 · 단풍나무 Generate("maple", 24, 3) #8 · 풀밭 Generate("meadow", 24, 3) #2 · 오솔길 Generate("trail", 40, 3) #32
+    //   버섯 Generate("mushroom", 24, 1) #2 · 호박 Generate("pumpkin", 24, 1) #1 · 다람쥐 Generate("squirrel", 24, 1) #13 · 낙엽 Generate("leaves", 24, 1) #5 · 꽃 Generate("aster", 24, 1) #1
+    //   — 단풍나무 · 풀밭 · 호박 · 다람쥐 · 꽃 · 도토리는 후보 수를 채우기 전에 시간 제한(45초)으로 끝난다: 후보 수는 PC 속도에 따라 다르지만 번호는 앞에서부터 같다
+    //   — 소재 자리(산은 위쪽 · 꼭지 · 줄기)를 조건으로 걸면 후보가 없어 색 구성만 거르고 눈으로 골랐다(풀밭은 시드 1 · 3 · 4의 후보 10개 중 산이 윗줄인 것 5개)
     // 색 규칙(DECISIONS 2026-11-16): 목표 색은 그 소재의 색과 그림에서 맞닿아 있고 이미 칠한(앞 판의) 것의 색만. 아직 칠하지 않은 소재 자리는 0(비워 둘 칸)
     //   — 소재 표의 bush · sand · beachsky · crab은 이 규칙 전의 색 구성이다(챕터 판에는 더 쓰지 않음, 기록으로 둔다)
     // 쉬어 가기 판은 대충 풀림만 보지 않는다 — 순서 성공률이 높고(대략 9% 이상) 수가 적은 후보를 고른다(챕터 2 해바라기: 대충 풀림 100%인데 가장 많이 헤맴, DevelopLog 2026-11-16)
