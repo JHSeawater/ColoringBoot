@@ -9,7 +9,9 @@ using ColoringBoot.Core;
 // 소재 맵 후보 생성(2026-10-11 챕터 1 덩굴 · 언덕 · 하늘) — 게임 데이터는 쓰지 않는다. 고른 후보를 챕터 Stages/ 파일에 옮긴다
 // run_script(file=AgentScripts/Tools/SubjectLab.cs, entry=SubjectLab.Generate, args=["vine", 8, 1])
 //   — 소재(vine · hill · sky · 챕터 2: lawn · stone · fence · bush · lavender · ladybug · can · sunflower
-//     · 챕터 3: beachsky · sea · sand · palm · gull · fish · umbrella · crab · shell · castle) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
+//     · 챕터 3: beachsky · sea · sand · palm · gull · fish · umbrella · crab · shell · castle
+//     · 챕터 4: duskhill · maple · meadow · trail · mushroom · pumpkin · squirrel · acorn · leaves · aster
+//     · 챕터 5: snowhill · smoke · roof · house · window · fir · snowman · sled) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
 // 소재 단서 = 맵 모양 + 목표 색 구성(GDD §5 2026-10-06). 시작 색 구성을 정해 두고 무작위 자리 · 무작위 획으로 목표를 만든 뒤
 // 목표 색 구성 · 막힐 수 있는 칸 비율(단색 채우기 거르기) · 최소 수 · 순서 민감도로 거른다
 public static class SubjectLab
@@ -509,6 +511,8 @@ public static class SubjectLab
         int n = coords.Count;
         string paletteId = palette == "default" ? null : palette;
         var paintable = Enumerable.Range(0, n).Where(i => target[i] != PaintColor.Empty && fixedStart[i] == PaintColor.Empty).ToList();
+        // 시작 칸을 놓을 자리가 모자라면 아래 자리 고르기가 끝나지 않는다(에디터가 멈춤)
+        if (minSeeds < 0 || minSeeds > maxSeeds || maxSeeds > paintable.Count) return $"시작 칸 수 {minSeeds}~{maxSeeds}: 0 이상 · 최소 ≤ 최대 ≤ 칠할 칸 {paintable.Count}개여야 함";
         PaintColor needed = PaintColor.Empty, given = PaintColor.Empty;
         foreach (PaintColor t in target) needed |= t;
         foreach (PaintColor f in fixedStart) given |= f;

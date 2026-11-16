@@ -15,6 +15,7 @@ using UnityEngine.UI;
 // 여러 챕터: Press("SelectScreen/Body/PictureSlot/NextChapterButton") · PrevChapterButton. 모든 챕터 열기(?unlock, 2026-11-14): UnlockAll()
 // 앞 챕터를 깬 상태로: ClearChapter(n) — 마지막 판만 남기려면 ClearChapter(n, 1)
 // 따라 하기: 저장 키가 없으면 타이틀 [시작]이 레슨 1을 연다 → Drag로 안내한 획 → Press("BoardScreen/ClearBanner/NextButton"). 힌트: Press("BoardScreen/HintButton")
+// 힌트 탐색 중 잠금(2026-11-17): HintProbe(false|true) — 힌트를 누른 같은 호출 안에서 되돌리기 · 처음부터 · 끌기 · 힌트를 시도. 뒤 호출에서 HintStatus()
 // 탭은 실제 입력 경로를 탄다: 보드 영역에 클릭 이벤트(화면 좌표) → BoardView 칸 판정 → 방향 버튼 onClick → PuzzleController → 세션
 public static class BoardQa
 {
@@ -244,6 +245,62 @@ public static class BoardQa
         if (target == null) return $"{path} 없음(꺼져 있음?)";
         target.GetComponent<Button>().onClick.Invoke();
         return Flow();
+    }
+
+    // 힌트 탐색 중 확인(2026-11-17 힌트 프레임 나누기) — 힌트를 누른 같은 호출 안에서(다음 프레임으로 넘어가기 전) 되돌리기 · 처음부터 · 끌기 · 힌트 다시 누르기를 시도한다.
+    // 버튼이 흐려도 onClick을 직접 불러 메서드 안 잠금까지 본다(Ctrl+Z와 같은 길). 끌기는 보드 입력 잠금만 보므로 붓질 메서드(OnBrushRequested)도 직접 부른다. leave면 끝에 [목록]으로 나간다 — 버린 탐색이 나중에 뜨지 않는지는 뒤 호출의 HintStatus로.
+    // 탐색이 여러 프레임에 걸치는 판에서 쓴다(챕터 4 호박: (-1,3) 3시 → (-1,2) 11시 → (1,4) 1시 → (1,4) 7시 → (-1,3) 1시 뒤 "5수 되돌려 보세요")
+    public static string HintProbe(bool leave)
+    {
+        Transform screen = GameObject.Find("Canvas/SafeArea/BoardScreen").transform;
+        Button Find(string name) => screen.Find(name).GetComponent<Button>();
+        PuzzleSession session = Session();
+        Board board = session.Board;
+        // 지금 상태에서 색이 바뀌는 획 하나 — 잠겨 있지 않다면 그어질 획
+        var state = Enumerable.Range(0, board.CellCount).Select(session.ColorAt).ToArray();
+        BoardMove stroke = board.Moves.FirstOrDefault(m => board.Brush((PaintColor[])state.Clone(), m.Cell, m.Direction));
+        HexCoord at = board.CoordOf(stroke.Cell);
+
+        int hints = HintCount();
+        string text = $"누르기 전 [{Locks()}] 수 {session.MoveCount} · 힌트 횟수 {hints}";
+        Find("HintButton").onClick.Invoke();
+        text += $" → 누른 직후: 탐색 중 {Searching()} · 힌트 횟수 {HintCount()} · [{Locks()}] · 안내 \"{GuideText()}\"";
+        Find("UndoButton").onClick.Invoke();
+        text += $" | 되돌리기 직접 호출 → 수 {session.MoveCount}";
+        Find("RestartButton").onClick.Invoke();
+        text += $" | 처음부터 직접 호출 → 수 {session.MoveCount}";
+        Drag(at.Q, at.R, (int)stroke.Direction, 1.2f, true);
+        text += $" | 끌기 ({at.Q},{at.R}) {stroke.Direction} → 수 {session.MoveCount}";
+        // 끌기는 잠긴 보드(BoardView)가 먼저 거른다 — 붓질 메서드 안 잠금은 직접 불러 본다(키보드 등 다른 길로 요청이 와도 막히는지)
+        typeof(PuzzleController).GetMethod("OnBrushRequested", BindingFlags.NonPublic | BindingFlags.Instance)
+            .Invoke(UnityEngine.Object.FindAnyObjectByType<PuzzleController>(), new object[] { stroke.Cell, stroke.Direction });
+        text += $" | 붓질 직접 호출 → 수 {session.MoveCount}";
+        Find("HintButton").onClick.Invoke();
+        text += $" | 힌트 다시 → 횟수 {HintCount()} · 탐색 중 {Searching()} · 안내 \"{GuideText()}\"";
+        if (leave) text += " | [목록] → " + Press("BoardScreen/BackButton") + $" · 탐색 중 {Searching()}";
+        return text + $" · 프레임 {Time.frameCount}";
+    }
+
+    // 힌트 탐색 상태 — 탐색 중인가 · 지금 판의 힌트 횟수 · 잠금 · 프레임 번호 · 화면 흐름
+    public static string HintStatus() =>
+        $"탐색 중 {Searching()} · 힌트 횟수 {(Session() == null ? "(판 없음)" : HintCount().ToString())} · [{Locks()}] · 프레임 {Time.frameCount} · {Flow()}";
+
+    private static bool Searching() => PuzzleField("_hintSearch") != null;
+
+    private static int HintCount() => ((SaveData)PuzzleField("_data")).Stats.Get((string)PuzzleField("_stageId")).Hints;
+
+    private static object PuzzleField(string name) =>
+        typeof(PuzzleController).GetField(name, BindingFlags.NonPublic | BindingFlags.Instance).GetValue(UnityEngine.Object.FindAnyObjectByType<PuzzleController>());
+
+    private static string GuideText() => Active("GuideBanner") ? GameObject.Find("Canvas/SafeArea/BoardScreen/GuideBanner/Label").GetComponent<TMPro.TMP_Text>().text : "";
+
+    // 보드 입력 · 되돌리기 · 처음부터 · 힌트 버튼이 받는 상태인가
+    private static string Locks()
+    {
+        Transform screen = GameObject.Find("Canvas/SafeArea").transform.Find("BoardScreen");
+        bool board = (bool)typeof(BoardView).GetField("_interactable", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(screen.Find("BoardArea").GetComponent<BoardView>());
+        bool On(string name) => screen.Find(name).GetComponent<Button>().interactable;
+        return $"보드 {board} · 되돌리기 {On("UndoButton")} · 처음부터 {On("RestartButton")} · 힌트 {On("HintButton")}";
     }
 
     // 그림에서 보이는 단계 번호들 (Step01 …) — 단계는 Picture/Clip/Content 아래(2026-11-13 — 확대는 그 층만). 아직 Show 전이면 빈 글자

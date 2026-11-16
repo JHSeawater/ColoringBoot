@@ -35,7 +35,7 @@ namespace ColoringBoot.Core
     }
 
     // 너비 우선 탐색 솔버 (GDD §8) — 프로토타입 solve · orderSensitivity와 같은 순서로 탐색해 같은 풀이를 찾는다.
-    // 막힌 상태 · 색이 안 바뀌는 획은 제외한다. 동기 실행이라 에디터 도구용 — 런타임에 쓰려면 프레임을 나눠야 한다(CLAUDE.md §4)
+    // 막힌 상태 · 색이 안 바뀌는 획은 제외한다. Solve는 한 번에 끝까지 돌아 에디터 도구용 — 런타임은 SolverSearch를 프레임에 나눠 돌린다(CLAUDE.md §6)
     public static class Solver
     {
         public const int DefaultLimit = 400000;  // 프로토타입 플레이 화면과 같은 상한
@@ -45,42 +45,12 @@ namespace ColoringBoot.Core
         private const int CellsPerWord = 64 / BitsPerCell;  // 21
         public const int MaxCells = CellsPerWord * 2;       // 상태 키 두 워드 = 42칸
 
+        // 탐색은 SolverSearch 한 곳이다 — 여기서는 끝까지 돌린다(2026-11-17)
         public static SolveResult Solve(Board board, PaintColor[] start, int limit = DefaultLimit)
         {
-            if (board.CellCount > MaxCells) throw new ArgumentException($"칸이 {MaxCells}개를 넘습니다: {board.CellCount}", nameof(board));
-            if (board.IsSolved(start)) return new SolveResult(Array.Empty<BoardMove>(), 1, false, false);
-            if (board.IsDead(start)) return new SolveResult(null, 1, false, true);
-
-            StateKey startKey = StateKey.Of(start);
-            var previous = new Dictionary<StateKey, (StateKey from, int move)>();
-            var seen = new HashSet<StateKey> { startKey };
-            var frontier = new List<PaintColor[]> { start };
-            IReadOnlyList<BoardMove> moves = board.Moves;
-            int explored = 1;
-
-            while (frontier.Count > 0)
-            {
-                var next = new List<PaintColor[]>();
-                foreach (PaintColor[] state in frontier)
-                {
-                    StateKey key = StateKey.Of(state);
-                    for (int m = 0; m < moves.Count; m++)
-                    {
-                        var candidate = (PaintColor[])state.Clone();
-                        if (!board.Brush(candidate, moves[m].Cell, moves[m].Direction)) continue;
-                        StateKey candidateKey = StateKey.Of(candidate);
-                        if (seen.Contains(candidateKey) || board.IsDead(candidate)) continue;
-                        seen.Add(candidateKey);
-                        previous[candidateKey] = (key, m);
-                        explored++;
-                        if (board.IsSolved(candidate)) return new SolveResult(PathTo(candidateKey, startKey, previous, moves), explored, false, false);
-                        if (explored > limit) return new SolveResult(null, explored, true, false);
-                        next.Add(candidate);
-                    }
-                }
-                frontier = next;
-            }
-            return new SolveResult(null, explored, false, false);
+            var search = new SolverSearch(board, start, limit);
+            while (!search.Step(int.MaxValue)) { }
+            return search.Result;
         }
 
         // 풀이의 순서를 모두 바꿔 대입해 본다. 2수 미만 · 7수 초과면 null (프로토타입과 같음)
@@ -115,7 +85,7 @@ namespace ColoringBoot.Core
             }
         }
 
-        private static IReadOnlyList<BoardMove> PathTo(StateKey end, StateKey start, Dictionary<StateKey, (StateKey from, int move)> previous, IReadOnlyList<BoardMove> moves)
+        internal static IReadOnlyList<BoardMove> PathTo(StateKey end, StateKey start, Dictionary<StateKey, (StateKey from, int move)> previous, IReadOnlyList<BoardMove> moves)
         {
             var path = new List<BoardMove>();
             for (StateKey key = end; !key.Equals(start); key = previous[key].from) path.Add(moves[previous[key].move]);

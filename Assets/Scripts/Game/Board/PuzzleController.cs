@@ -31,8 +31,11 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _guideLabel;
         [SerializeField] private SoundController _sound;
 
-        private const int HintLimit = 200000;     // 힌트 탐색 상한(상태 하나당) — 지금 스테이지 최악 4만여 개(2026-10-07 에디터 실측 327 ms)
+        private const int HintLimit = HintSearch.RuntimeLimit;   // 20만. 힌트 탐색 상한(상태 하나당) — 한 번 탐색은 최악 3.6만 상태(챕터 4 호박). 되돌리기 안내는 단계마다 다시 탐색해 합계 13만 상태 · 한 번에 돌면 PC WebGL 1,287 ms라(2026-11-17 실측, DevelopLog) 프레임마다 HintFrameMs씩 나눠 돈다
+        private const long HintFrameMs = 40;      // 힌트 탐색이 한 프레임에 쓰는 시간 — 탐색 중에는 20프레임 남짓으로 그린다. PC WebGL 실측(챕터 4 호박 막다른 길): 프레임 간격 최대 51 ms · 누른 뒤 결과까지 약 1.2초(DECISIONS 2026-11-17 — 처음 값 25 ms에서 바꿈)
+        private const int HintStepStates = 64;    // 상태를 이만큼 펼칠 때마다 시계를 본다
         private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
+        private const string HintSearching = "힌트를 찾고 있어요";
         private const string HintNotFound = "힌트를 찾지 못했어요";
         private const string WrongCellText = "손가락이 있는 칸에서 끌어 주세요";
         private const float GoalPulseScale = 0.12f;   // 따라 하기 1 클리어: 목표 그림이 커졌다 작아지는 정도 · 한 번 걸리는 초
@@ -53,6 +56,13 @@ namespace ColoringBoot.Game
         private PaintColor[] _pathBefore;
         private Coroutine _afterStroke;   // 물결이 끝난 뒤 클리어 반응 · 막힘 흔들림 → 안내 띠
         private Coroutine _goalPulse;     // 목표 그림 강조(따라 하기 1 클리어 띠가 떠 있는 동안)
+        // 힌트 탐색(2026-11-17): 한 프레임에 끝나지 않으면 코루틴으로 프레임마다 이어 돈다.
+        // 도는 동안(_hintSearch != null) 보드 입력 · 되돌리기 · 처음부터 · 힌트를 받지 않는다 — 버튼을 흐리게 하고 메서드에서도 막는다(Ctrl+Z는 Undo를 바로 부른다)
+        private HintSearch _hintSearch;
+        private Coroutine _hintRoutine;
+        private readonly System.Diagnostics.Stopwatch _hintWork = new System.Diagnostics.Stopwatch();   // 계산에 쓴 시간(프레임 몫의 합)
+        private readonly System.Diagnostics.Stopwatch _hintWait = new System.Diagnostics.Stopwatch();   // 누른 때부터 결과까지
+        private int _hintFrames;          // 탐색이 걸친 프레임 수
 
         // 지금 판을 풀었는가 — 무한 모드는 풀린 판을 떠날 때 다음 퍼즐로 넘어간다
         public bool IsSolved => _session != null && _session.IsSolved;
@@ -92,6 +102,7 @@ namespace ColoringBoot.Game
             _lesson = -1;
             _trapDone = false;
             StopAfterStroke();
+            StopHintSearch();
             _session = new PuzzleSession(new Board(stage));
             _minMoves = stage.MinMoves;
             int cells = _session.Board.CellCount;
@@ -136,6 +147,7 @@ namespace ColoringBoot.Game
         public void Close()
         {
             StopAfterStroke();
+            StopHintSearch();
             StopGoalPulse();
             if (_session != null) _data.SaveStats();
             _session = null;
@@ -207,7 +219,7 @@ namespace ColoringBoot.Game
 
         private void OnBrushRequested(int cell, HexDirection dir)
         {
-            if (_session == null || _session.IsSolved) return;
+            if (_session == null || _session.IsSolved || _hintSearch != null) return;
             // 따라 하기: 손가락이 가리킨 칸 · 방향만 긋는다(혼자 풀기 레슨은 아무 획이나). 아니면 안내를 다시 보인다
             if (_lesson >= 0 && !TutorialLessons.IsFree(_lesson) && !LessonAllows(cell, dir, out bool guideCell))
             {
@@ -301,7 +313,7 @@ namespace ColoringBoot.Game
         private void Undo()
         {
             bool wasDead = _session != null && _session.IsDead;
-            if (_session == null || !_session.Undo()) return;
+            if (_session == null || _hintSearch != null || !_session.Undo()) return;
             if (_lesson >= 0 && wasDead) _trapDone = true;   // 따라 하기: 막혔다가 되돌리면 본 풀이로
             StopAfterStroke();
             _boardView.CancelDrag();
@@ -312,7 +324,7 @@ namespace ColoringBoot.Game
 
         private void Restart()
         {
-            if (_session == null || _session.MoveCount == 0) return;
+            if (_session == null || _hintSearch != null || _session.MoveCount == 0) return;
             if (_lesson >= 0 && _session.IsDead) _trapDone = true;
             StopAfterStroke();
             _boardView.CancelDrag();
@@ -344,8 +356,10 @@ namespace ColoringBoot.Game
             string counter = _minMoves.HasValue ? $"{_session.MoveCount} / {_minMoves.Value}수" : $"{_session.MoveCount}수";
             _moveCounter.text = best.HasValue ? $"{counter} · 최고 {best.Value}" : counter;
             bool solved = _session.IsSolved;
+            // 힌트 탐색 중에는 보드 입력 · 되돌리기 · 처음부터 · 힌트를 모두 잠근다 — 잠금은 여기 한 곳에서 정한다(2026-11-17)
+            bool searching = _hintSearch != null;
             // 클리어하거나 막히면 보드 입력을 잠근다(되돌리면 풀린다). 막힌 뒤에는 더 그어도 완성할 수 없다 — GDD §2.5 "헛수고를 막는다"(2026-10-08 사용자 결정)
-            _boardView.SetInteractable(!solved && !_session.IsDead);
+            _boardView.SetInteractable(!solved && !_session.IsDead && !searching);
             _clearBanner.SetActive(solved && !holdBanners);
             if (solved)
             {
@@ -353,12 +367,12 @@ namespace ColoringBoot.Game
                 else _clearLabel.text = _data.Progress.IsPerfect(_stageId, _minMoves) ? $"완벽! 최소 {best.Value}수" : $"완성! 최고 {best.Value}수";
             }
             _stuckBanner.SetActive(!solved && _session.IsDead && !holdBanners);
-            _undoButton.interactable = _session.MoveCount > 0;
-            _restartButton.interactable = _session.MoveCount > 0;
+            _undoButton.interactable = _session.MoveCount > 0 && !searching;
+            _restartButton.interactable = _session.MoveCount > 0 && !searching;
             // 안내(따라 하기 · 힌트)는 상태가 바뀔 때마다 지운다 — 따라 하기면 다음 획 안내를 다시 보인다. 따라 하기에서는 힌트를 쓰지 않는다(버튼은 흐리게 — 혼자 풀기 레슨만 씀)
             _boardView.HideGuide();
             _guideBanner.SetActive(false);
-            _hintButton.interactable = !solved && (_lesson < 0 || TutorialLessons.IsFree(_lesson));
+            _hintButton.interactable = !solved && !searching && (_lesson < 0 || TutorialLessons.IsFree(_lesson));
             if (_lesson >= 0 && !solved) ShowLessonGuide();
         }
 
@@ -389,13 +403,14 @@ namespace ColoringBoot.Game
         // 힌트 버튼 — 보상형 광고 자리를 거친다(지금은 바로). 횟수 제한 없음 · "완벽"과 무관 (GDD §5 · §6, 2026-10-07)
         private void RequestHint()
         {
-            if (_session == null || _session.IsSolved || (_lesson >= 0 && !TutorialLessons.IsFree(_lesson))) return;
+            if (_session == null || _session.IsSolved || _hintSearch != null || (_lesson >= 0 && !TutorialLessons.IsFree(_lesson))) return;
             _ads.ShowRewarded(ShowHint);
         }
 
+        // 힌트 탐색을 시작한다. 첫 프레임 몫 안에 끝나면 바로 결과를 보이고, 아니면 "찾는 중" 안내를 띄우고 프레임마다 이어 돈다(CLAUDE.md §6)
         private void ShowHint()
         {
-            if (_session == null || _session.IsSolved) return;
+            if (_session == null || _session.IsSolved || _hintSearch != null) return;
             if (_afterStroke != null)
             {
                 // 붓질 연출 중이면 끝난 모습으로 정리한 뒤(막힘 띠가 나중에 겹쳐 뜨지 않게)
@@ -403,11 +418,75 @@ namespace ColoringBoot.Game
                 Refresh();
             }
             _boardView.CancelDrag();
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-            Hint hint = _session.FindHint(HintLimit);
-            if (watch.ElapsedMilliseconds > SlowHintMs) Debug.Log($"힌트 계산 {watch.ElapsedMilliseconds} ms ({_stageId})", this);
+            // 횟수는 요청할 때 한 번 센다 — 탐색을 버려도(목록으로 나감) 누른 횟수다
             _data.Stats.Hinted(_stageId);
             _data.SaveStats();
+
+            _hintSearch = _session.StartHint(HintLimit);
+            _hintWork.Reset();
+            _hintWait.Restart();
+            _hintFrames = 0;
+            if (RunHintFrame())
+            {
+                FinishHint(false);
+                return;
+            }
+            // 한 프레임에 끝나지 않았다 — Refresh가 잠그고(_hintSearch를 본다) 이전 힌트의 손가락 표시도 지운다
+            Refresh();
+            ShowGuideText(HintSearching);
+            _hintRoutine = StartCoroutine(SearchHint());
+        }
+
+        private IEnumerator SearchHint()
+        {
+            do yield return null;
+            while (!RunHintFrame());
+            _hintRoutine = null;
+            FinishHint(true);
+        }
+
+        // 이번 프레임 몫만큼 탐색한다. 힌트가 정해졌으면 true
+        private bool RunHintFrame()
+        {
+            _hintFrames++;
+            long end = _hintWork.ElapsedMilliseconds + HintFrameMs;
+            _hintWork.Start();
+            bool done = false;
+            try
+            {
+                while (!done && _hintWork.ElapsedMilliseconds < end) done = _hintSearch.Step(HintStepStates);
+            }
+            catch
+            {
+                // 탐색이 예외로 죽어도 잠금이 남지 않게 버리고 실패를 알린다 — 예외는 그대로 던져 콘솔에 남긴다
+                StopHintSearch();
+                Refresh();
+                ShowGuideText(HintNotFound);
+                throw;
+            }
+            finally
+            {
+                _hintWork.Stop();
+            }
+            return done;
+        }
+
+        // 힌트 탐색을 버린다(보드를 떠남 · 다른 판을 엶) — 이 오브젝트는 보드 화면이 꺼져도 켜져 있어 코루틴이 저절로 멈추지 않는다.
+        // 잠금은 뒤따르는 Refresh(Open)가 맞춘다
+        private void StopHintSearch()
+        {
+            if (_hintRoutine != null) StopCoroutine(_hintRoutine);
+            _hintRoutine = null;
+            _hintSearch = null;
+        }
+
+        // locked: 여러 프레임에 걸쳐 잠가 둔 탐색이었다 — 잠금을 그냥 풀지 않고 지금 상태 기준(Refresh)으로 되돌린다(막힌 판의 보드 입력은 잠긴 채, CLAUDE.md §5)
+        private void FinishHint(bool locked)
+        {
+            Hint hint = _hintSearch.Result;
+            _hintSearch = null;
+            if (_hintWork.ElapsedMilliseconds > SlowHintMs) Debug.Log($"힌트 계산 {_hintWork.ElapsedMilliseconds} ms · 누른 뒤 {_hintWait.ElapsedMilliseconds} ms · {_hintFrames}프레임 ({_stageId})", this);
+            if (locked) Refresh();
 
             switch (hint.Kind)
             {

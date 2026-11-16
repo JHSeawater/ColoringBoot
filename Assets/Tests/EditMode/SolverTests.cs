@@ -80,5 +80,88 @@ namespace ColoringBoot.Core.Tests
             var board = new Board(Stage.Parse(TestStages.Grape));
             Assert.IsNull(Solver.MeasureOrder(board, board.CreateStartState(), new[] { board.Moves[0] }));
         }
+
+        // 나눠 도는 탐색(SolverSearch, 2026-11-17 힌트 프레임 나누기) — 한 번에 펼치는 상태 수(예산)를 어떻게 주든
+        // 끝까지 한 번에 돌리는 Solver.Solve와 같은 결과다: 경로의 모든 획 · Explored · Limited · DeadAtStart.
+        // (Solve의 옛 본문을 지우기 전에는 이 테스트로 옛 탐색과 새 탐색이 같음을 확인했다 — 지금은 Solve도 SolverSearch를 쓴다.
+        // Solve가 예산 int.MaxValue로 도는 것이라 그 예산은 여기서 다시 보지 않는다)
+        private static readonly int[] Budgets = { 1, 997 };
+
+        private static void AssertSearchMatchesSolve(Board board, PaintColor[] start, int limit)
+        {
+            SolveResult expected = Solver.Solve(board, start, limit);
+            foreach (int budget in Budgets)
+            {
+                var search = new SolverSearch(board, start, limit);
+                bool done = search.Step(budget);
+                if (!done) Assert.IsNull(search.Result, "끝나기 전에는 결과 없음");
+                while (!done) done = search.Step(budget);
+                SolveResult actual = search.Result;
+
+                Assert.AreEqual(expected.Solved, actual.Solved, $"예산 {budget}: 풀림");
+                Assert.AreEqual(expected.Explored, actual.Explored, $"예산 {budget}: 탐색 상태 수");
+                Assert.AreEqual(expected.Limited, actual.Limited, $"예산 {budget}: 상한");
+                Assert.AreEqual(expected.DeadAtStart, actual.DeadAtStart, $"예산 {budget}: 시작부터 막힘");
+                if (!expected.Solved) continue;
+                Assert.AreEqual(expected.Path.Count, actual.Path.Count, $"예산 {budget}: 수");
+                for (int i = 0; i < expected.Path.Count; i++)
+                {
+                    Assert.AreEqual(expected.Path[i].Cell, actual.Path[i].Cell, $"예산 {budget}: {i}번째 획의 칸");
+                    Assert.AreEqual(expected.Path[i].Direction, actual.Path[i].Direction, $"예산 {budget}: {i}번째 획의 방향");
+                }
+            }
+        }
+
+        [TestCaseSource(typeof(TestStages), nameof(TestStages.GameStageFiles))]
+        public void Search_AnyBudget_MatchesSolve_GameStage(string file)
+        {
+            var board = new Board(TestStages.ReadGameStage(file));
+            AssertSearchMatchesSolve(board, board.CreateStartState(), Solver.DefaultLimit);
+        }
+
+        [TestCase("Grape")]
+        [TestCase("TwoColors")]
+        [TestCase("BrushChanges")]
+        [TestCase("Honeycomb")]
+        [TestCase("Crossing")]
+        [TestCase("Stain")]
+        [TestCase("MakeBlack")]
+        [TestCase("Hive")]
+        [TestCase("LastStroke")]
+        public void Search_AnyBudget_MatchesSolve_PrototypeStage(string file)
+        {
+            var board = new Board(Stage.Parse(TestStages.ReadPrototype(file)));
+            AssertSearchMatchesSolve(board, board.CreateStartState(), Solver.DefaultLimit);
+        }
+
+        // 상한에 걸리는 경우 — 상한을 넘는 순간도 같다
+        [TestCase(1)]
+        [TestCase(10)]
+        [TestCase(66)]
+        [TestCase(67)]
+        public void Search_AnyBudget_MatchesSolve_Limited(int limit)
+        {
+            var board = new Board(Stage.Parse(TestStages.Grape));
+            AssertSearchMatchesSolve(board, board.CreateStartState(), limit);
+        }
+
+        // 풀 수 없는 상태: 포도의 조용한 막다른 길(보라 칸에서 9시) · 거기서 더 그어 막힌 상태 · 이미 풀린 상태
+        [Test]
+        public void Search_AnyBudget_MatchesSolve_UnsolvableDeadAndSolved()
+        {
+            var board = new Board(Stage.Parse(TestStages.Grape));
+            PaintColor[] state = board.CreateStartState();
+            Assert.IsTrue(board.Brush(state, board.IndexOf(new HexCoord(3, 3)), HexDirection.Clock9));
+            Assert.IsFalse(Solver.Solve(board, state).Solved, "조용한 막다른 길");
+            AssertSearchMatchesSolve(board, state, Solver.DefaultLimit);
+
+            Assert.IsTrue(board.Brush(state, board.IndexOf(new HexCoord(1, 3)), HexDirection.Clock1));
+            Assert.IsTrue(Solver.Solve(board, state).DeadAtStart, "막힌 상태");
+            AssertSearchMatchesSolve(board, state, Solver.DefaultLimit);
+
+            PaintColor[] solved = board.CreateStartState();
+            foreach (BoardMove move in Solver.Solve(board, solved).Path) board.Brush(solved, move.Cell, move.Direction);
+            AssertSearchMatchesSolve(board, solved, Solver.DefaultLimit);
+        }
     }
 }

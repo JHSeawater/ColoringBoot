@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace ColoringBoot.Core.Tests
 {
@@ -11,20 +9,11 @@ namespace ColoringBoot.Core.Tests
     // 읽히고 · 풀리고 · minMoves가 맞고 · 미리보기 경로(Trace)가 실제 붓질(Brush)과 같고 · 파일 이름(진행 기록의 키)이 겹치지 않는다 (2026-10-07)
     public class ContentRegressionTests
     {
-        private static string DataPath => Path.Combine(Application.dataPath, "Data");
-
-        // 테스트 이름에 보이도록 Data 기준 상대 경로
-        private static IEnumerable<string> StageFiles() =>
-            Directory.GetFiles(DataPath, "*.json", SearchOption.AllDirectories)
-                .Select(path => path.Substring(DataPath.Length + 1).Replace('\\', '/'))
-                .OrderBy(path => path, StringComparer.Ordinal);
-
-        private static Stage Read(string file) => Stage.Parse(File.ReadAllText(Path.Combine(DataPath, file)));
-
-        [TestCaseSource(nameof(StageFiles))]
+        // 스테이지 목록 · 읽기는 TestStages 한 곳(SolverTests와 함께 쓴다, 2026-11-17)
+        [TestCaseSource(typeof(TestStages), nameof(TestStages.GameStageFiles))]
         public void Stage_SolvesInMinMoves(string file)
         {
-            Stage stage = Read(file);
+            Stage stage = TestStages.ReadGameStage(file);
             var board = new Board(stage);
 
             SolveResult result = Solver.Solve(board, board.CreateStartState());
@@ -35,10 +24,10 @@ namespace ColoringBoot.Core.Tests
         }
 
         // 시작 상태와 풀이의 매 수 뒤 상태에서, 모든 칸 · 모든 방향의 미리보기 결과가 실제 붓질 결과와 같다
-        [TestCaseSource(nameof(StageFiles))]
+        [TestCaseSource(typeof(TestStages), nameof(TestStages.GameStageFiles))]
         public void Trace_MatchesBrush(string file)
         {
-            var board = new Board(Read(file));
+            var board = new Board(TestStages.ReadGameStage(file));
             var cells = new int[board.CellCount];
             var brushes = new PaintColor[board.CellCount];
             PaintColor[] state = board.CreateStartState();
@@ -70,7 +59,7 @@ namespace ColoringBoot.Core.Tests
         [Test]
         public void FileNames_AreUnique()
         {
-            string[] names = StageFiles().Select(Path.GetFileNameWithoutExtension).ToArray();
+            string[] names = TestStages.GameStageFiles().Select(Path.GetFileNameWithoutExtension).ToArray();
             string[] duplicates = names.GroupBy(n => n, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
 
             Assert.Greater(names.Length, 0, "스테이지 파일이 있음");
