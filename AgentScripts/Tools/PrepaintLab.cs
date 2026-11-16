@@ -35,6 +35,7 @@ public static class PrepaintLab
     private static readonly Dictionary<string, Background> Backgrounds = new Dictionary<string, Background>
     {
         // 하늘 + 노랑 벌: 그림 가운데 아래 세 마리
+        // — 2026-11-16 챕터 판에서는 이 벌 칸을 비워 둘 칸으로 바꿨다(벌은 하늘 뒤에 칠하는 소재 — DECISIONS 2026-11-16). 미리 칠하는 것은 이미 칠한 소재만. 이 항목은 기록으로 둔다
         ["sky"] = new Background
         {
             File = "Assets/Data/Chapters/Chapter1/Stages/Sky.json", Color = PaintColor.Yellow, MinCount = 2, MaxCount = 3,

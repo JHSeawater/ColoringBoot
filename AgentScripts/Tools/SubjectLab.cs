@@ -287,19 +287,29 @@ public static class SubjectLab
     // 시작 색은 그 칸 목표에 든 기본색만. 후보는 Builds/SubjectLab/<파일 키>.json(한 줄에 하나)에 쓴다 — 고른 것은 Phase8Chapters.AddStage로 챕터에 넣는다.
     // 챕터 2에 넣은 판(2026-11-15 — 같은 인자로 다시 돌리면 같은 후보가 같은 번호로 나온다. 넣기는 Phase8Chapters.AddStages):
     //   화분    Picture("GardenPot5", "화분", "garden", "..1../.11../33333/3333.", 3, 4, 4, 5, 90, 100, 8, 2) #6
-    //   하늘    Picture("GardenSky", "하늘", "spring", "44444/44444/44444/2222C", 2, 4, 4, 8, 0, 100, 16, 1) #10
-    //   튤립    Picture("GardenTulip", "튤립", "spring", ".111./1111./.111./.FF../.FFF./..F..", 1, 3, 3, 8, 0, 100, 12, 1) #2
+    //   하늘    Picture("GardenSky", "하늘", "spring", "44444/44444/44444/2222C", 2, 4, 4, 8, 0, 100, 16, 1) #10 — 2026-11-16 울타리 한 칸(C)을 비워 둘 칸(0)으로 손으로 바꿈
+    //   튤립    Picture("TulipI", "튤립", "spring", ".111./1111./.111./.666./..6..", 5, 8, 5, 6, 20, 100, 12, 7) #6 (2026-11-16 — 그 전은 잎 여섯 칸을 미리 칠한 GardenTulip #2)
+    //   덤불    Picture("BushG", "덤불", "garden", ".666./66066/66666.", 3, 5, 5, 6, 0, 100, 12, 5) #1 (2026-11-16 — 그 전은 초록 + 보라 Generate("bush", 12, 2) #2)
     //   해바라기 Picture("GardenSunflower", "해바라기", "garden", ".222./2GG2./2GGG2/2GG2./.222./.66../..6..", 2, 4, 5, 8, 0, 100, 16, 1) #3
-    //   잔디밭 Generate("lawn", 14, 1) #8 · 라벤더 Generate("lavender", 14, 1) #3 · 덤불 Generate("bush", 12, 2) #2 · 울타리 Generate("fence", 14, 1) #9
+    //   잔디밭 Generate("lawn", 14, 1) #8 · 라벤더 Generate("lavender", 14, 1) #3 · 울타리 Generate("fence", 14, 1) #9
     //   물뿌리개 Generate("can", 30, 2) #1 · 디딤돌 Generate("stone", 14, 1) #3 · 무당벌레 Generate("ladybug", 12, 2) #9
     // 챕터 3에 넣은 판(2026-11-16):
     //   해      Picture("BeachSun", "해", "beach", ".C2C./2222./C222C/2222./.C2C.", 2, 3, 3, 6, 0, 100, 16, 1) #4
-    //   모래사장 Generate("sand", 24, 1) #5 · 하늘 Generate("beachsky", 24, 1) #7 · 물고기 Generate("fish", 24, 1) #3 · 갈매기 Generate("gull", 24, 1) #8
+    //   모래사장 Picture("SandB", "모래사장", "shore", ".2222/222220/222200", 2, 4, 4, 5, 0, 100, 12, 1) #4 (그 전은 모래 + 민트 Generate("sand", 24, 1) #5)
+    //   하늘    Picture("SkyB", "하늘", "shore", "44044/44444/40044/44444", 2, 4, 5, 7, 0, 100, 14, 1) #5 (그 전은 하늘색 + 회색 Generate("beachsky", 24, 1) #7)
+    //   게      Picture("CrabK5", "게", "beach", "11311/1331./11311", 3, 5, 6, 8, 5, 40, 10, 2) #3 (그 전은 빨강 + 갈색 띠 Generate("crab", 24, 1) #1)
+    //   물고기 Generate("fish", 24, 1) #3 · 갈매기 Generate("gull", 24, 1) #8
     //   바다 Generate("sea", 30, 2) #5 · 모래성 Generate("castle", 24, 1) #23 · 조개 Generate("shell", 24, 1) #10 · 파라솔 Generate("umbrella", 30, 2) #9
-    //   야자수 Generate("palm", 24, 1) #10 · 게 Generate("crab", 24, 1) #1
+    //   야자수 Generate("palm", 24, 1) #10
+    // 색 규칙(DECISIONS 2026-11-16): 목표 색은 그 소재의 색과 그림에서 맞닿아 있고 이미 칠한(앞 판의) 것의 색만. 아직 칠하지 않은 소재 자리는 0(비워 둘 칸)
+    //   — 소재 표의 bush · sand · beachsky · crab은 이 규칙 전의 색 구성이다(챕터 판에는 더 쓰지 않음, 기록으로 둔다)
     // 쉬어 가기 판은 대충 풀림만 보지 않는다 — 순서 성공률이 높고(대략 9% 이상) 수가 적은 후보를 고른다(챕터 2 해바라기: 대충 풀림 100%인데 가장 많이 헤맴, DevelopLog 2026-11-16)
     // 그림 먼저가 맞는 것: 색 하나짜리 띠 · 포함 관계(빨강 ⊂ 귤색) · 미리 칠한 칸으로 막아 둔 그림 — 5~7수 · 대충 풀림 100%가 나온다.
     // 안 맞는 것: 틈이 있는 그림(줄이 끊겨 9~12수) · 기본색을 나눠 쓰지 않는 두 색 그림(분홍 꽃 + 연두 잎 — 8수 이상) → 소재 맵(Generate)으로
+    // 2026-11-16에 더 알게 된 것:
+    //   한 색 + 비워 둘 칸 — 0이 한 칸이거나 가장자리면 대충 풀림 100%(BushG · SandB), 가운데에 2~3칸이면 조용한 막다른 길이 생겨 15~40%도 나온다(SkyB). 0 두 칸이 한 줄 가운데에 붙으면 1%까지 떨어진다
+    //   분홍 꽃 + 연두 잎 — 잎을 네 칸으로 줄이고 시작 칸을 7~8개 주면 5~6수가 나온다(TulipI). 잎 여섯 칸은 시작 칸 10개에서도 7수
+    //   빨강 ⊂ 주황 — 주황이 빨강 옆에 붙으면 100%, 빨강 덩어리 사이에 끼면 17~40%(CrabK5 · 주황 칸의 노랑이 빨강 칸으로 새면 막힌다)
     public static string Picture(string key, string name, string palette, string rows, int minSeeds, int maxSeeds, int minMoves, int maxMoves,
         int minChance, int maxChance, int count, int seed)
     {
