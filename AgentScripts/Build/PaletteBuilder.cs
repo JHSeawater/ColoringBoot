@@ -19,6 +19,11 @@ public static class PaletteBuilder
         ("pastel", "PastelPalette", new[] { "#F08BA8", "#EFD95A", "#F5A870", "#7DB6EC", "#B49AE0", "#98D07C", "#4A4643" }),
         ("garden", "GardenPalette", new[] { "#F23B2E", "#FAD80F", "#F98E1C", "#2A7FF0", "#B462D8", "#4DBA1C", "#6E3515" }),
         ("spring", "SpringPalette", new[] { "#FB7499", "#FFF48C", "#F9B25A", "#5EC2F8", "#C7A0EC", "#7EF224", "#857A75" }),
+        // 챕터 3 여름 바닷가(2026-11-16 — 그림 ArtSource/Chapter3 소재 색에 맞춤, CIEDE2000 20 이상 · 7번이 가장 어두움)
+        // 바닷가: 게 빨강 · 해 노랑 · 불가사리 주황 · 바다 청록 · 파라솔 보라 · 야자 잎 초록 · 야자 줄기 갈색
+        ("beach", "BeachPalette", new[] { "#FD4A32", "#FED404", "#FE8C02", "#01A6BB", "#BC62D3", "#0F9723", "#8A4B1E" }),
+        // 물가: 조개 분홍 · 모래 · 모래성 · 하늘 · 연보라 · 얕은 물(민트) · 갈매기 회색(7번이라 그림보다 어둡게)
+        ("shore", "ShorePalette", new[] { "#FCB0DE", "#F3DA8A", "#F0962A", "#8ED3FB", "#A98BEF", "#66DFC0", "#7D7B78" }),
     };
 
     public static string Build()

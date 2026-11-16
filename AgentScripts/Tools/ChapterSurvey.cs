@@ -10,7 +10,7 @@ using UnityEngine;
 // 챕터 표 (2026-11-15, 챕터 2~5 계획 3단계) — 읽기 전용. 챕터 목록 순서대로 판마다 난이도 지표를 한 표로 보여 준다
 // run_script(file=AgentScripts/Tools/ChapterSurvey.cs, entry=ChapterSurvey.Table, args=[챕터 번호])
 //   — 결과는 응답 텍스트와 Builds/ChapterSurvey/ChapterN.md(git이 무시). 게임 데이터는 쓰지 않는다
-// 지표는 Core(Solver · StageMetrics) 그대로이고 새 지표를 만들지 않는다. 챕터끼리 비교하는 주 지표는 최소 수 · 대충 풀림,
+// 지표는 Core(Solver · StageMetrics) 그대로이고 새 지표를 만들지 않는다(막히는 획 열은 2026-11-16 — 대충 풀림 100%인 해바라기에서 가장 많이 헤맨 기록 때문). 챕터끼리 비교하는 주 지표는 최소 수 · 대충 풀림,
 // 순서 성공률은 7수 이하 판끼리 보는 보조 지표다(Solver.MaxOrderMoves). 값이 없는 칸은 "—"와 이유를 적고 평균에서 뺀다(뺀 판 수 표시).
 // 대충 풀림이 상태 초과로 비면 그 판만 상한을 키워 다시 잰다(Core 상한은 바꾸지 않는다)
 public static class ChapterSurvey
@@ -28,12 +28,13 @@ public static class ChapterSurvey
         var sb = new StringBuilder();
         sb.AppendLine($"# 챕터 {chapter} 표 ({catalog.Stages.Count}판)");
         sb.AppendLine();
-        sb.AppendLine("| # | 파일 | 이름 | 칸 | 팔레트 | 최소 수 | 순서 성공률 | 막힐 칸 | 조용한 막다른 길 | 대충 풀림 | 닿는 상태 |");
-        sb.AppendLine("|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|");
+        sb.AppendLine("| # | 파일 | 이름 | 칸 | 팔레트 | 최소 수 | 순서 성공률 | 막힐 칸 | 막히는 획 | 조용한 막다른 길 | 대충 풀림 | 닿는 상태 |");
+        sb.AppendLine("|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|");
         var moves = new List<double>();
         var orders = new List<double>();
         var traps = new List<double>();
         var silents = new List<double>();
+        var deads = new List<double>();
         var chances = new List<double>();
         var cells = new List<double>();
         var notes = new List<string>();
@@ -43,7 +44,7 @@ public static class ChapterSurvey
             n++;
             if (asset == null)
             {
-                sb.AppendLine($"| {n} | (빈 칸) | | | | | | | | | |");
+                sb.AppendLine($"| {n} | (빈 칸) | | | | | | | | | | |");
                 continue;
             }
             Stage stage = Stage.Parse(asset.text);
@@ -78,11 +79,17 @@ public static class ChapterSurvey
             traps.Add(metrics.TrapRatio);
             cells.Add(metrics.Cells);
             string silentText = "— 상태 초과";
+            string deadText = "— 상태 초과";
             string chanceText = "— 상태 초과";
             string statesText = $"> {RetryLimit}";
             if (metrics.Complete)
             {
                 statesText = metrics.States + (retried ? " (상한 키움)" : "");
+                if (metrics.DeadStrokeRatio.HasValue)
+                {
+                    deads.Add(metrics.DeadStrokeRatio.Value);
+                    deadText = Percent(metrics.DeadStrokeRatio.Value);
+                }
                 if (metrics.SilentRatio.HasValue)
                 {
                     silents.Add(metrics.SilentRatio.Value);
@@ -94,12 +101,12 @@ public static class ChapterSurvey
                     chanceText = Percent(metrics.SolveChance.Value);
                 }
             }
-            sb.AppendLine($"| {n} | {asset.name} | {stage.Name} | {metrics.Cells} | {stage.Palette ?? "기본"} | {minText} | {orderText} | {Percent(metrics.TrapRatio)} | {silentText} | {chanceText} | {statesText} |");
+            sb.AppendLine($"| {n} | {asset.name} | {stage.Name} | {metrics.Cells} | {stage.Palette ?? "기본"} | {minText} | {orderText} | {Percent(metrics.TrapRatio)} | {deadText} | {silentText} | {chanceText} | {statesText} |");
         }
         int total = catalog.Stages.Count;
-        sb.AppendLine($"| | **평균** | | {Mean(cells, total, "0.0")} | | {Mean(moves, total, "0.00")} | {MeanPercent(orders, total)} | {MeanPercent(traps, total)} | {MeanPercent(silents, total)} | {MeanPercent(chances, total)} | |");
+        sb.AppendLine($"| | **평균** | | {Mean(cells, total, "0.0")} | | {Mean(moves, total, "0.00")} | {MeanPercent(orders, total)} | {MeanPercent(traps, total)} | {MeanPercent(deads, total)} | {MeanPercent(silents, total)} | {MeanPercent(chances, total)} | |");
         sb.AppendLine();
-        sb.AppendLine("평균의 \"(n판 뺌)\"은 값이 없어 평균에서 뺀 판 수다. 순서 성공률은 8수 이상이면 재지 않는다. 대충 풀림 = 막히지 않는 획만 무작위로 그어 풀릴 확률.");
+        sb.AppendLine("평균의 \"(n판 뺌)\"은 값이 없어 평균에서 뺀 판 수다. 순서 성공률은 8수 이상이면 재지 않는다. 대충 풀림 = 막히지 않는 획만 무작위로 그어 풀릴 확률 — 바로 막히는 획은 세지 않으므로 막히는 획(색이 바뀌는 획 중 긋자마자 막히는 비율)을 함께 본다(2026-11-16).");
         foreach (string note in notes) sb.AppendLine("- 확인: " + note);
 
         Directory.CreateDirectory(OutFolder);

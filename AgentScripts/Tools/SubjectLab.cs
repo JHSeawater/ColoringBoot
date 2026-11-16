@@ -8,7 +8,8 @@ using ColoringBoot.Core;
 
 // 소재 맵 후보 생성(2026-10-11 챕터 1 덩굴 · 언덕 · 하늘) — 게임 데이터는 쓰지 않는다. 고른 후보를 챕터 Stages/ 파일에 옮긴다
 // run_script(file=AgentScripts/Tools/SubjectLab.cs, entry=SubjectLab.Generate, args=["vine", 8, 1])
-//   — 소재(vine · hill · sky · 챕터 2: lawn · stone · fence · bush · lavender · ladybug · can · sunflower) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
+//   — 소재(vine · hill · sky · 챕터 2: lawn · stone · fence · bush · lavender · ladybug · can · sunflower
+//     · 챕터 3: beachsky · sea · sand · palm · gull · fish · umbrella · crab · shell · castle) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
 // 소재 단서 = 맵 모양 + 목표 색 구성(GDD §5 2026-10-06). 시작 색 구성을 정해 두고 무작위 자리 · 무작위 획으로 목표를 만든 뒤
 // 목표 색 구성 · 막힐 수 있는 칸 비율(단색 채우기 거르기) · 최소 수 · 순서 민감도로 거른다
 public static class SubjectLab
@@ -127,6 +128,90 @@ public static class SubjectLab
             Targets = new[] { PaintColor.Yellow, PaintColor.Green, PaintColor.Black }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
             Looks = t => Share(t, PaintColor.Yellow) >= 0.4 && Count(t, PaintColor.Black) >= 3 && Count(t, PaintColor.Green) >= 2,
         },
+
+        // ── 챕터 3 여름 바닷가 (2026-11-16) — 바닷가 beach: 1 빨강(게) · 2 노랑(해) · 3 주황(불가사리) · 4 청록(바다) · 5 보라(파라솔) · 6 초록(야자 잎) · 7 갈색(줄기)
+        // 물가 shore: 1 분홍(조개) · 2 모래 · 3 모래성 · 4 하늘 · 5 연보라 · 6 민트(얕은 물) · 7 회색(갈매기)
+        // 하늘: 낮고 넓은 판, 하늘색 + 회색 갈매기
+        ["beachsky"] = new Subject
+        {
+            Name = "하늘", Palette = "shore", Rows = Shape("xxxxxx", "xxxxxx", "xxxxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Blue, PaintColor.Black }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Blue) >= 0.6 && Count(t, PaintColor.Black) >= 2 && Count(t, PaintColor.Black) <= 5,
+        },
+        // 바다: 물결 모양 판, 하늘색 깊은 물 + 민트 얕은 물
+        ["sea"] = new Subject
+        {
+            Name = "바다", Palette = "shore", Rows = Shape(".xxxxx", "xxxxxx", "xxxxxx", "xxxxx."),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Blue, PaintColor.Green }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Blue) >= 0.5 && Count(t, PaintColor.Green) >= 4,
+        },
+        // 모래사장: 낮은 언덕 모양, 모래 + 물가의 민트
+        ["sand"] = new Subject
+        {
+            Name = "모래사장", Palette = "shore", Rows = Shape(".xxxx.", "xxxxxx", "xxxxxx"),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Yellow, PaintColor.Green }, Fill = 0.9, MinSolve = 4, MaxSolve = 6,
+            Looks = t => Share(t, PaintColor.Yellow) >= 0.55 && Count(t, PaintColor.Green) >= 3,
+        },
+        // 야자수: 넓은 잎 아래 가는 줄기, 초록 잎 + 갈색 줄기 · 열매
+        ["palm"] = new Subject
+        {
+            Name = "야자수", Palette = "beach", Rows = Shape("xxxxx", "xxxxx", ".xxx.", "..x..", "..x..", "..x.."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Blue, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Green, PaintColor.Black }, Fill = 0.85, MinSolve = 6, MaxSolve = 8,
+            // 줄기(아래 세 칸 — 칸 번호 13~15)는 갈색이어야 나무로 보인다
+            Looks = t => Share(t, PaintColor.Green) >= 0.5 && t[13] == PaintColor.Black && t[14] == PaintColor.Black && t[15] == PaintColor.Black,
+        },
+        // 갈매기: 날개를 편 모양, 회색 몸 + 뒤의 하늘색
+        ["gull"] = new Subject
+        {
+            Name = "갈매기", Palette = "shore", Rows = Shape("xxxxxxx", ".xxxxx.", "..xxx.."),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Black, PaintColor.Blue }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Black) >= 0.5 && Count(t, PaintColor.Blue) >= 3,
+        },
+        // 물고기: 둥근 몸, 노랑 몸 + 주황 지느러미
+        ["fish"] = new Subject
+        {
+            Name = "물고기", Palette = "beach", Rows = Shape(".xxxx.", "xxxxxx", "xxxxxx", ".xxxx."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Red },
+            Targets = new[] { PaintColor.Yellow, PaintColor.Orange }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Yellow) >= 0.5 && Count(t, PaintColor.Orange) >= 4,
+        },
+        // 파라솔: 둥근 지붕 모양, 보라 + 뒤의 청록 바다
+        ["umbrella"] = new Subject
+        {
+            Name = "파라솔", Palette = "beach", Rows = Shape("..xxx..", ".xxxxx.", "xxxxxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red },
+            Targets = new[] { PaintColor.Purple, PaintColor.Blue }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Purple) >= 0.55 && Count(t, PaintColor.Blue) >= 3,
+        },
+        // 게: 옆으로 넓은 몸, 빨강 + 갈색 다리 · 눈
+        ["crab"] = new Subject
+        {
+            Name = "게", Palette = "beach", Rows = Shape(".xxxxx.", "xxxxxxx", ".xxxxx."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Red, PaintColor.Black }, Fill = 0.85, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Red) >= 0.5 && Count(t, PaintColor.Black) >= 2,
+        },
+        // 조개 · 불가사리: 부채 모양, 분홍 조개 + 주황 불가사리
+        ["shell"] = new Subject
+        {
+            Name = "조개", Palette = "shore", Rows = Shape("xxxxx", "xxxx.", ".xxx.", ".xx.."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Red, PaintColor.Orange }, Fill = 0.9, MinSolve = 5, MaxSolve = 7,
+            Looks = t => Share(t, PaintColor.Red) >= 0.5 && Count(t, PaintColor.Orange) >= 3,
+        },
+        // 모래성: 위로 좁아지는 탑, 모래성 색 + 모래
+        ["castle"] = new Subject
+        {
+            Name = "모래성", Palette = "shore", Rows = Shape("..xx..", ".xxxx.", "xxxxxx", "xxxxxx"),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Red },
+            Targets = new[] { PaintColor.Orange, PaintColor.Yellow }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Orange) >= 0.55 && Count(t, PaintColor.Yellow) >= 3,
+        },
     };
 
     // 글자 그림 → 줄마다 q 범위. 'x' = 칸, 홀수 줄은 반 칸 오른쪽(q = 열 - 줄/2 내림) — 줄마다 칸이 이어져 있어야 한다
@@ -207,6 +292,12 @@ public static class SubjectLab
     //   해바라기 Picture("GardenSunflower", "해바라기", "garden", ".222./2GG2./2GGG2/2GG2./.222./.66../..6..", 2, 4, 5, 8, 0, 100, 16, 1) #3
     //   잔디밭 Generate("lawn", 14, 1) #8 · 라벤더 Generate("lavender", 14, 1) #3 · 덤불 Generate("bush", 12, 2) #2 · 울타리 Generate("fence", 14, 1) #9
     //   물뿌리개 Generate("can", 30, 2) #1 · 디딤돌 Generate("stone", 14, 1) #3 · 무당벌레 Generate("ladybug", 12, 2) #9
+    // 챕터 3에 넣은 판(2026-11-16):
+    //   해      Picture("BeachSun", "해", "beach", ".C2C./2222./C222C/2222./.C2C.", 2, 3, 3, 6, 0, 100, 16, 1) #4
+    //   모래사장 Generate("sand", 24, 1) #5 · 하늘 Generate("beachsky", 24, 1) #7 · 물고기 Generate("fish", 24, 1) #3 · 갈매기 Generate("gull", 24, 1) #8
+    //   바다 Generate("sea", 30, 2) #5 · 모래성 Generate("castle", 24, 1) #23 · 조개 Generate("shell", 24, 1) #10 · 파라솔 Generate("umbrella", 30, 2) #9
+    //   야자수 Generate("palm", 24, 1) #10 · 게 Generate("crab", 24, 1) #1
+    // 쉬어 가기 판은 대충 풀림만 보지 않는다 — 순서 성공률이 높고(대략 9% 이상) 수가 적은 후보를 고른다(챕터 2 해바라기: 대충 풀림 100%인데 가장 많이 헤맴, DevelopLog 2026-11-16)
     // 그림 먼저가 맞는 것: 색 하나짜리 띠 · 포함 관계(빨강 ⊂ 귤색) · 미리 칠한 칸으로 막아 둔 그림 — 5~7수 · 대충 풀림 100%가 나온다.
     // 안 맞는 것: 틈이 있는 그림(줄이 끊겨 9~12수) · 기본색을 나눠 쓰지 않는 두 색 그림(분홍 꽃 + 연두 잎 — 8수 이상) → 소재 맵(Generate)으로
     public static string Picture(string key, string name, string palette, string rows, int minSeeds, int maxSeeds, int minMoves, int maxMoves,
@@ -277,7 +368,7 @@ public static class SubjectLab
             StageMetrics m = StageMetrics.Measure(new Board(stage), 2000000);
             if (!m.SolveChance.HasValue || m.SolveChance.Value * 100 < minChance || m.SolveChance.Value * 100 > maxChance) { chanceOut++; continue; }
             string line = $"{result.Path.Count}수 · 시작 칸 {seeds} · 순서 {(order.HasValue ? $"{order.Value.Succeeded}/{order.Value.Total}" : "-")}"
-                + $" · 막힐 칸 {Percent(m.TrapRatio)} · 조용한 막다른 길 {Percent(m.SilentRatio)} · 대충 풀림 {Percent(m.SolveChance)} · 상태 {m.States}";
+                + $" · 막힐 칸 {Percent(m.TrapRatio)} · 막히는 획 {Percent(m.DeadStrokeRatio)} · 조용한 막다른 길 {Percent(m.SilentRatio)} · 대충 풀림 {Percent(m.SolveChance)} · 상태 {m.States}";
             found.Add($"{{\"metrics\":\"{line}\",\"stage\":{StageWriter.ToJson(stage)}}}");
             report.AppendLine($"#{found.Count} {line}");
         }

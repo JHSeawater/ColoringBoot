@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43bc86358f74e6d488376b51a95396d6, type: 3}
+  m_Name: ChapterArt
+  m_EditorClassIdentifier: ColoringBoot.Game::ColoringBoot.Game.ChapterArt
+  _canvas: {x: 1080, y: 1350}
+  _line:
+    _sprite: {fileID: 21300000, guid: 27d91f88213c7ab4fae235ca3a810106, type: 3}
+    _rect:
+      x: -2
+      y: 8
+      width: 1084
+      height: 1344
+  _steps:
+  - _sprite: {fileID: 21300000, guid: 2a68ef8f2114948459f40d2f6c18ccb6, type: 3}
+    _rect:
+      x: -2
+      y: 779
+      width: 1084
+      height: 576
+  - _sprite: {fileID: 21300000, guid: 8406f072875dfc845901eab5c70329fd, type: 3}
+    _rect:
+      x: 833
+      y: 14
+      width: 216
+      height: 216
+  - _sprite: {fileID: 21300000, guid: 3ad800c3f8e9d3043972f9545e444143, type: 3}
+    _rect:
+      x: -2
+      y: -2
+      width: 1084
+      height: 528
+  - _sprite: {fileID: 21300000, guid: 55d2fbcc331323747b3bf514a394e50a, type: 3}
+    _rect:
+      x: 229
+      y: 367
+      width: 476
+      height: 332
+  - _sprite: {fileID: 21300000, guid: 1b2d7e43b209a024ba9f3a97a107cd5a, type: 3}
+    _rect:
+      x: 360
+      y: 38
+      width: 520
+      height: 276
+  - _sprite: {fileID: 21300000, guid: b433d168c301b834c9cfb03c84e3eaf2, type: 3}
+    _rect:
+      x: 51
+      y: 438
+      width: 1032
+      height: 436
+  - _sprite: {fileID: 21300000, guid: 94472b26655a33a44827c625ac366bcb, type: 3}
+    _rect:
+      x: 281
+      y: 857
+      width: 456
+      height: 396
+  - _sprite: {fileID: 21300000, guid: c2986fabcf081b842860604c3d53356f, type: 3}
+    _rect:
+      x: 44
+      y: 751
+      width: 996
+      height: 596
+  - _sprite: {fileID: 21300000, guid: ab18828e613038e46a1858b73ee0d835, type: 3}
+    _rect:
+      x: 692
+      y: 535
+      width: 392
+      height: 428
+  - _sprite: {fileID: 21300000, guid: 3b1a108d08ed9c8488db3ef4283151a4, type: 3}
+    _rect:
+      x: -2
+      y: 58
+      width: 384
+      height: 740
+  - _sprite: {fileID: 21300000, guid: aa2be9d1e168082458d135acbca184ce, type: 3}
+    _rect:
+      x: 26
+      y: 876
+      width: 1012
+      height: 244

@@ -34,7 +34,15 @@ public static class StageOrder
             "GardenPot", "GardenSky", "GardenLawn", "GardenLavender", "GardenTulip", "GardenBush",
             "GardenFence", "GardenSunflower", "GardenCan", "GardenStone", "GardenLadybug",
         },
-        // 챕터 3~5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md)
+        // 챕터 3 여름 바닷가 (2026-11-16): 톱니 모양 — 쉬어 가기는 대충 풀림 100%가 아니라 순서 성공률이 높은 판으로(챕터 2 해바라기 기록 — DevelopLog 2026-11-16)
+        // 모래사장 · 해 → 하늘 · 물고기 → 갈매기(쉬어 가기) → 바다 · 모래성 → 조개(쉬어 가기) → 파라솔 · 야자수(8수) · 게. 수치는 ChapterSurvey.Table(3)
+        // 해는 그림을 먼저 정한 판(SubjectLab.Picture — 햇살 여섯 칸은 미리 칠한 칸), 나머지는 소재 맵(SubjectLab.Generate)
+        new[]
+        {
+            "BeachSand", "BeachSun", "BeachSky", "BeachFish", "BeachGull", "BeachSea",
+            "BeachCastle", "BeachShell", "BeachUmbrella", "BeachPalm", "BeachCrab",
+        },
+        // 챕터 4~5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md)
     };
 
     public static string SetOrder(int chapter)

@@ -43,16 +43,16 @@
   {"color": "shell", "step": "beach"}
  ],
  "steps": [
-  {"id": "sky", "label": "하늘", "memo": "위쪽 하늘 · 야자수 사이"},
-  {"id": "sea", "label": "바다", "memo": "가운데 바다 + 물가 얕은 물 · 물방울"},
   {"id": "sand", "label": "모래사장", "memo": "아래쪽 모래"},
   {"id": "sun", "label": "해", "memo": "오른쪽 위"},
-  {"id": "palm", "label": "야자수", "memo": "왼쪽 2그루 — 잎 · 줄기 · 열매"},
-  {"id": "gull", "label": "갈매기", "memo": "위쪽 2마리"},
+  {"id": "sky", "label": "하늘", "memo": "위쪽 하늘 · 야자수 사이"},
   {"id": "fish", "label": "물고기", "memo": "뛰어오른 1마리 + 바다 속 2마리"},
-  {"id": "umbrella", "label": "파라솔", "memo": "오른쪽 — 보라 · 노랑 + 기둥"},
-  {"id": "crab", "label": "게", "memo": "좌우 2마리"},
+  {"id": "gull", "label": "갈매기", "memo": "위쪽 2마리"},
+  {"id": "sea", "label": "바다", "memo": "가운데 바다 + 물가 얕은 물 · 물방울"},
+  {"id": "castle", "label": "모래성", "memo": "아래 가운데 — 깃발 · 창문 포함"},
   {"id": "beach", "label": "조개 · 불가사리", "memo": "물가 조개 5개 + 모래 위 불가사리 3개"},
-  {"id": "castle", "label": "모래성", "memo": "아래 가운데 — 깃발 · 창문 포함"}
+  {"id": "umbrella", "label": "파라솔", "memo": "오른쪽 — 보라 · 노랑 + 기둥"},
+  {"id": "palm", "label": "야자수", "memo": "왼쪽 2그루 — 잎 · 줄기 · 열매"},
+  {"id": "crab", "label": "게", "memo": "좌우 2마리"}
  ]
 }
