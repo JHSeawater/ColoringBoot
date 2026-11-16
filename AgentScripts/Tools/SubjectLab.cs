@@ -303,6 +303,75 @@ public static class SubjectLab
             Targets = new[] { PaintColor.Purple, PaintColor.Green, PaintColor.Yellow }, Fill = 0.8, MinSolve = 6, MaxSolve = 8,
             Looks = t => Count(t, PaintColor.Purple) >= 5 && Count(t, PaintColor.Green) >= 4 && Count(t, PaintColor.Yellow) <= 3,
         },
+
+        // ── 챕터 5 눈 내린 밤 (2026-11-16) — 밤 night: 1 빨강(눈사람 모자 · 목도리) · 2 노랑(달 · 별) · 3 주황(당근 코 · 썰매) · 4 남색(밤하늘) · 5 자주(재료) · 6 초록(전나무) · 7 갈색(나뭇가지)
+        // 눈마을 village: 1 살구(집 벽) · 2 달빛 노랑 · 3 주황(창문 불빛) · 4 남색(밤하늘) · 5 연보라(먼 산 · 연기) · 6 청록(지붕) · 7 벽돌(굴뚝). 흰 눈은 종이 — 판에서는 빈칸
+        // 색 규칙(DECISIONS 2026-11-16)대로 다른 소재 색은 이미 칠한 맞닿은 것만. 소재 자리 조건은 걸지 않고(챕터 4 기록) 색 구성만 거른 뒤 눈으로 고른다
+        // 먼 산: 삼각형 판, 연보라 산 + 뒤의 이미 칠한 남색 밤하늘
+        ["snowhill"] = new Subject
+        {
+            Name = "먼 산", Palette = "village", Rows = Shape("..xxx..", ".xxxxx.", "xxxxxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red },
+            Targets = new[] { PaintColor.Purple, PaintColor.Blue }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Purple) >= 0.55 && Count(t, PaintColor.Blue) >= 3,
+        },
+        // 굴뚝 연기: 세로로 긴 판, 연보라 연기 + 뒤의 남색 밤하늘
+        ["smoke"] = new Subject
+        {
+            Name = "연기", Palette = "village", Rows = Shape("xxxx", "xxxx", "xxxx", "xxxx", "xxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red },
+            Targets = new[] { PaintColor.Purple, PaintColor.Blue }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Purple) >= 0.4 && Count(t, PaintColor.Blue) >= 5,
+        },
+        // 지붕: 삼각 지붕, 청록 + 뒤의 연보라 산(둘이 남색을 나눠 쓴다). 빈칸 = 지붕 위 눈
+        ["roof"] = new Subject
+        {
+            Name = "지붕", Palette = "village", Rows = Shape("..xxx..", ".xxxxx.", "xxxxxxx"),
+            Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Yellow, PaintColor.Red },
+            Targets = new[] { PaintColor.Green, PaintColor.Purple }, Fill = 0.8, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Green) >= 0.55 && Count(t, PaintColor.Purple) >= 2,
+        },
+        // 집 · 굴뚝: 네모난 벽 + 위의 굴뚝, 살구 벽 + 벽돌 굴뚝
+        ["house"] = new Subject
+        {
+            Name = "집", Palette = "village", Rows = Shape("..xx..", "xxxxx.", "xxxxxx", "xxxxx."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Red, PaintColor.Black }, Fill = 0.85, MinSolve = 7, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Red) >= 0.5 && Count(t, PaintColor.Black) >= 3,
+        },
+        // 창문 불빛: 네모난 판, 주황 불빛 + 둘레의 이미 칠한 살구 벽
+        ["window"] = new Subject
+        {
+            Name = "창문", Palette = "village", Rows = Shape("xxxx.", "xxxxx", "xxxx.", "xxxxx"),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Red, PaintColor.Orange }, Fill = 0.9, MinSolve = 5, MaxSolve = 6,
+            Looks = t => Count(t, PaintColor.Orange) >= 5 && Count(t, PaintColor.Red) >= 5,
+        },
+        // 전나무: 층층이 넓어지는 세모 + 줄기, 초록 + 갈색 줄기. 빈칸 = 가지 위 눈
+        ["fir"] = new Subject
+        {
+            Name = "전나무", Palette = "night", Rows = Shape("..x..", ".xx..", ".xxx.", "xxxx.", "xxxxx", ".xx.."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Blue, PaintColor.Red, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Green, PaintColor.Black }, Fill = 0.8, MinSolve = 7, MaxSolve = 8,
+            // 줄기(아래 두 칸 — 칸 15 · 16)는 갈색
+            Looks = t => Share(t, PaintColor.Green) >= 0.5 && t[15] == PaintColor.Black && t[16] == PaintColor.Black,
+        },
+        // 눈사람: 둥근 덩어리 둘, 빨강 모자 · 목도리 + 갈색 나뭇가지 팔 · 눈(주황 코는 두 칸까지). 빈칸 = 눈으로 된 몸
+        ["snowman"] = new Subject
+        {
+            Name = "눈사람", Palette = "night", Rows = Shape(".xxx.", "xxxx.", ".xxx.", "xxxx.", "xxxxx", "xxxx."),
+            Seeds = new[] { PaintColor.Red, PaintColor.Red, PaintColor.Yellow, PaintColor.Blue },
+            Targets = new[] { PaintColor.Red, PaintColor.Orange, PaintColor.Black }, Fill = 0.6, MinSolve = 7, MaxSolve = 8,
+            Looks = t => Count(t, PaintColor.Red) >= 6 && Count(t, PaintColor.Black) >= 3 && Count(t, PaintColor.Orange) <= 2 && Count(t, PaintColor.Empty) >= 4,
+        },
+        // 썰매: 낮고 넓은 판, 주황 썰매 + 갈색 다리(곁의 이미 칠한 눈사람 빨강은 세 칸까지)
+        ["sled"] = new Subject
+        {
+            Name = "썰매", Palette = "night", Rows = Shape("xxxxxx.", "xxxxxxx", ".xxxxx."),
+            Seeds = new[] { PaintColor.Yellow, PaintColor.Yellow, PaintColor.Red, PaintColor.Blue },
+            Targets = new[] { PaintColor.Orange, PaintColor.Black, PaintColor.Red }, Fill = 0.85, MinSolve = 7, MaxSolve = 8,
+            Looks = t => Share(t, PaintColor.Orange) >= 0.5 && Count(t, PaintColor.Black) >= 3 && Count(t, PaintColor.Red) <= 3,
+        },
     };
 
     // 글자 그림 → 줄마다 q 범위. 'x' = 칸, 홀수 줄은 반 칸 오른쪽(q = 열 - 줄/2 내림) — 줄마다 칸이 이어져 있어야 한다
@@ -399,6 +468,14 @@ public static class SubjectLab
     //   버섯 Generate("mushroom", 24, 1) #2 · 호박 Generate("pumpkin", 24, 1) #1 · 다람쥐 Generate("squirrel", 24, 1) #13 · 낙엽 Generate("leaves", 24, 1) #5 · 꽃 Generate("aster", 24, 1) #1
     //   — 단풍나무 · 풀밭 · 호박 · 다람쥐 · 꽃 · 도토리는 후보 수를 채우기 전에 시간 제한(45초)으로 끝난다: 후보 수는 PC 속도에 따라 다르지만 번호는 앞에서부터 같다
     //   — 소재 자리(산은 위쪽 · 꼭지 · 줄기)를 조건으로 걸면 후보가 없어 색 구성만 거르고 눈으로 골랐다(풀밭은 시드 1 · 3 · 4의 후보 10개 중 산이 윗줄인 것 5개)
+    // 챕터 5에 넣은 판(2026-11-16 — 달을 먼저 칠하고 밤하늘은 그 달을 피해서):
+    //   달      Picture("MoonA", "달", "night", ".222./222../22.../222../.222.", 1, 2, 4, 5, 0, 100, 12, 1) #12 (초승달 모양 · 노랑 한 색)
+    //   밤하늘  Picture("NightSkyB", "밤하늘", "night", "BB444/B4404/44444/40444", 2, 4, 5, 7, 0, 100, 12, 1) #11 (B = 이미 칠한 달 · 0 = 아직 칠하지 않은 별 자리)
+    //   별      Picture("StarA", "별", "night", ".2...2./222.222/.2...2./...2.../..222../...2...", 2, 3, 4, 6, 0, 100, 12, 1) #12 (떨어진 세 덩어리 — 붓이 빈자리를 건너간다)
+    //   먼 산 Generate("snowhill", 24, 1) #6 · 연기 Generate("smoke", 24, 1) #13 · 지붕 Generate("roof", 24, 2) #19 · 집 Generate("house", 24, 1) #12
+    //   창문 Generate("window", 40, 3) #10 · 전나무 Generate("fir", 24, 1) #15 · 눈사람 Generate("snowman", 24, 1) #21 · 썰매 Generate("sled", 24, 2) #17
+    //   — 전나무 · 썰매는 시간 제한(45초)으로 끝난다(번호는 앞에서부터 같다). 별 · 달을 남색 하늘 안에 두는 그림은 못 만든다(노랑 붓이 하늘 칸에 닿으면 막힘 — 가장자리 칸만 칠할 수 있다)
+    //   — 눈사람을 "몸은 칸 없음(종이)" 그림으로 하면(모자 · 목도리 · 팔만 칸) 6~7수 · 대충 풀림 100%뿐이라 소재 맵 후보를 썼다
     // 색 규칙(DECISIONS 2026-11-16): 목표 색은 그 소재의 색과 그림에서 맞닿아 있고 이미 칠한(앞 판의) 것의 색만. 아직 칠하지 않은 소재 자리는 0(비워 둘 칸)
     //   — 소재 표의 bush · sand · beachsky · crab은 이 규칙 전의 색 구성이다(챕터 판에는 더 쓰지 않음, 기록으로 둔다)
     // 쉬어 가기 판은 대충 풀림만 보지 않는다 — 순서 성공률이 높고(대략 9% 이상) 수가 적은 후보를 고른다(챕터 2 해바라기: 대충 풀림 100%인데 가장 많이 헤맴, DevelopLog 2026-11-16)

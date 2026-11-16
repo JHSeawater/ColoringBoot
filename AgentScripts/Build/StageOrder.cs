@@ -57,7 +57,16 @@ public static class StageOrder
             "AutumnSky", "AutumnHill", "AutumnTree", "AutumnGrass", "AutumnPath", "AutumnMushroom",
             "AutumnPumpkin", "AutumnSquirrel", "AutumnAcorn", "AutumnLeaves", "AutumnFlower",
         },
-        // 챕터 5는 스테이지를 만든 뒤 여기에 더한다(계획 Docs/plans/2026-11-14-chapters-2-5.md)
+        // 챕터 5 눈 내린 밤 (2026-11-16): 달을 먼저 칠하고 밤하늘은 그 달을 피해서 칠한다(배경 판은 앞의 소재를 칠한 뒤에 — DECISIONS 2026-11-16).
+        // 그림 단계도 이 순서로 다시 나눴다(달 → 밤하늘 → 먼 산 → 별 → …). 톱니 모양 — 수치는 ChapterSurvey.Table(5):
+        // 달 → 밤하늘 · 먼 산 → 별(쉬어 가기) → 연기(8수) · 지붕(8수) · 집 → 창문(쉬어 가기) → 전나무 · 눈사람(8수) · 썰매
+        // 달 · 별은 노랑 한 색 그림(별은 떨어진 세 덩어리 — 붓이 빈자리를 건너간다), 밤하늘은 남색 + 미리 칠한 달 + 별 자리 빈칸(SubjectLab.Picture), 나머지는 소재 맵
+        // 흰 눈은 그림에서 종이로 남는다 — 판에서는 빈칸(지붕 · 전나무 · 눈사람 · 집의 창문 자리)
+        new[]
+        {
+            "WinterMoon", "WinterSky", "WinterMountain", "WinterStar", "WinterSmoke", "WinterRoof",
+            "WinterHouse", "WinterWindow", "WinterTree", "WinterSnowman", "WinterSled",
+        },
     };
 
     public static string SetOrder(int chapter)
