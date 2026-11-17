@@ -42,6 +42,7 @@ public static class StageOrder
         // 해는 그림을 먼저 정한 판(SubjectLab.Picture — 햇살 여섯 칸은 미리 칠한 칸), 나머지는 소재 맵(SubjectLab.Generate)
         // 같은 날 색 규칙(DECISIONS 2026-11-16)에 맞춰 모래사장(모래 한 색 + 바다 자리 빈칸) · 하늘(하늘색 한 색 + 갈매기 자리 빈칸) · 게(빨강 + 이미 칠한 불가사리 주황)를 그림 먼저 판으로 바꿈
         // — 최소 수(5 · 6 · 7)와 톱니는 그대로, 평균 최소 수 6.27 · 대충 풀림 46%
+        // 2026-11-18 파라솔을 보라 + 노랑(그림의 줄무늬 색)으로 바꿈 — 그 전은 보라 + 뒤의 바다 청록. 7수 · 대충 풀림 25%(전 22%), 평균은 그대로
         new[]
         {
             "BeachSand", "BeachSun", "BeachSky", "BeachFish", "BeachGull", "BeachSea",

@@ -9,7 +9,7 @@ using ColoringBoot.Core;
 // 소재 맵 후보 생성(2026-10-11 챕터 1 덩굴 · 언덕 · 하늘) — 게임 데이터는 쓰지 않는다. 고른 후보를 챕터 Stages/ 파일에 옮긴다
 // run_script(file=AgentScripts/Tools/SubjectLab.cs, entry=SubjectLab.Generate, args=["vine", 8, 1])
 //   — 소재(vine · hill · sky · 챕터 2: lawn · stone · fence · bush · lavender · ladybug · can · sunflower
-//     · 챕터 3: beachsky · sea · sand · palm · gull · fish · umbrella · crab · shell · castle
+//     · 챕터 3: beachsky · sea · sand · palm · gull · fish · umbrella · parasol · crab · shell · castle
 //     · 챕터 4: duskhill · maple · meadow · trail · mushroom · pumpkin · squirrel · acorn · leaves · aster
 //     · 챕터 5: snowhill · smoke · roof · house · window · fir · snowman · sled) · 후보 수 · 시드. 후보는 Builds/SubjectLab/<소재>.json(git이 무시)에 쓰고 요약을 돌려준다
 // 소재 단서 = 맵 모양 + 목표 색 구성(GDD §5 2026-10-06). 시작 색 구성을 정해 두고 무작위 자리 · 무작위 획으로 목표를 만든 뒤
@@ -189,6 +189,14 @@ public static class SubjectLab
             Seeds = new[] { PaintColor.Blue, PaintColor.Blue, PaintColor.Red },
             Targets = new[] { PaintColor.Purple, PaintColor.Blue }, Fill = 0.9, MinSolve = 6, MaxSolve = 8,
             Looks = t => Share(t, PaintColor.Purple) >= 0.55 && Count(t, PaintColor.Blue) >= 3,
+        },
+        // 파라솔(2026-11-18 — 그림의 파라솔은 보라 + 노랑 줄무늬다. 위 umbrella는 노랑을 빼고 뒤의 바다 청록을 넣었던 색 구성 — 기록으로 둔다)
+        ["parasol"] = new Subject
+        {
+            Name = "파라솔", Palette = "beach", Rows = Shape("..xxx..", ".xxxxx.", "xxxxxxx"),
+            Seeds = new[] { PaintColor.Red, PaintColor.Blue, PaintColor.Yellow, PaintColor.Yellow },
+            Targets = new[] { PaintColor.Purple, PaintColor.Yellow }, Fill = 0.8, MinSolve = 6, MaxSolve = 8,
+            Looks = t => Count(t, PaintColor.Purple) >= 5 && Count(t, PaintColor.Yellow) >= 4,
         },
         // 게: 옆으로 넓은 몸, 빨강 + 갈색 다리 · 눈
         ["crab"] = new Subject
@@ -461,7 +469,7 @@ public static class SubjectLab
     //   하늘    Picture("SkyB", "하늘", "shore", "44044/44444/40044/44444", 2, 4, 5, 7, 0, 100, 14, 1) #5 (그 전은 하늘색 + 회색 Generate("beachsky", 24, 1) #7)
     //   게      Picture("CrabK5", "게", "beach", "11311/1331./11311", 3, 5, 6, 8, 5, 40, 10, 2) #3 (그 전은 빨강 + 갈색 띠 Generate("crab", 24, 1) #1)
     //   물고기 Generate("fish", 24, 1) #3 · 갈매기 Generate("gull", 24, 1) #8
-    //   바다 Generate("sea", 30, 2) #5 · 모래성 Generate("castle", 24, 1) #23 · 조개 Generate("shell", 24, 1) #10 · 파라솔 Generate("umbrella", 30, 2) #9
+    //   바다 Generate("sea", 30, 2) #5 · 모래성 Generate("castle", 24, 1) #23 · 조개 Generate("shell", 24, 1) #10 · 파라솔 Generate("parasol", 60, 3) #43 (2026-11-18 보라 + 노랑 — 그 전은 보라 + 청록 Generate("umbrella", 30, 2) #9)
     //   야자수 Generate("palm", 24, 1) #10
     // 챕터 4에 넣은 판(2026-11-16 — 그림 단계 순서 그대로):
     //   노을    Picture("DuskSkyG", "노을", "dusk", "111111/33333./.3BB3.", 1, 3, 4, 5, 0, 100, 12, 1) #4 (해 두 칸 B는 주황을 만드는 노랑 재료 — 큰 그림 19칸은 7~10수)
@@ -479,7 +487,7 @@ public static class SubjectLab
     //   — 전나무 · 썰매는 시간 제한(45초)으로 끝난다(번호는 앞에서부터 같다). 별 · 달을 남색 하늘 안에 두는 그림은 못 만든다(노랑 붓이 하늘 칸에 닿으면 막힘 — 가장자리 칸만 칠할 수 있다)
     //   — 눈사람을 "몸은 칸 없음(종이)" 그림으로 하면(모자 · 목도리 · 팔만 칸) 6~7수 · 대충 풀림 100%뿐이라 소재 맵 후보를 썼다
     // 색 규칙(DECISIONS 2026-11-16): 목표 색은 그 소재의 색과 그림에서 맞닿아 있고 이미 칠한(앞 판의) 것의 색만. 아직 칠하지 않은 소재 자리는 0(비워 둘 칸)
-    //   — 소재 표의 bush · sand · beachsky · crab은 이 규칙 전의 색 구성이다(챕터 판에는 더 쓰지 않음, 기록으로 둔다)
+    //   — 소재 표의 bush · sand · beachsky · crab · umbrella는 이 규칙 전의 색 구성이다(챕터 판에는 더 쓰지 않음, 기록으로 둔다)
     // 쉬어 가기 판은 대충 풀림만 보지 않는다 — 순서 성공률이 높고(대략 9% 이상) 수가 적은 후보를 고른다(챕터 2 해바라기: 대충 풀림 100%인데 가장 많이 헤맴, DevelopLog 2026-11-16)
     // 그림 먼저가 맞는 것: 색 하나짜리 띠 · 포함 관계(빨강 ⊂ 귤색) · 미리 칠한 칸으로 막아 둔 그림 — 5~7수 · 대충 풀림 100%가 나온다.
     // 안 맞는 것: 틈이 있는 그림(줄이 끊겨 9~12수) · 기본색을 나눠 쓰지 않는 두 색 그림(분홍 꽃 + 연두 잎 — 8수 이상) → 소재 맵(Generate)으로

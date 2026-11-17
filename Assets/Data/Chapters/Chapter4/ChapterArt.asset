@@ -38,7 +38,7 @@ MonoBehaviour:
       x: -2
       y: -2
       width: 1084
-      height: 1132
+      height: 672
   - _sprite: {fileID: 21300000, guid: 1e64dae5212511a4e96d12285c48c348, type: 3}
     _rect:
       x: -2
@@ -53,10 +53,10 @@ MonoBehaviour:
       height: 760
   - _sprite: {fileID: 21300000, guid: 8063605e81556cd4b80d760f804911a7, type: 3}
     _rect:
-      x: 25
+      x: 38
       y: 513
-      width: 1048
-      height: 156
+      width: 1036
+      height: 152
   - _sprite: {fileID: 21300000, guid: f1cbaccecc78ec1409f7c5c26eaefa45, type: 3}
     _rect:
       x: 627

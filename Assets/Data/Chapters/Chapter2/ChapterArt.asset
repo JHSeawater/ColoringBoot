@@ -17,73 +17,73 @@ MonoBehaviour:
     _sprite: {fileID: 21300000, guid: c6ce3c3542b8faa4ab11fc5691f940cd, type: 3}
     _rect:
       x: -2
-      y: 0
+      y: -2
       width: 1084
-      height: 1352
+      height: 1356
   _steps:
   - _sprite: {fileID: 21300000, guid: 20a4cc1903e597f46a09636a1227f12a, type: 3}
     _rect:
-      x: 23
-      y: 1034
-      width: 508
-      height: 264
+      x: 8
+      y: 726
+      width: 380
+      height: 548
   - _sprite: {fileID: 21300000, guid: 217efab804d404a4cb82c1bc8ded7229, type: 3}
     _rect:
       x: -2
       y: -2
       width: 1084
-      height: 720
+      height: 624
   - _sprite: {fileID: 21300000, guid: 512d14db81df70e4ca79d76c064a990a, type: 3}
     _rect:
       x: -2
-      y: 581
+      y: 571
       width: 1084
-      height: 772
+      height: 784
   - _sprite: {fileID: 21300000, guid: 631291b211778104195e1f855350f134, type: 3}
     _rect:
-      x: 11
-      y: 174
-      width: 416
-      height: 224
+      x: 31
+      y: 17
+      width: 1036
+      height: 472
   - _sprite: {fileID: 21300000, guid: 2aadf19b420d5624e8e6152a91227012, type: 3}
     _rect:
-      x: 56
-      y: 6
-      width: 1000
-      height: 1048
+      x: 35
+      y: 503
+      width: 1032
+      height: 764
   - _sprite: {fileID: 21300000, guid: 8c5edd13eb369aa4eba22f1f60df9431, type: 3}
     _rect:
       x: -2
-      y: 7
+      y: 52
       width: 1084
-      height: 1136
+      height: 1300
   - _sprite: {fileID: 21300000, guid: 6ae634ceb32ab024fbfd43460112c931, type: 3}
     _rect:
       x: -2
-      y: 52
-      width: 1024
-      height: 552
+      y: 1
+      width: 1084
+      height: 608
   - _sprite: {fileID: 21300000, guid: 30ac637b02f30d04b8dbea2e44fa1a66, type: 3}
     _rect:
-      x: 629
-      y: 257
-      width: 456
-      height: 348
+      x: 643
+      y: 158
+      width: 376
+      height: 332
   - _sprite: {fileID: 21300000, guid: 8191fbbb151d3f645814378fb5d65f0d, type: 3}
     _rect:
-      x: 559
-      y: 934
-      width: 496
-      height: 376
+      x: 377
+      y: 633
+      width: 524
+      height: 424
   - _sprite: {fileID: 21300000, guid: 72626e1a04a85114684cc5117f88f921, type: 3}
     _rect:
-      x: 378
-      y: 604
-      width: 664
-      height: 748
+      x: 271
+      y: 581
+      width: 560
+      height: 772
   - _sprite: {fileID: 21300000, guid: 3a9526a60a52b2d408431a46774add53, type: 3}
     _rect:
-      x: 53
-      y: 344
-      width: 472
-      height: 736
+      x: 206
+      y: 116
+      width: 804
+      height: 1076
