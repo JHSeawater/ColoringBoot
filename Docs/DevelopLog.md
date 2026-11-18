@@ -22,7 +22,8 @@
 **검증**
 - EditMode: 시작 370/370 → 새 상태 테스트가 먼저 실패(9개, 상태를 늘 Ok로 둔 오버로드) → 408/408 → Game 참조 뒤 기존 408 그대로 통과 · `SaveDataTests` 11개 먼저 실패 → 420/420(`SourceRuleTests` · 회귀 테스트 포함).
 - 에디터 플레이(`BoardQa`, 저장 키는 시작 전 값을 기록하고 끝에 되돌림 — 확인함): (a) `ColoringBoot.Progress` = `progress 2\nGrape\t5\n` → 경고 1회("이 빌드보다 새 형식…") · 백업 키 없음 · 1번 판(바구니) 클리어 뒤에도 키 그대로, `PlayStats`는 정상 저장. (b) `garbage` → 경고 1회 · `ColoringBoot.Progress.Unread` = `garbage` · 클리어 뒤 `progress 1\nBasket\t5\n` 저장. (c) 정상 값 → 경고 0 · 백업 키 0. 세 경우 모두 콘솔 에러 0.
-- 확인 못 함: WebGL 빌드(동작이 플랫폼과 무관 — 다음 빌드 때 정상 값에서 경고가 없는지 본다).
+- WebGL(2026-11-19 추가 — 빌드 13,177,696바이트 · Pages `ac2095e`, `BuildHistory.md`): PC Chrome에서 정상 기록으로 열면 `[저장]` 경고 0 · `?reset`은 로그 1줄만 남기고 경고 없이 진행 · 플레이 기록을 지움. QA 전에 떠 둔 PlayerPrefs(IndexedDB `/idbfs`)를 Unity가 돌지 않는 같은 출처 404 페이지에서 되돌려 바이트 그대로임을 확인.
+- 확인 못 함: 휴대폰 WebGL · 앱인토스(같은 코드 — 따로 보지 않음).
 
 ### 📅 [2026-11-18] 출시 문서 — 루트 README · CREDITS · 출시 뒤 스테이지 교체 규칙
 
