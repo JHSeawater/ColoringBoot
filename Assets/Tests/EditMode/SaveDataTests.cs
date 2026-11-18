@@ -83,17 +83,25 @@ namespace ColoringBoot.Core.Tests
             LogAssert.NoUnexpectedReceived();   // 저장할 때 로그를 더 남기지 않음
         }
 
+        // 일부 줄만 버려 백업이 생긴 뒤, 다음에 값 전체가 깨지면 그 원본(진행 대부분)이 백업에 남아야 한다 (2026-11-19 코드 리뷰)
         [Test]
-        public void DroppedValue_KeepsFirstBackup()
+        public void DroppedValue_ReplacesBackupWithLatestOriginal()
         {
+            const string earlier = "progress 1\nGrape\t5\nHive\tx\n";
             var store = new MemoryStore();
-            store.Values[ProgressKey] = "garbage 2";
-            store.Values[ProgressKey + Backup] = "garbage 1";
+            store.Values[ProgressKey] = earlier;
+            ExpectWarning(ProgressKey);
+            var data = new SaveData(store);
+            data.SaveProgress();                       // 첫 실행: 백업 = earlier, 키는 읽은 만큼으로 덮임
+            Assert.AreEqual(earlier, store.Load(ProgressKey + Backup));
+            LogAssert.NoUnexpectedReceived();
+
+            store.Values[ProgressKey] = "garbage";     // 다음 실행: 값 전체가 깨짐
             ExpectWarning(ProgressKey);
 
             new SaveData(store);
 
-            Assert.AreEqual("garbage 1", store.Load(ProgressKey + Backup), "처음 버린 원본을 지킨다");
+            Assert.AreEqual("garbage", store.Load(ProgressKey + Backup), "백업은 이번에 버린 원본으로");
             LogAssert.NoUnexpectedReceived();
         }
 

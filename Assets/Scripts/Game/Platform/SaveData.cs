@@ -85,7 +85,7 @@ namespace ColoringBoot.Game
         }
 
         // 읽다 버린 것이 있으면 경고 · 원본 보존 (2026-11-19, DECISIONS.md) — 게임은 읽은 만큼으로 시작한다.
-        // 깨진 값 · 일부 줄 버림: 다음 저장이 원본을 덮으므로 <키>.Unread에 복사(이미 있으면 처음 원본을 지킴) 뒤 지금처럼 저장.
+        // 깨진 값 · 일부 줄 버림: 다음 저장이 원본을 덮으므로 <키>.Unread에 복사(이미 있으면 이번 원본으로 바꿈 — 진행이 가장 많이 남은 최근 원본을 지킨다) 뒤 지금처럼 저장.
         // 새 버전 값(옛 빌드가 새 빌드의 값을 읽음): 백업 없이 이번 실행 동안 그 키에 쓰지 않는다 — 원본이 그대로 남는다
         private void CheckRead(string key, string text, RecordReadStatus status)
         {
@@ -97,11 +97,9 @@ namespace ColoringBoot.Game
                 return;
             }
             string backupKey = key + UnreadSuffix;
-            bool hadBackup = _store.Load(backupKey) != null;
-            if (!hadBackup) _store.Save(backupKey, text);
+            if (_store.Load(backupKey) != text) _store.Save(backupKey, text);   // 같은 원본이면 다시 쓰지 않는다
             string what = status == RecordReadStatus.LinesDropped ? "읽을 수 없는 줄을 건너뛰었습니다" : "읽을 수 없어 빈 기록으로 시작합니다";
-            string backup = hadBackup ? $"백업 {backupKey}가 이미 있어 그대로 둡니다" : $"원본을 {backupKey}에 백업했습니다";
-            Debug.LogWarning($"[저장] {key}: {what} — {backup}");
+            Debug.LogWarning($"[저장] {key}: {what} — 원본을 {backupKey}에 백업했습니다");
         }
 
         // 주소 ?reset — 진행 · 플레이테스트 기록 · 무한 모드 진행을 지운다(설정은 남긴다). 휴대폰 하나로 여러 명이 테스트할 때 — 다음 사람이 따라 하기부터 보게 그 기록도 지운다.
