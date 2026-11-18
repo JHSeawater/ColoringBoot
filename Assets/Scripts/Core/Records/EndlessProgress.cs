@@ -52,36 +52,19 @@ namespace ColoringBoot.Core
             return text.ToString();
         }
 
-        // 머리줄이 다르거나 비어 있으면 빈 진행, 읽을 수 없는 줄은 건너뛴다
-        public static EndlessProgress Deserialize(string text) => Deserialize(text, out _);
-
+        // 머리줄이 다르거나 비어 있으면 빈 진행, 읽을 수 없는 줄은 건너뛴다.
         // 버린 것이 있으면 status로 알린다(2026-11-19) — 공백뿐인 줄 · 같은 난이도 줄(뒤 줄이 이김)은 버림이 아니다
         public static EndlessProgress Deserialize(string text, out RecordReadStatus status)
         {
-            status = RecordReadStatus.Ok;
             var progress = new EndlessProgress();
-            if (string.IsNullOrWhiteSpace(text)) return progress;
-            string[] lines = text.Split('\n');
-            string header = lines[0].Trim();
-            if (header != Header)
+            status = RecordHeader.Read(text, HeaderName, Version, Separator, (header, f) =>
             {
-                status = RecordHeader.Unknown(header, HeaderName, Version);
-                return progress;
-            }
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string line = lines[i].Trim();
-                if (line.Length == 0) continue;
-                string[] f = line.Split(Separator);
                 if (f.Length != 4 || !Progress.IsValidStage(f[0])
                     || !int.TryParse(f[1], out int current) || !int.TryParse(f[2], out int solved) || !int.TryParse(f[3], out int skipped)
-                    || current < 0 || solved < 0 || skipped < 0)
-                {
-                    status = RecordReadStatus.LinesDropped;
-                    continue;
-                }
+                    || current < 0 || solved < 0 || skipped < 0) return false;
                 progress._tiers[f[0]] = new Entry { Current = current, Solved = solved, Skipped = skipped };
-            }
+                return true;
+            }, Header);
             return progress;
         }
     }

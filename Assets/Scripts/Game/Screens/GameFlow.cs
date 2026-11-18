@@ -90,7 +90,15 @@ namespace ColoringBoot.Game
 #if UNITY_ANDROID
             Application.targetFrameRate = AndroidFrameRate;
 #endif
-            _data = new SaveData(new PlayerPrefsStore());
+            var store = new PlayerPrefsStore();
+            // ?reset은 읽기 전에 — 읽은 뒤 지우면 곧 지울 값에 경고 · 백업이 먼저 생긴다. QA 주소 기능은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
+            string url = Application.absoluteURL;
+            if (UrlQuery.IsQaHost(url) && UrlQuery.TryGet(url, ResetQuery, out _))
+            {
+                SaveData.ClearRecords(store);
+                Debug.Log("주소에 ?reset — 진행 · 플레이 기록을 지웠습니다", this);
+            }
+            _data = new SaveData(store);
             _ads = new NoAdService();
             _puzzle.SetAds(_ads);
             SetChapters(_chapters);
@@ -216,13 +224,8 @@ namespace ColoringBoot.Game
         private void Start()
         {
             string url = Application.absoluteURL;
-            // QA 주소 기능(?reset · ?palette= · ?unlock · ?lab · ?stage= · ?stats)은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
+            // QA 주소 기능(?palette= · ?unlock · ?lab · ?stage= · ?stats — ?reset은 Awake)은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
             bool qa = UrlQuery.IsQaHost(url);
-            if (qa && UrlQuery.TryGet(url, ResetQuery, out _))
-            {
-                _data.ClearRecords();
-                Debug.Log("주소에 ?reset — 진행 · 플레이 기록을 지웠습니다", this);
-            }
             ApplySettings();
             if (qa && UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
             if (qa && UrlQuery.TryGet(url, UnlockQuery, out _)) _unlockAll = true;

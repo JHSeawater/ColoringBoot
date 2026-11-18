@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 namespace ColoringBoot.Core.Tests
 {
     // 읽지 못한 저장 값을 SaveData가 다루는 법 (2026-11-19, Docs/plans/2026-11-18-save-read-failure.md) —
-    // 경고 로그 1회 · 덮일 원본은 백업 키에 · 새 버전 값은 그 실행 동안 쓰지 않음 · ?reset은 백업도 지우고 쓰기 막기를 푼다
+    // 경고 로그 1회 · 덮일 원본은 백업 키에(최근 원본으로) · 새 버전 값은 그 실행 동안 쓰지 않음 · ?reset은 읽기 전에 백업까지 지운다
     public class SaveDataTests
     {
         private const string ProgressKey = "ColoringBoot.Progress";
@@ -131,20 +131,46 @@ namespace ColoringBoot.Core.Tests
             }
         }
 
+        // 저장이 없어 지난 실행의 깨진 값이 그대로 남으면, 다음 실행부터는 경고를 되풀이하지 않는다(일반 로그) (2026-11-19 코드 리뷰)
         [Test]
-        public void ClearRecords_DeletesBackupsAndUnblocksNewerVersionKey()
+        public void DroppedValue_SameOriginalNextRun_LogsWithoutWarning()
+        {
+            var store = new MemoryStore();
+            store.Values[EndlessKey] = "endless 1\nEasy\t5\t4\t1\nbroken line\n";
+            ExpectWarning(EndlessKey);
+            new SaveData(store);                       // 첫 실행: 백업 · 경고. 무한 모드를 하지 않아 저장 없음
+            LogAssert.NoUnexpectedReceived();
+
+            LogAssert.Expect(LogType.Log, new Regex(@"^\[저장\] " + Regex.Escape(EndlessKey) + ":"));
+
+            new SaveData(store);
+
+            Assert.AreEqual(store.Load(EndlessKey), store.Load(EndlessKey + Backup));
+            LogAssert.NoUnexpectedReceived();          // 두 번째 실행에 경고 없음
+        }
+
+        // ?reset은 SaveData를 만들기 전에 지운다 — 곧 지울 값에 경고 · 백업이 생기지 않고, 새 버전 값이었던 키도 그 실행에서 정상 저장
+        [Test]
+        public void ClearRecords_BeforeLoad_DeletesRecordsAndBackupsWithoutWarning()
         {
             var store = new MemoryStore();
             store.Values[ProgressKey] = "progress 2\nGrape\t5\n";
             store.Values[StatsKey] = "garbage";
             store.Values[EndlessKey + Backup] = "endless x";
-            ExpectWarning(ProgressKey);
-            ExpectWarning(StatsKey);
+            store.Values["ColoringBoot.Tutorial"] = "1";
+            store.Values["ColoringBoot.Sound"] = "0";
+
+            SaveData.ClearRecords(store);
             var data = new SaveData(store);
 
-            data.ClearRecords();
-
-            foreach (string key in RecordKeys) Assert.IsNull(store.Load(key + Backup), $"{key}{Backup} 지움");
+            LogAssert.NoUnexpectedReceived();
+            foreach (string key in RecordKeys)
+            {
+                Assert.IsNull(store.Load(key), $"{key} 지움");
+                Assert.IsNull(store.Load(key + Backup), $"{key}{Backup} 지움");
+            }
+            Assert.IsFalse(data.TutorialSeen, "따라 하기 기록도 지움");
+            Assert.IsFalse(data.Sound, "설정은 남김");
             data.Progress.RecordClear("Grape", 7);
             data.SaveProgress();
             Assert.AreEqual(data.Progress.Serialize(), store.Load(ProgressKey), "?reset 뒤에는 그 실행에서도 정상 저장");

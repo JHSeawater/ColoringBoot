@@ -102,36 +102,23 @@ namespace ColoringBoot.Core
             return text.ToString();
         }
 
-        // 머리줄이 다르거나 비어 있으면 빈 기록, 읽을 수 없는 줄은 건너뛴다. 옛 형식(stats 1 — 힌트 칸 없음)은 힌트 0으로 읽는다
-        public static PlayStats Deserialize(string text) => Deserialize(text, out _);
-
+        // 머리줄이 다르거나 비어 있으면 빈 기록, 읽을 수 없는 줄은 건너뛴다. 옛 형식(stats 1 — 힌트 칸 없음)은 힌트 0으로 읽는다.
         // 버린 것이 있으면 status로 알린다(2026-11-19) — 공백뿐인 줄 · 같은 스테이지 줄(뒤 줄이 이김)은 버림이 아니다
         public static PlayStats Deserialize(string text, out RecordReadStatus status)
         {
-            status = RecordReadStatus.Ok;
             var stats = new PlayStats();
-            if (string.IsNullOrWhiteSpace(text)) return stats;
-            string[] lines = text.Split('\n');
-            string header = lines[0].Trim();
-            if (header != Header && header != HeaderV1)
+            status = RecordHeader.Read(text, HeaderName, Version, Separator, (header, f) =>
             {
-                status = RecordHeader.Unknown(header, HeaderName, Version);
-                return stats;
-            }
-            bool hasHints = header == Header;
-            int fields = hasHints ? 8 : 7;
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string line = lines[i].Trim();
-                if (line.Length == 0) continue;
-                if (TryReadLine(line.Split(Separator), fields, hasHints, out string stage, out Entry entry)) stats._entries[stage] = entry;
-                else status = RecordReadStatus.LinesDropped;
-            }
+                if (!TryReadLine(f, header == Header, out string stage, out Entry entry)) return false;
+                stats._entries[stage] = entry;
+                return true;
+            }, Header, HeaderV1);
             return stats;
         }
 
-        private static bool TryReadLine(string[] f, int fields, bool hasHints, out string stage, out Entry entry)
+        private static bool TryReadLine(string[] f, bool hasHints, out string stage, out Entry entry)
         {
+            int fields = hasHints ? 8 : 7;
             stage = f[0];
             entry = null;
             if (f.Length != fields || !Progress.IsValidStage(f[0])) return false;

@@ -139,7 +139,7 @@ namespace ColoringBoot.Core.Tests
             progress.RecordClear("Grape", 5);
             progress.RecordClear("Hive", 9);
 
-            Progress read = Progress.Deserialize(progress.Serialize());
+            Progress read = Progress.Deserialize(progress.Serialize(), out _);
 
             Assert.AreEqual(5, read.BestMoves("Grape"));
             Assert.AreEqual(9, read.BestMoves("Hive"));
@@ -152,13 +152,13 @@ namespace ColoringBoot.Core.Tests
         [TestCase("progress 2\nGrape\t5\n")]
         public void Deserialize_UnreadableText_GivesEmptyProgress(string text)
         {
-            Assert.IsFalse(Progress.Deserialize(text).IsCleared("Grape"));
+            Assert.IsFalse(Progress.Deserialize(text, out _).IsCleared("Grape"));
         }
 
         [Test]
         public void Deserialize_SkipsBrokenLines()
         {
-            Progress read = Progress.Deserialize("progress 1\nGrape\t5\nHive\tx\nStain\t0\n\tfour\nTwoColors\t3\r\n");
+            Progress read = Progress.Deserialize("progress 1\nGrape\t5\nHive\tx\nStain\t0\n\tfour\nTwoColors\t3\r\n", out _);
 
             Assert.AreEqual(5, read.BestMoves("Grape"));
             Assert.AreEqual(3, read.BestMoves("TwoColors"), "CRLF 줄 끝");

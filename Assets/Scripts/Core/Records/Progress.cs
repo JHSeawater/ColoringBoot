@@ -104,34 +104,17 @@ namespace ColoringBoot.Core
             return text.ToString();
         }
 
-        // 머리줄이 다르거나 비어 있으면 빈 진행, 읽을 수 없는 줄은 건너뛴다 — 저장 값이 깨져도 게임은 시작한다
-        public static Progress Deserialize(string text) => Deserialize(text, out _);
-
+        // 머리줄이 다르거나 비어 있으면 빈 진행, 읽을 수 없는 줄은 건너뛴다 — 저장 값이 깨져도 게임은 시작한다.
         // 버린 것이 있으면 status로 알린다(2026-11-19) — 공백뿐인 줄 · 같은 스테이지 줄(작은 수가 이김)은 버림이 아니다
         public static Progress Deserialize(string text, out RecordReadStatus status)
         {
-            status = RecordReadStatus.Ok;
             var progress = new Progress();
-            if (string.IsNullOrWhiteSpace(text)) return progress;
-            string[] lines = text.Split('\n');
-            string header = lines[0].Trim();
-            if (header != Header)
+            status = RecordHeader.Read(text, HeaderName, Version, Separator, (header, fields) =>
             {
-                status = RecordHeader.Unknown(header, HeaderName, Version);
-                return progress;
-            }
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string line = lines[i].Trim();
-                if (line.Length == 0) continue;
-                string[] fields = line.Split(Separator);
-                if (fields.Length != 2 || !IsValidStage(fields[0]) || !int.TryParse(fields[1], out int moves) || moves < 1)
-                {
-                    status = RecordReadStatus.LinesDropped;
-                    continue;
-                }
+                if (fields.Length != 2 || !IsValidStage(fields[0]) || !int.TryParse(fields[1], out int moves) || moves < 1) return false;
                 progress.RecordClear(fields[0], moves);
-            }
+                return true;
+            }, Header);
             return progress;
         }
 

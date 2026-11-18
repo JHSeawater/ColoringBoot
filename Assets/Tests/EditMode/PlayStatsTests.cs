@@ -55,7 +55,7 @@ namespace ColoringBoot.Core.Tests
             stats.Undid("Hive");
             stats.Hinted("Hive");
 
-            PlayStats read = PlayStats.Deserialize(stats.Serialize());
+            PlayStats read = PlayStats.Deserialize(stats.Serialize(), out _);
 
             StageStats grape = read.Get("Grape");
             Assert.AreEqual(1, grape.Opens);
@@ -71,10 +71,10 @@ namespace ColoringBoot.Core.Tests
         [Test]
         public void Deserialize_BrokenText_SkipsOrEmpties()
         {
-            Assert.AreEqual(0, PlayStats.Deserialize(null).Get("Grape").Opens);
-            Assert.AreEqual(0, PlayStats.Deserialize("progress 1\nGrape\t5\n").Get("Grape").Opens, "다른 머리줄");
+            Assert.AreEqual(0, PlayStats.Deserialize(null, out _).Get("Grape").Opens);
+            Assert.AreEqual(0, PlayStats.Deserialize("progress 1\nGrape\t5\n", out _).Get("Grape").Opens, "다른 머리줄");
 
-            PlayStats read = PlayStats.Deserialize("stats 1\nGrape\t2\t9\t1\t0\t30.0\t5\nHive\t1\t-3\t0\t0\t1.0\t-\nStain\t1\t2\n");
+            PlayStats read = PlayStats.Deserialize("stats 1\nGrape\t2\t9\t1\t0\t30.0\t5\nHive\t1\t-3\t0\t0\t1.0\t-\nStain\t1\t2\n", out _);
             Assert.AreEqual(2, read.Get("Grape").Opens, "옛 형식(stats 1)도 읽음");
             Assert.AreEqual(0, read.Get("Grape").Hints, "옛 형식은 힌트 0");
             Assert.AreEqual(5, read.Get("Grape").ClearMoves);

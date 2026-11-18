@@ -36,14 +36,14 @@ namespace ColoringBoot.Core.Tests
             progress.Skip("Normal", 300);
             progress.Solve("Hard", 300);
 
-            EndlessProgress read = EndlessProgress.Deserialize(progress.Serialize());
+            EndlessProgress read = EndlessProgress.Deserialize(progress.Serialize(), out _);
             Assert.AreEqual(2, read.Current("Normal"));
             Assert.AreEqual(1, read.Solved("Normal"));
             Assert.AreEqual(1, read.Skipped("Normal"));
             Assert.AreEqual(1, read.Solved("Hard"));
 
-            Assert.AreEqual(0, EndlessProgress.Deserialize("garbage").Current("Normal"));
-            Assert.AreEqual(5, EndlessProgress.Deserialize("endless 1\nEasy\t5\t4\t1\nbroken line\nHard\t-1\t0\t0\n").Current("Easy"));
+            Assert.AreEqual(0, EndlessProgress.Deserialize("garbage", out _).Current("Normal"));
+            Assert.AreEqual(5, EndlessProgress.Deserialize("endless 1\nEasy\t5\t4\t1\nbroken line\nHard\t-1\t0\t0\n", out _).Current("Easy"));
         }
 
         // 읽은 상태 (2026-11-19) — ProgressTests의 같은 테스트 참고
