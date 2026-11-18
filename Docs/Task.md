@@ -139,10 +139,10 @@
 
 > 높음 없음. 중간 3 · 개선 4를 옮김. 솔버 · 파서를 고치는 항목은 회귀 테스트(`GrapeRegressionTests` · `PrototypeStageRegressionTests` · `ContentRegressionTests`)를 통과해야 끝난다.
 
-- [ ] [QA] 막다른 길 힌트 시간 실측 — 조용한 막다른 길에서 몇 획 더 그은 뒤 힌트를 누른다(PC · 휴대폰, `?lab&stage=LabSkyHill` 등 큰 맵). 2026-10-07 "한 프레임 유지" 결정은 시작 상태 힌트만 쟀다 → 결과로 아래 두 항목의 범위를 정한다
+- [x] [QA] 막다른 길 힌트 시간 실측 — 조용한 막다른 길에서 몇 획 더 그은 뒤 힌트를 누른다(PC · 휴대폰, `?lab&stage=LabSkyHill` 등 큰 맵). 2026-10-07 "한 프레임 유지" 결정은 시작 상태 힌트만 쟀다 → 결과로 아래 두 항목의 범위를 정한다 → PC WebGL 호박 막다른 길 1,287 ms(2026-11-17 — 이 실측으로 힌트를 여러 프레임에 나눔, 위 "힌트 프레임 나누기") · 휴대폰 힌트 체감 사용자 "문제 없었다"(2026-11-18)로 닫음(사용자). 아래 탐색 상한 항목은 사용자 "거의 체감 안 됨"으로 보류
 - [ ] [Code] 힌트 탐색 상한을 호출 전체에서 하나로 — `PuzzleSession.FindHint`는 지금 상태 하나당 20만(`PuzzleController.HintLimit`) × (되돌리기 기록 수 + 1)까지 돈다. 상한에 걸리면 지금처럼 `Hint.Unknown`. 2026-11-17 리뷰 1번으로 다시 나왔으나 사용자 "거의 체감 안 됨"으로 지금은 하지 않는다 — 하게 되면 앞 단계에서 확인한 상태를 넘기는 안(`DECISIONS.md` 2026-11-17 "코드 리뷰 뒤 수정", Full Plan). 상수는 이제 `HintSearch.RuntimeLimit`
 - [ ] [Code] 솔버 할당 줄이기 — `Solver.Solve`가 색이 안 바뀌는 수도 상태 배열을 복사하고, `seen`과 `previous`에 같은 키를 이중으로 보관한다(런타임 힌트 경로). 막힌 후보는 `seen`에 넣지 않아 같은 막힌 상태를 거듭 만들고 판정한다(`/code-audit all` 2026-11-12)
-- [ ] [Code] 생성기 — 그린 칸들이 줄을 하나도 공유하지 않으면 `Board.Moves`가 비어 `Generator.Generate`가 `ArgumentOutOfRangeException`(예: (0,0) · (1,1)). 수가 없으면 `null`. 에디터 전용
+- [x] [Code] 생성기 — 그린 칸들이 줄을 하나도 공유하지 않으면 `Board.Moves`가 비어 `Generator.Generate`가 `ArgumentOutOfRangeException`(예: (0,0) · (1,1)). 수가 없으면 `null`. 에디터 전용 → `Board.Moves`가 비면 바로 `null` · `GeneratorTests.DrawnCells_WithoutSharedLine_ReturnsNull`(DevelopLog 2026-11-18)
 - [x] [Code] 콘텐츠 테스트에 "파일 이름이 진행 기록 키 규칙(`Progress.IsValidStage` — 공백 · 제어 문자 없음)을 통과한다" 추가 — 지금은 겹침만 본다. 공백이 든 이름이면 클리어 때 `RecordClear`가 예외를 던져 기록이 남지 않는다 → `ContentRegressionTests.FileNames_AreValidRecordKeys`(DevelopLog 2026-11-18)
 - [x] [Code] `StageWriter` 숫자를 Invariant로 — `Append(int)`는 현재 문화권이라 음수 부호가 `−`(U+2212)인 문화권에서 쓴 코드를 `StageParser`가 못 읽는다 → `StageWriterTests.ToJson_IgnoresCurrentCultureNegativeSign`(DevelopLog 2026-11-18)
 - [x] [Code] `StageParser` 중복 키를 `FormatException`으로 — 지금은 마지막 값이 이긴다(`cells` 두 번이면 앞의 보드가 조용히 사라짐) → `StageParserTests` 키 중복 두 경우(DevelopLog 2026-11-18)

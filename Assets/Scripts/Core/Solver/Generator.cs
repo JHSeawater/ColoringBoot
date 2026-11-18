@@ -102,6 +102,8 @@ namespace ColoringBoot.Core
                 foreach (int pick in picks) start[pick] = options.Palette[random.Next(options.Palette.Length)];
 
                 var board = new Board(new Stage(name, Cells(coords, start, new PaintColor[count])));
+                // 칸들이 줄을 하나도 공유하지 않으면 그을 수가 없다 — 직접 그린 모양이면 다시 시도해도 같으므로 바로 null
+                if (board.Moves.Count == 0) return null;
                 var state = (PaintColor[])start.Clone();
                 int used = 0;
                 for (int t = 0; t < options.Moves * StrokeTriesPerMove && used < options.Moves; t++)

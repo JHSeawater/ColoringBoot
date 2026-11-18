@@ -46,6 +46,14 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(expectedMin, Solver.Solve(board, board.CreateStartState()).Path.Count);
         }
 
+        // 직접 그린 칸들이 줄을 하나도 공유하지 않으면 그을 수가 없다 — 예외 없이 null
+        [Test]
+        public void DrawnCells_WithoutSharedLine_ReturnsNull()
+        {
+            var options = new GeneratorOptions { Cells = new[] { new HexCoord(0, 0), new HexCoord(1, 1) } };
+            Assert.IsNull(Generator.Generate(options, new SeededRandom(1), "랜덤"));
+        }
+
         [Test]
         public void SameSeed_SameStage()
         {
