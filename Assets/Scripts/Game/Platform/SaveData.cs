@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using ColoringBoot.Core;
+using UnityEngine;
 
 namespace ColoringBoot.Game
 {
@@ -11,10 +13,12 @@ namespace ColoringBoot.Game
         private const string SoundKey = "ColoringBoot.Sound";
         private const string TutorialKey = "ColoringBoot.Tutorial";   // 따라 하기를 봤는가 (2026-10-07)
         private const string EndlessKey = "ColoringBoot.Endless";     // 무한 모드 진행 (2026-10-07)
+        private const string UnreadSuffix = ".Unread";                // 읽다 버린 원본 백업 (2026-11-19)
         private const string On = "1";
         private const string Off = "0";
 
         private readonly IKeyValueStore _store;
+        private readonly HashSet<string> _blocked = new HashSet<string>();   // 새 버전 값이라 이번 실행 동안 쓰지 않는 키
         private bool _symbols;
         private bool _sound;
         private bool _tutorialSeen;
@@ -22,9 +26,15 @@ namespace ColoringBoot.Game
         public SaveData(IKeyValueStore store)
         {
             _store = store;
-            Progress = Progress.Deserialize(store.Load(ProgressKey));
-            Stats = PlayStats.Deserialize(store.Load(StatsKey));
-            Endless = EndlessProgress.Deserialize(store.Load(EndlessKey));
+            string text = store.Load(ProgressKey);
+            Progress = Progress.Deserialize(text, out RecordReadStatus status);
+            CheckRead(ProgressKey, text, status);
+            text = store.Load(StatsKey);
+            Stats = PlayStats.Deserialize(text, out status);
+            CheckRead(StatsKey, text, status);
+            text = store.Load(EndlessKey);
+            Endless = EndlessProgress.Deserialize(text, out status);
+            CheckRead(EndlessKey, text, status);
             _symbols = store.Load(SymbolsKey) == On;   // 기본 끔
             _sound = store.Load(SoundKey) != Off;      // 기본 켬
             _tutorialSeen = store.Load(TutorialKey) == On;
@@ -65,17 +75,47 @@ namespace ColoringBoot.Game
             }
         }
 
-        public void SaveProgress() => _store.Save(ProgressKey, Progress.Serialize());
-        public void SaveStats() => _store.Save(StatsKey, Stats.Serialize());
-        public void SaveEndless() => _store.Save(EndlessKey, Endless.Serialize());
+        public void SaveProgress() => SaveRecord(ProgressKey, Progress.Serialize());
+        public void SaveStats() => SaveRecord(StatsKey, Stats.Serialize());
+        public void SaveEndless() => SaveRecord(EndlessKey, Endless.Serialize());
 
-        // 주소 ?reset — 진행 · 플레이테스트 기록 · 무한 모드 진행을 지운다(설정은 남긴다). 휴대폰 하나로 여러 명이 테스트할 때 — 다음 사람이 따라 하기부터 보게 그 기록도 지운다
+        private void SaveRecord(string key, string text)
+        {
+            if (!_blocked.Contains(key)) _store.Save(key, text);
+        }
+
+        // 읽다 버린 것이 있으면 경고 · 원본 보존 (2026-11-19, DECISIONS.md) — 게임은 읽은 만큼으로 시작한다.
+        // 깨진 값 · 일부 줄 버림: 다음 저장이 원본을 덮으므로 <키>.Unread에 복사(이미 있으면 처음 원본을 지킴) 뒤 지금처럼 저장.
+        // 새 버전 값(옛 빌드가 새 빌드의 값을 읽음): 백업 없이 이번 실행 동안 그 키에 쓰지 않는다 — 원본이 그대로 남는다
+        private void CheckRead(string key, string text, RecordReadStatus status)
+        {
+            if (status == RecordReadStatus.Ok) return;
+            if (status == RecordReadStatus.NewerVersion)
+            {
+                _blocked.Add(key);
+                Debug.LogWarning($"[저장] {key}: 이 빌드보다 새 형식이라 읽지 않았습니다 — 이번 실행 동안 이 기록은 저장하지 않습니다");
+                return;
+            }
+            string backupKey = key + UnreadSuffix;
+            bool hadBackup = _store.Load(backupKey) != null;
+            if (!hadBackup) _store.Save(backupKey, text);
+            string what = status == RecordReadStatus.LinesDropped ? "읽을 수 없는 줄을 건너뛰었습니다" : "읽을 수 없어 빈 기록으로 시작합니다";
+            string backup = hadBackup ? $"백업 {backupKey}가 이미 있어 그대로 둡니다" : $"원본을 {backupKey}에 백업했습니다";
+            Debug.LogWarning($"[저장] {key}: {what} — {backup}");
+        }
+
+        // 주소 ?reset — 진행 · 플레이테스트 기록 · 무한 모드 진행을 지운다(설정은 남긴다). 휴대폰 하나로 여러 명이 테스트할 때 — 다음 사람이 따라 하기부터 보게 그 기록도 지운다.
+        // 읽다 버린 원본 백업도 지우고, 새 버전 값 쓰기 막기도 푼다(지웠으니 그 실행에서도 정상 저장)
         public void ClearRecords()
         {
             _store.Delete(ProgressKey);
             _store.Delete(StatsKey);
             _store.Delete(TutorialKey);
             _store.Delete(EndlessKey);
+            _store.Delete(ProgressKey + UnreadSuffix);
+            _store.Delete(StatsKey + UnreadSuffix);
+            _store.Delete(EndlessKey + UnreadSuffix);
+            _blocked.Clear();
             Progress = new Progress();
             Stats = new PlayStats();
             Endless = new EndlessProgress();

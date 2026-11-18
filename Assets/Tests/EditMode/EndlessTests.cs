@@ -46,6 +46,51 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(5, EndlessProgress.Deserialize("endless 1\nEasy\t5\t4\t1\nbroken line\nHard\t-1\t0\t0\n").Current("Easy"));
         }
 
+        // 읽은 상태 (2026-11-19) — ProgressTests의 같은 테스트 참고
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("endless 1\n")]
+        [TestCase("endless 1\r\nEasy\t5\t4\t1\r\n\r\n  \nHard\t1\t1\t0\n")]
+        public void Progress_Status_OkForEmptyAndNormalText(string text)
+        {
+            EndlessProgress.Deserialize(text, out RecordReadStatus status);
+            Assert.AreEqual(RecordReadStatus.Ok, status);
+        }
+
+        [Test]
+        public void Progress_Status_OkForSerializedText()
+        {
+            var progress = new EndlessProgress();
+            progress.Solve("Normal", 300);
+            progress.Skip("Hard", 300);
+
+            EndlessProgress.Deserialize(progress.Serialize(), out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.Ok, status, "끝의 빈 줄은 버림이 아님");
+        }
+
+        [Test]
+        public void Progress_Status_LinesDropped_KeepsReadLines()
+        {
+            EndlessProgress read = EndlessProgress.Deserialize("endless 1\nEasy\t5\t4\t1\nbroken line\nHard\t-1\t0\t0\n", out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.LinesDropped, status);
+            Assert.AreEqual(5, read.Current("Easy"));
+            Assert.AreEqual(0, read.Current("Hard"));
+        }
+
+        [TestCase("endless 2\nEasy\t5\t4\t1\n", RecordReadStatus.NewerVersion)]
+        [TestCase("garbage", RecordReadStatus.Unreadable)]
+        [TestCase("endless x\nEasy\t5\t4\t1\n", RecordReadStatus.Unreadable)]
+        [TestCase("progress 1\nEasy\t5\n", RecordReadStatus.Unreadable)]
+        public void Progress_Status_UnknownHeader_GivesEmptyProgress(string text, RecordReadStatus expected)
+        {
+            EndlessProgress read = EndlessProgress.Deserialize(text, out RecordReadStatus status);
+
+            Assert.AreEqual(expected, status);
+            Assert.AreEqual(0, read.Current("Easy"));
+        }
+
         [Test]
         public void PlayStats_SumByPrefix()
         {

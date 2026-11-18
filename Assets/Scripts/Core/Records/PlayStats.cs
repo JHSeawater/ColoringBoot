@@ -31,8 +31,10 @@ namespace ColoringBoot.Core
     // 스테이지별 플레이테스트 기록 (2026-09-30 사용자 결정). 첫 클리어 뒤로는 세지 않는다 — 다시 하기는 추론을 보여 주지 않으므로
     public sealed class PlayStats
     {
-        private const string Header = "stats 2";     // 2026-10-07: 힌트 횟수 칸 추가
-        private const string HeaderV1 = "stats 1";   // 옛 형식(힌트 칸 없음)도 읽는다
+        private const string HeaderName = "stats";
+        private const int Version = 2;   // 2026-10-07: 힌트 횟수 칸 추가
+        private static readonly string Header = RecordHeader.Make(HeaderName, Version);
+        private static readonly string HeaderV1 = RecordHeader.Make(HeaderName, 1);   // 옛 형식(힌트 칸 없음)도 읽는다
         private const char Separator = '\t';
         private const string NotCleared = "-";
 
@@ -101,31 +103,50 @@ namespace ColoringBoot.Core
         }
 
         // 머리줄이 다르거나 비어 있으면 빈 기록, 읽을 수 없는 줄은 건너뛴다. 옛 형식(stats 1 — 힌트 칸 없음)은 힌트 0으로 읽는다
-        public static PlayStats Deserialize(string text)
+        public static PlayStats Deserialize(string text) => Deserialize(text, out _);
+
+        // 버린 것이 있으면 status로 알린다(2026-11-19) — 공백뿐인 줄 · 같은 스테이지 줄(뒤 줄이 이김)은 버림이 아니다
+        public static PlayStats Deserialize(string text, out RecordReadStatus status)
         {
+            status = RecordReadStatus.Ok;
             var stats = new PlayStats();
-            string[] lines = (text ?? "").Split('\n');
+            if (string.IsNullOrWhiteSpace(text)) return stats;
+            string[] lines = text.Split('\n');
             string header = lines[0].Trim();
-            if (header != Header && header != HeaderV1) return stats;
+            if (header != Header && header != HeaderV1)
+            {
+                status = RecordHeader.Unknown(header, HeaderName, Version);
+                return stats;
+            }
             bool hasHints = header == Header;
             int fields = hasHints ? 8 : 7;
             for (int i = 1; i < lines.Length; i++)
             {
-                string[] f = lines[i].Trim().Split(Separator);
-                if (f.Length != fields || !Progress.IsValidStage(f[0])) continue;
-                if (!TryCount(f[1], out int opens) || !TryCount(f[2], out int strokes) || !TryCount(f[3], out int undos) || !TryCount(f[4], out int restarts)) continue;
-                int hints = 0;
-                if (hasHints && !TryCount(f[5], out hints)) continue;
-                if (!double.TryParse(f[fields - 2], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) || seconds < 0) continue;
-                int? clearMoves = null;
-                if (f[fields - 1] != NotCleared)
-                {
-                    if (!TryCount(f[fields - 1], out int moves) || moves < 1) continue;
-                    clearMoves = moves;
-                }
-                stats._entries[f[0]] = new Entry { Opens = opens, Strokes = strokes, Undos = undos, Restarts = restarts, Hints = hints, Seconds = seconds, ClearMoves = clearMoves };
+                string line = lines[i].Trim();
+                if (line.Length == 0) continue;
+                if (TryReadLine(line.Split(Separator), fields, hasHints, out string stage, out Entry entry)) stats._entries[stage] = entry;
+                else status = RecordReadStatus.LinesDropped;
             }
             return stats;
+        }
+
+        private static bool TryReadLine(string[] f, int fields, bool hasHints, out string stage, out Entry entry)
+        {
+            stage = f[0];
+            entry = null;
+            if (f.Length != fields || !Progress.IsValidStage(f[0])) return false;
+            if (!TryCount(f[1], out int opens) || !TryCount(f[2], out int strokes) || !TryCount(f[3], out int undos) || !TryCount(f[4], out int restarts)) return false;
+            int hints = 0;
+            if (hasHints && !TryCount(f[5], out hints)) return false;
+            if (!double.TryParse(f[fields - 2], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) || seconds < 0) return false;
+            int? clearMoves = null;
+            if (f[fields - 1] != NotCleared)
+            {
+                if (!TryCount(f[fields - 1], out int moves) || moves < 1) return false;
+                clearMoves = moves;
+            }
+            entry = new Entry { Opens = opens, Strokes = strokes, Undos = undos, Restarts = restarts, Hints = hints, Seconds = seconds, ClearMoves = clearMoves };
+            return true;
         }
 
         private static bool TryCount(string text, out int value) =>

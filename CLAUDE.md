@@ -109,7 +109,7 @@ MCP 안전 규칙:
 | `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`Rules/` · `Stages/` · `Solver/` · `Records/`) |
 | `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층(`Board/` · `Screens/` · `Data/` · `Platform/` — 저장 · 광고 · 소리 · 주소는 `Platform/`) |
 | `Assets/Scripts/LevelEditor/` | `ColoringBoot.LevelEditor` — 에디터 전용(`UNITY_EDITOR`) · `Assets/Scenes/LevelEditor.unity` |
-| `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 로직 · 콘텐츠 테스트 |
+| `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — 로직 · 콘텐츠 테스트(Core + Game 참조 — `SaveData` 테스트) |
 | `Assets/Data/` | 챕터 · 따라 하기 · 시험 목록 · 무한 모드 묶음 · 팔레트 · 디자인 · 연출 값 |
 | `AgentScripts/` | `Assets/` 밖 `run_script` 빌더 · QA · 도구 · 설정 기록(`AgentScripts/README.md`) |
 | `ArtSource/` | 그림 원본(`Docs/ArtSpec.md` 규격) |

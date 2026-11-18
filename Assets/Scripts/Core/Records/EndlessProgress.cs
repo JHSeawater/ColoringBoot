@@ -8,7 +8,9 @@ namespace ColoringBoot.Core
     // 퍼즐은 묶음 순서대로 내고, 끝까지 가면 처음으로 돌아간다. 저장은 문자열로 — 어디에 쓸지는 표현 계층이 정한다
     public sealed class EndlessProgress
     {
-        private const string Header = "endless 1";
+        private const string HeaderName = "endless";
+        private const int Version = 1;
+        private static readonly string Header = RecordHeader.Make(HeaderName, Version);
         private const char Separator = '\t';
 
         private sealed class Entry
@@ -51,17 +53,33 @@ namespace ColoringBoot.Core
         }
 
         // 머리줄이 다르거나 비어 있으면 빈 진행, 읽을 수 없는 줄은 건너뛴다
-        public static EndlessProgress Deserialize(string text)
+        public static EndlessProgress Deserialize(string text) => Deserialize(text, out _);
+
+        // 버린 것이 있으면 status로 알린다(2026-11-19) — 공백뿐인 줄 · 같은 난이도 줄(뒤 줄이 이김)은 버림이 아니다
+        public static EndlessProgress Deserialize(string text, out RecordReadStatus status)
         {
+            status = RecordReadStatus.Ok;
             var progress = new EndlessProgress();
-            string[] lines = (text ?? "").Split('\n');
-            if (lines[0].Trim() != Header) return progress;
+            if (string.IsNullOrWhiteSpace(text)) return progress;
+            string[] lines = text.Split('\n');
+            string header = lines[0].Trim();
+            if (header != Header)
+            {
+                status = RecordHeader.Unknown(header, HeaderName, Version);
+                return progress;
+            }
             for (int i = 1; i < lines.Length; i++)
             {
-                string[] f = lines[i].Trim().Split(Separator);
-                if (f.Length != 4 || !Progress.IsValidStage(f[0])) continue;
-                if (!int.TryParse(f[1], out int current) || !int.TryParse(f[2], out int solved) || !int.TryParse(f[3], out int skipped)) continue;
-                if (current < 0 || solved < 0 || skipped < 0) continue;
+                string line = lines[i].Trim();
+                if (line.Length == 0) continue;
+                string[] f = line.Split(Separator);
+                if (f.Length != 4 || !Progress.IsValidStage(f[0])
+                    || !int.TryParse(f[1], out int current) || !int.TryParse(f[2], out int solved) || !int.TryParse(f[3], out int skipped)
+                    || current < 0 || solved < 0 || skipped < 0)
+                {
+                    status = RecordReadStatus.LinesDropped;
+                    continue;
+                }
                 progress._tiers[f[0]] = new Entry { Current = current, Solved = solved, Skipped = skipped };
             }
             return progress;

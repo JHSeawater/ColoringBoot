@@ -3,6 +3,7 @@
     "rootNamespace": "ColoringBoot.Core.Tests",
     "references": [
         "ColoringBoot.Core",
+        "ColoringBoot.Game",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

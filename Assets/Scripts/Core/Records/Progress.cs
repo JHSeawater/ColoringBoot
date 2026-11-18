@@ -8,7 +8,9 @@ namespace ColoringBoot.Core
     // 스테이지는 파일 이름으로 구분한다(표시 이름을 바꿔도 기록이 남는다). 저장은 문자열로 — 어디에 쓸지는 표현 계층이 정한다
     public sealed class Progress
     {
-        private const string Header = "progress 1";
+        private const string HeaderName = "progress";
+        private const int Version = 1;
+        private static readonly string Header = RecordHeader.Make(HeaderName, Version);
         private const char Separator = '\t';
 
         private readonly Dictionary<string, int> _best = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -103,15 +105,31 @@ namespace ColoringBoot.Core
         }
 
         // 머리줄이 다르거나 비어 있으면 빈 진행, 읽을 수 없는 줄은 건너뛴다 — 저장 값이 깨져도 게임은 시작한다
-        public static Progress Deserialize(string text)
+        public static Progress Deserialize(string text) => Deserialize(text, out _);
+
+        // 버린 것이 있으면 status로 알린다(2026-11-19) — 공백뿐인 줄 · 같은 스테이지 줄(작은 수가 이김)은 버림이 아니다
+        public static Progress Deserialize(string text, out RecordReadStatus status)
         {
+            status = RecordReadStatus.Ok;
             var progress = new Progress();
-            string[] lines = (text ?? "").Split('\n');
-            if (lines[0].Trim() != Header) return progress;
+            if (string.IsNullOrWhiteSpace(text)) return progress;
+            string[] lines = text.Split('\n');
+            string header = lines[0].Trim();
+            if (header != Header)
+            {
+                status = RecordHeader.Unknown(header, HeaderName, Version);
+                return progress;
+            }
             for (int i = 1; i < lines.Length; i++)
             {
-                string[] fields = lines[i].Trim().Split(Separator);
-                if (fields.Length != 2 || !IsValidStage(fields[0]) || !int.TryParse(fields[1], out int moves) || moves < 1) continue;
+                string line = lines[i].Trim();
+                if (line.Length == 0) continue;
+                string[] fields = line.Split(Separator);
+                if (fields.Length != 2 || !IsValidStage(fields[0]) || !int.TryParse(fields[1], out int moves) || moves < 1)
+                {
+                    status = RecordReadStatus.LinesDropped;
+                    continue;
+                }
                 progress.RecordClear(fields[0], moves);
             }
             return progress;

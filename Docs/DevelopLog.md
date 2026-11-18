@@ -9,6 +9,21 @@
 
 ---
 
+### 📅 [2026-11-19] 저장 값을 읽지 못했을 때 조용히 지우지 않기 (Full Plan)
+
+**작업 내용** (계획 `Docs/plans/2026-11-18-save-read-failure.md` 0~4단계, 결정은 `DECISIONS.md` 2026-11-19)
+- Core `Records/RecordReadStatus.cs`(새): 상태 `Ok` · `LinesDropped` · `NewerVersion` · `Unreadable`과 머리줄 판정 `RecordHeader.Unknown`(이 빌드의 머리줄 이름 · 번호와 견주어 "이름 같고 번호가 정수로 더 큼"만 새 버전).
+- `Progress` · `PlayStats` · `EndlessProgress`: `Deserialize(text, out RecordReadStatus)` 오버로드 — 공백뿐인 값 · 줄은 세지 않음, 읽는 기록은 전과 같음. `Deserialize(text)`는 그것을 불러 상태를 버린다. `PlayStats`는 줄 하나를 읽는 부분을 `TryReadLine`으로 뺐다(실패 지점이 여럿이라).
+- `SaveData`: 읽은 뒤 `CheckRead` — 경고 `[저장] <키>: …` 1회 · `LinesDropped` · `Unreadable`이면 `<키>.Unread`에 원본(이미 있으면 그대로) · `NewerVersion`이면 그 키를 `_blocked`에 넣어 `Save*`가 쓰지 않음. `ClearRecords`가 백업 셋을 지우고 `_blocked`를 비움.
+- 테스트: 세 기록 테스트에 `*_Status_*` 38개(빈 값 · `Serialize` 결과 · 끝/중간 빈 줄 · `\r\n` · 같은 이름 줄 · `stats 1` → Ok / 깨진 줄 → LinesDropped / `progress 2` · `stats 3` · `endless 2` · `progress 10` → NewerVersion / `garbage` · `x` · 0 · 음수 · 다른 기록 머리줄 → Unreadable). 테스트 asmdef에 `ColoringBoot.Game` 참조 + `SaveDataTests` 12개(메모리 `IKeyValueStore`). 경고는 계획대로 `LogAssert.Expect`(키별 정규식) + `LogAssert.NoUnexpectedReceived`("1회"는 두 번째 경고가 기대 밖이라 실패하는 것으로 본다).
+- 코드 리뷰(`/code-review high`, 9건) 중 2건 반영: 테스트가 경고를 직접 세던 것을 위 `LogAssert`로(계획과 어긋남) · `RecordHeader.Unknown`이 머리줄 문자열을 잘라 `int.Parse` 하던 것을 이름 · 번호 인자로(머리줄 모양이 바뀌면 깨진 값을 읽을 때만 예외 — 각 기록에 `HeaderName` · `Version` 상수, 머리줄은 `RecordHeader.Make`). 백업 칸 하나 · 새 버전 값 알림은 사용자 결정 뒤 이어서.
+- 문서: `TDD.md` §1 · §5 · `CLAUDE.md` §5 표 · `health-check` 지우는 키(`.Unread` 셋) · `Task.md`.
+
+**검증**
+- EditMode: 시작 370/370 → 새 상태 테스트가 먼저 실패(9개, 상태를 늘 Ok로 둔 오버로드) → 408/408 → Game 참조 뒤 기존 408 그대로 통과 · `SaveDataTests` 11개 먼저 실패 → 420/420(`SourceRuleTests` · 회귀 테스트 포함).
+- 에디터 플레이(`BoardQa`, 저장 키는 시작 전 값을 기록하고 끝에 되돌림 — 확인함): (a) `ColoringBoot.Progress` = `progress 2\nGrape\t5\n` → 경고 1회("이 빌드보다 새 형식…") · 백업 키 없음 · 1번 판(바구니) 클리어 뒤에도 키 그대로, `PlayStats`는 정상 저장. (b) `garbage` → 경고 1회 · `ColoringBoot.Progress.Unread` = `garbage` · 클리어 뒤 `progress 1\nBasket\t5\n` 저장. (c) 정상 값 → 경고 0 · 백업 키 0. 세 경우 모두 콘솔 에러 0.
+- 확인 못 함: WebGL 빌드(동작이 플랫폼과 무관 — 다음 빌드 때 정상 값에서 경고가 없는지 본다).
+
 ### 📅 [2026-11-18] 출시 문서 — 루트 README · CREDITS · 출시 뒤 스테이지 교체 규칙
 
 **작업 내용**

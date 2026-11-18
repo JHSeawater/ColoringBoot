@@ -81,5 +81,55 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(0, read.Get("Hive").Opens, "음수");
             Assert.AreEqual(0, read.Get("Stain").Opens, "칸 수 부족");
         }
+
+        // 읽은 상태 (2026-11-19) — ProgressTests의 같은 테스트 참고
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("stats 2\n")]
+        [TestCase("stats 2\nGrape\t1\t2\t0\t0\t0\t3.0\t-\n\n \nGrape\t2\t2\t0\t0\t1\t4.0\t5\r\n")]
+        [TestCase("stats 1\r\nGrape\t2\t9\t1\t0\t30.0\t5\r\n")]
+        public void Deserialize_Status_OkForEmptyAndNormalText(string text)
+        {
+            PlayStats.Deserialize(text, out RecordReadStatus status);
+            Assert.AreEqual(RecordReadStatus.Ok, status);
+        }
+
+        [Test]
+        public void Deserialize_Status_OkForSerializedText()
+        {
+            var stats = new PlayStats();
+            stats.Opened("Grape");
+            stats.Stroked("Grape");
+            stats.AddTime("Grape", 2.5);
+            stats.Cleared("Grape", 5);
+            stats.Hinted("Hive");
+
+            PlayStats.Deserialize(stats.Serialize(), out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.Ok, status, "끝의 빈 줄은 버림이 아님");
+        }
+
+        [Test]
+        public void Deserialize_Status_LinesDropped_KeepsReadLines()
+        {
+            PlayStats read = PlayStats.Deserialize("stats 2\nGrape\t2\t9\t1\t0\t0\t30.0\t5\nHive\t1\t-3\t0\t0\t0\t1.0\t-\n", out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.LinesDropped, status);
+            Assert.AreEqual(2, read.Get("Grape").Opens);
+            Assert.AreEqual(0, read.Get("Hive").Opens);
+        }
+
+        [TestCase("stats 3\nGrape\t1\t1\t0\t0\t0\t1.0\t-\t9\n", RecordReadStatus.NewerVersion)]
+        [TestCase("garbage", RecordReadStatus.Unreadable)]
+        [TestCase("stats x\nGrape\t1\t1\t0\t0\t0\t1.0\t-\n", RecordReadStatus.Unreadable)]
+        [TestCase("stats 0\nGrape\t1\t1\t0\t0\t1.0\t-\n", RecordReadStatus.Unreadable)]
+        [TestCase("progress 1\nGrape\t5\n", RecordReadStatus.Unreadable)]
+        public void Deserialize_Status_UnknownHeader_GivesEmptyStats(string text, RecordReadStatus expected)
+        {
+            PlayStats read = PlayStats.Deserialize(text, out RecordReadStatus status);
+
+            Assert.AreEqual(expected, status);
+            Assert.AreEqual(0, read.Get("Grape").Opens);
+        }
     }
 }

@@ -166,6 +166,58 @@ namespace ColoringBoot.Core.Tests
             Assert.IsFalse(read.IsCleared("Stain"));
         }
 
+        // 읽은 상태 (2026-11-19) — 버린 것이 있으면 SaveData가 경고 · 원본 보존. 정상 값을 "버림"으로 세면 플레이어마다 경고가 난다
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("\n")]
+        [TestCase("progress 1\n")]
+        [TestCase("progress 1\nGrape\t5\n\n  \nHive\t9\r\n\r\n")]
+        [TestCase("progress 1\r\nGrape\t5\r\nGrape\t7\r\n")]
+        public void Deserialize_Status_OkForEmptyAndNormalText(string text)
+        {
+            Progress.Deserialize(text, out RecordReadStatus status);
+            Assert.AreEqual(RecordReadStatus.Ok, status);
+        }
+
+        [Test]
+        public void Deserialize_Status_OkForSerializedText()
+        {
+            var progress = new Progress();
+            progress.RecordClear("Grape", 5);
+            progress.RecordClear("Hive", 9);
+
+            Progress.Deserialize(progress.Serialize(), out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.Ok, status, "끝의 빈 줄은 버림이 아님");
+        }
+
+        [Test]
+        public void Deserialize_Status_LinesDropped_KeepsReadLines()
+        {
+            Progress read = Progress.Deserialize("progress 1\nGrape\t5\nHive\tx\nTwoColors\t3\n", out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.LinesDropped, status);
+            Assert.AreEqual(5, read.BestMoves("Grape"));
+            Assert.AreEqual(3, read.BestMoves("TwoColors"));
+            Assert.IsFalse(read.IsCleared("Hive"));
+        }
+
+        [TestCase("progress 2\nGrape\t5\n", RecordReadStatus.NewerVersion)]
+        [TestCase("progress 10", RecordReadStatus.NewerVersion)]
+        [TestCase("garbage", RecordReadStatus.Unreadable)]
+        [TestCase("progress x\nGrape\t5\n", RecordReadStatus.Unreadable)]
+        [TestCase("progress 0\nGrape\t5\n", RecordReadStatus.Unreadable)]
+        [TestCase("progress -2\nGrape\t5\n", RecordReadStatus.Unreadable)]
+        [TestCase("stats 2\nGrape\t1\t1\t0\t0\t0\t1.0\t-\n", RecordReadStatus.Unreadable)]
+        [TestCase("Grape\t5\n", RecordReadStatus.Unreadable)]
+        public void Deserialize_Status_UnknownHeader_GivesEmptyProgress(string text, RecordReadStatus expected)
+        {
+            Progress read = Progress.Deserialize(text, out RecordReadStatus status);
+
+            Assert.AreEqual(expected, status);
+            Assert.IsFalse(read.IsCleared("Grape"));
+        }
+
         [Test]
         public void RecordClear_RejectsBadInput()
         {
