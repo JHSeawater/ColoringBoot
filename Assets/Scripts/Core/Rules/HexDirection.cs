@@ -1,6 +1,6 @@
 namespace ColoringBoot.Core
 {
-    // 붓질 방향 6개 — 꼭짓점이 위를 향하는 배치의 시계 방향 (CLAUDE.md §3 방향 표)
+    // 붓질 방향 6개 — 꼭짓점이 위를 향하는 배치의 시계 방향 (CLAUDE.md §5 방향 표)
     // 값 순서는 프로토타입 DIRS와 같다: 0~2(1·3·5시)가 각 축의 정방향이고, 3~5는 같은 순서의 반대 방향이다
     public enum HexDirection
     {

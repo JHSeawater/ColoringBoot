@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace ColoringBoot.Game
 {
     // 화면 흐름 (Phase 4.3) — 타이틀(Phase 7.3) → 스테이지 선택 → 보드 → 다음 스테이지 · 목록, 옵션 · 기록 패널. 씬은 하나이고 패널을 켜고 끈다(다시 불러오지 않음).
-    // 저장소 · 기록 · 광고 자리 · 설정을 여기서 한 번 만든다(static · 싱글턴 없음 — CLAUDE.md §5)
+    // 저장소 · 기록 · 광고 자리 · 설정을 여기서 한 번 만든다(static · 싱글턴 없음 — .claude/rules/game-code.md 유니티 코딩)
     public sealed class GameFlow : MonoBehaviour
     {
         private const string StageQuery = "stage";   // ?stage=<파일 이름> — 해금과 상관없이 그 스테이지를 바로 연다(QA)
@@ -192,6 +192,9 @@ namespace ColoringBoot.Game
         // 따라 하기 레슨을 연다 (GDD §6, 2026-10-07) — 보드 화면을 그대로 쓰고, 클리어 띠 "다음"으로 다음 레슨 · 마지막이면 목록
         private void OpenLesson(int lesson)
         {
+            // 보드에서 옵션 "규칙 다시 보기"로 왔으면 목록 버튼(LeaveBoard)처럼 풀린 무한 모드 판을 정리한다.
+            // 챕터를 막 완성한 클리어도 목록 버튼처럼 큰 그림 완성 연출 없이 지나간다(기록은 이미 남음 — 2026-11-18 사용자)
+            FinishEndless();
             _titleScreen.SetActive(false);
             _select.gameObject.SetActive(false);
             _chapterScreen.SetActive(false);

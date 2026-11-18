@@ -306,7 +306,7 @@ namespace ColoringBoot.Game
             return vectors;
         }
 
-        // 축 좌표 → 반지름 1 기준 화면 위치. Unity는 y가 위쪽이라 r이 커질수록 아래로 (CLAUDE.md §3 화면 배치)
+        // 축 좌표 → 반지름 1 기준 화면 위치. Unity는 y가 위쪽이라 r이 커질수록 아래로 (CLAUDE.md §5 화면 배치)
         private static Vector2 ToLocal(HexCoord coord) => new Vector2(Sqrt3 * (coord.Q + coord.R * 0.5f), -1.5f * coord.R);
     }
 }

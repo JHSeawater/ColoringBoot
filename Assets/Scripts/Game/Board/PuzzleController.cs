@@ -184,15 +184,15 @@ namespace ColoringBoot.Game
             _hintButton.onClick.RemoveListener(RequestHint);
         }
 
-        // PC 입력 (CLAUDE.md §6): Ctrl+Z 되돌리기 · 방향키 칸 선택 · 숫자키 1 · 3 · 5 · 7 · 9 · 0(11시) 붓질 · Esc 선택 해제
+        // PC 입력 (.claude/rules/game-code.md 입력): Ctrl+Z 되돌리기 · 방향키 칸 선택 · 숫자키 1 · 3 · 5 · 7 · 9 · 0(11시) 붓질 · Esc 선택 해제
         private void Update()
         {
             if (_session == null) return;
+            // 패널이 보드를 덮고 있으면 키보드로 뒤의 보드를 움직이지 않고, 걸린 시간도 세지 않는다 (2026-10-05 코드 점검 8 · DECISIONS 2026-11-13)
+            if (IsCovered()) return;
             // 걸린 시간은 앱이 앞에 있고 아직 풀지 못했을 때만 센다
             float frame = Time.unscaledDeltaTime;
             if (!_session.IsSolved && Application.isFocused && frame < MaxCountedFrame) _data.Stats.AddTime(_stageId, frame);
-            // 패널이 보드를 덮고 있으면 키보드로 뒤의 보드를 움직이지 않는다 (2026-10-05 코드 점검 8)
-            if (IsCovered()) return;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;

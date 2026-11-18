@@ -2,7 +2,7 @@ using ColoringBoot.Core;
 
 namespace ColoringBoot.Game
 {
-    // 저장하는 것 전부 — 진행(Progress) · 플레이테스트 기록(PlayStats) · 무한 모드 진행(EndlessProgress) · 설정(기호 · 소리). 저장소는 인터페이스 뒤(CLAUDE.md §3)
+    // 저장하는 것 전부 — 진행(Progress) · 플레이테스트 기록(PlayStats) · 무한 모드 진행(EndlessProgress) · 설정(기호 · 소리). 저장소는 인터페이스 뒤(CLAUDE.md §5 플랫폼 서비스)
     public sealed class SaveData
     {
         private const string ProgressKey = "ColoringBoot.Progress";

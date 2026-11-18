@@ -84,7 +84,7 @@ namespace ColoringBoot.Core.Tests
             }
         }
 
-        // 줄 중간의 빈자리는 건너간다 — 같은 직선 위면 한 줄 (CLAUDE.md §3)
+        // 줄 중간의 빈자리는 건너간다 — 같은 직선 위면 한 줄 (CLAUDE.md §5)
         [Test]
         public void Brush_CrossesGapsInLine()
         {
@@ -125,7 +125,7 @@ namespace ColoringBoot.Core.Tests
             CollectionAssert.AreEqual(new[] { E, R, R, E }, state);
         }
 
-        // 막힌 칸은 목표 색에 없는 기본색이 들어간 칸뿐이다. 아직 칠하지 않은 칸은 목표와 달라도 막힘이 아니다 (CLAUDE.md §8)
+        // 막힌 칸은 목표 색에 없는 기본색이 들어간 칸뿐이다. 아직 칠하지 않은 칸은 목표와 달라도 막힘이 아니다 (CLAUDE.md §5)
         [TestCase(PaintColor.Empty, PaintColor.Purple, false)]
         [TestCase(PaintColor.Red, PaintColor.Purple, false)]
         [TestCase(PaintColor.Purple, PaintColor.Purple, false)]

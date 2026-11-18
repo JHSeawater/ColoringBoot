@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ColoringBoot.Game
 {
-    // 게임이 여는 스테이지 목록 — 스테이지 코드(JSON TextAsset)를 순서대로 (CLAUDE.md §3 저장 형식).
+    // 게임이 여는 스테이지 목록 — 스테이지 코드(JSON TextAsset)를 순서대로 (CLAUDE.md §5 스테이지 데이터).
     // Phase 4 스테이지 선택 화면도 이 목록을 쓴다. 레벨 에디터가 저장하면 끝에 등록된다
     [CreateAssetMenu(menuName = "ColoringBoot/Stage Catalog", fileName = "StageCatalog")]
     public sealed class StageCatalog : ScriptableObject

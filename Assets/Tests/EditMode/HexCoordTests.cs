@@ -7,7 +7,7 @@ namespace ColoringBoot.Core.Tests
     {
         private static readonly HexDirection[] _allDirections = (HexDirection[])Enum.GetValues(typeof(HexDirection));
 
-        // CLAUDE.md §3 방향 표
+        // CLAUDE.md §5 방향 표
         [TestCase(HexDirection.Clock1, 1, -1)]
         [TestCase(HexDirection.Clock3, 1, 0)]
         [TestCase(HexDirection.Clock5, 0, 1)]

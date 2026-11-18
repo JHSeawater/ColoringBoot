@@ -17,7 +17,6 @@ namespace ColoringBoot.Core
     // 소재 맵 시험 스크립트(DevelopLog 2026-10-06)를 옮겼다. 에디터가 시간 안에서 되풀이해 부른다(동기 실행)
     public static class SeedSearch
     {
-        private const int SolveLimit = 120000;   // 생성기와 같은 탐색 상한
         private static readonly PaintColor[] _primaries = { PaintColor.Red, PaintColor.Yellow, PaintColor.Blue };
 
         // 무작위 배치 하나를 시험한다. 조건에 맞으면 그 스테이지(시작 색 · minMoves 채움), 아니면 null. 그림의 목표 색은 바꾸지 않는다
@@ -49,7 +48,7 @@ namespace ColoringBoot.Core
             var cells = new StageCell[picture.Cells.Count];
             for (int i = 0; i < cells.Length; i++) cells[i] = new StageCell(picture.Cells[i].Coord, start[i], picture.Cells[i].Target);
             var board = new Board(new Stage(picture.Name, cells, picture.Palette));
-            SolveResult result = Solver.Solve(board, board.CreateStartState(), SolveLimit);
+            SolveResult result = Solver.Solve(board, board.CreateStartState(), Generator.SolveLimit);
             if (!result.Solved || result.Path.Count < options.MinMoves || result.Path.Count > options.MaxMoves) return null;
             OrderSensitivity? order = Solver.MeasureOrder(board, board.CreateStartState(), result.Path);
             if (options.MaxOrderRatio < 1.0 && order.HasValue && (double)order.Value.Succeeded / order.Value.Total > options.MaxOrderRatio) return null;

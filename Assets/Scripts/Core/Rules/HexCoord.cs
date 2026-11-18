@@ -2,7 +2,7 @@ using System;
 
 namespace ColoringBoot.Core
 {
-    // 육각 축 좌표 (q, r) — 꼭짓점이 위를 향하는 배치 (CLAUDE.md §3)
+    // 육각 축 좌표 (q, r) — 꼭짓점이 위를 향하는 배치 (CLAUDE.md §5)
     public readonly struct HexCoord : IEquatable<HexCoord>
     {
         public HexCoord(int q, int r)

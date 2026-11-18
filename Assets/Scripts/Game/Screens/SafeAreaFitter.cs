@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace ColoringBoot.Game
 {
-    // 안전영역(노치 · Dynamic Island)에 맞춰 이 패널의 앵커를 조정한다 (GDD §6, CLAUDE.md §6).
+    // 안전영역(노치 · Dynamic Island)에 맞춰 이 패널의 앵커를 조정한다 (GDD §6, .claude/rules/game-code.md 안전영역).
     // 화면 크기 · 안전영역이 바뀌거나(매 프레임 확인) 토스 인셋 번호가 바뀌거나 토스 값 읽기에 실패했을 때(TossPollInterval마다 확인) 다시 맞춘다.
     // WebGL 빌드는 앱인토스 SDK 값이 있으면 Screen.safeArea와 겹치는 쪽(더 좁은 영역)을 쓴다(토스 상단 ⋯ ✕ 영역까지 비움)
     [RequireComponent(typeof(RectTransform))]

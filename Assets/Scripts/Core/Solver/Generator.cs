@@ -75,7 +75,7 @@ namespace ColoringBoot.Core
     {
         private const int Attempts = 400;
         private const int StrokeTriesPerMove = 6;
-        private const int SolveLimit = 120000;
+        internal const int SolveLimit = 120000;   // 후보 하나의 풀이 탐색 상한 — SeedSearch도 같은 값을 쓴다
         private const int BlobRadius = 3;
         private const int BlobMin = 14;
         private const int BlobExtra = 8;

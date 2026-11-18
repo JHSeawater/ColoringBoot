@@ -45,7 +45,7 @@ namespace ColoringBoot.Core
 
         public string Name { get; }
         public IReadOnlyList<StageCell> Cells { get; }
-        // 팔레트 이름. null이면 기본 팔레트 — 팔레트 에셋은 표현 계층이 고른다 (CLAUDE.md §3)
+        // 팔레트 이름. null이면 기본 팔레트 — 팔레트 에셋은 표현 계층이 고른다 (CLAUDE.md §5)
         public string Palette { get; }
         // 최소 수. null이면 수 카운터에 표시하지 않는다 — 값은 솔버가 채운다 (Phase 3)
         public int? MinMoves { get; }

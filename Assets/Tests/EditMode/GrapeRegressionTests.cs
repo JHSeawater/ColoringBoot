@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace ColoringBoot.Core.Tests
 {
-    // 회귀 기준 — 포도 스테이지 (GDD §3, CLAUDE.md §3): 최소 풀이 5수, 그 5수의 순서 120가지 중 8가지만 성공
+    // 회귀 기준 — 포도 스테이지 (GDD §3, CLAUDE.md §5): 최소 풀이 5수, 그 5수의 순서 120가지 중 8가지만 성공
     public class GrapeRegressionTests
     {
         // GDD §3 풀이를 (고른 칸, 방향) 그대로 옮긴 것
