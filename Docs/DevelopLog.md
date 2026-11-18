@@ -9,6 +9,17 @@
 
 ---
 
+### 📅 [2026-11-18] 스테이지 코드 읽기 · 쓰기 정리 — 중복 키 오류 · 숫자 Invariant · 파일 이름 키 검사
+
+**작업 내용** (`Task.md` 감사 후속 세 항목)
+- `StageParser`: 같은 키가 두 번 나오면 `FormatException`("키가 두 번 나옵니다"). 전에는 마지막 값이 이겨 `cells`가 두 번이면 앞의 보드가 조용히 사라졌다.
+- `StageWriter`: 칸 좌표 · 색 · `minMoves`를 `CultureInfo.InvariantCulture`로 쓴다(`AppendInt`). 전에는 `StringBuilder.Append(int)`가 현재 문화권의 음수 부호를 써서, 부호가 U+2212인 문화권에서 쓴 코드를 파서가 못 읽었다.
+- `ContentRegressionTests.FileNames_AreValidRecordKeys`: 게임 스테이지 파일 이름(확장자 뺀 이름 = `TextAsset.name` = 진행 기록 키)이 모두 `Progress.RecordClear`에 받아들여지는지 본다(공개 API로 검사 — `IsValidStage`는 internal).
+
+**검증**
+- 코드 · 테스트로 확인: 새 테스트를 먼저 넣어 중복 키 2건 · 문화권 1건이 실패하는 것을 본 뒤 고쳤다. 파일 이름 검사는 지금 파일들이 처음부터 통과한다. 컴파일 통과 · EditMode 369/369(전 365 + 새 4 — 회귀 `GrapeRegressionTests` · `PrototypeStageRegressionTests` · `ContentRegressionTests` 포함) · 콘솔 오류 0.
+- 확인 못 한 것: 레벨 에디터 · 빌더(`Phase8Chapters` · `SubjectLab` 등)로 실제 저장하지는 않았다 — 쓰는 글자는 Invariant 문화권에서 전과 같다(`RoundTrip_StageFiles` 9건 그대로 통과).
+
 ### 📅 [2026-11-18] WebGL 챕터 잠금 확인(쿼리 없이) — `Task.md` `?unlock` · `?stats` 항목 닫음
 
 **작업 내용**

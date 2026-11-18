@@ -30,11 +30,13 @@ namespace ColoringBoot.Core
             List<StageCell> cells = null;
             string palette = null;
             int? minMoves = null;
+            var keys = new HashSet<string>();
 
             Expect('{');
             do
             {
                 string key = ReadString();
+                if (!keys.Add(key)) throw Error($"키가 두 번 나옵니다 '{key}'");
                 Expect(':');
                 switch (key)
                 {

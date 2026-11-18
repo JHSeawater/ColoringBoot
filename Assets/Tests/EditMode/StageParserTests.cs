@@ -55,6 +55,8 @@ namespace ColoringBoot.Core.Tests
         [TestCase(@"{""name"":""t"",""cells"":[[0,0,1,1,1]]}")]             // 칸 값 5개
         [TestCase(@"{""name"":""t"",""cells"":[[0.5,0,1,1]]}")]             // 정수 아님
         [TestCase(@"{""name"":""t"",""cells"":[[0,0,1,1]],""size"":3}")]    // 모르는 키
+        [TestCase(@"{""name"":""t"",""cells"":[[0,0,1,1]],""cells"":[[1,0,1,1]]}")] // 키 중복(cells)
+        [TestCase(@"{""name"":""t"",""name"":""u"",""cells"":[[0,0,1,1]]}")]       // 키 중복(name)
         [TestCase(@"{""name"":""t"",""cells"":[[0,0,1,1]],""minMoves"":0}")] // 최소 수 0
         [TestCase(@"{""name"":""t"",""cells"":[[0,0,1,1]]} x")]             // 뒤에 남은 내용
         [TestCase(@"{""name"":""t"",""cells"":[[0,0,1,1]]")]                // 닫히지 않음

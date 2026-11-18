@@ -16,8 +16,11 @@ namespace ColoringBoot.Core
             {
                 StageCell cell = stage.Cells[i];
                 if (i > 0) json.Append(',');
-                json.Append('[').Append(cell.Coord.Q).Append(',').Append(cell.Coord.R).Append(',')
-                    .Append((int)cell.Start).Append(',').Append((int)cell.Target).Append(']');
+                json.Append('[');
+                AppendInt(json, cell.Coord.Q).Append(',');
+                AppendInt(json, cell.Coord.R).Append(',');
+                AppendInt(json, (int)cell.Start).Append(',');
+                AppendInt(json, (int)cell.Target).Append(']');
             }
             json.Append(']');
             if (stage.Palette != null)
@@ -25,10 +28,13 @@ namespace ColoringBoot.Core
                 json.Append(",\"palette\":");
                 AppendString(json, stage.Palette);
             }
-            if (stage.MinMoves.HasValue) json.Append(",\"minMoves\":").Append(stage.MinMoves.Value);
+            if (stage.MinMoves.HasValue) AppendInt(json.Append(",\"minMoves\":"), stage.MinMoves.Value);
             json.Append('}');
             return json.ToString();
         }
+
+        // StringBuilder.Append(int)는 현재 문화권의 음수 부호를 쓴다 — 파서가 읽는 '-'로 고정
+        private static StringBuilder AppendInt(StringBuilder json, int value) => json.Append(value.ToString(CultureInfo.InvariantCulture));
 
         private static void AppendString(StringBuilder json, string text)
         {

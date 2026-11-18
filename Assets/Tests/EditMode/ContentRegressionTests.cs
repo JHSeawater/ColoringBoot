@@ -65,5 +65,17 @@ namespace ColoringBoot.Core.Tests
             Assert.Greater(names.Length, 0, "스테이지 파일이 있음");
             CollectionAssert.IsEmpty(duplicates, "겹치는 파일 이름");
         }
+
+        // 파일 이름이 진행 기록 키 규칙(공백 · 제어 문자 없음)을 통과한다 — 아니면 클리어 때 RecordClear가 예외를 던져 기록이 남지 않는다
+        [Test]
+        public void FileNames_AreValidRecordKeys()
+        {
+            var progress = new Progress();
+            string[] invalid = TestStages.GameStageFiles().Select(Path.GetFileNameWithoutExtension)
+                .Where(name => { try { progress.RecordClear(name, 1); return false; } catch (ArgumentException) { return true; } })
+                .ToArray();
+
+            CollectionAssert.IsEmpty(invalid, "진행 기록 키로 쓸 수 없는 파일 이름");
+        }
     }
 }

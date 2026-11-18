@@ -1,3 +1,4 @@
+using System.Globalization;
 using NUnit.Framework;
 
 namespace ColoringBoot.Core.Tests
@@ -34,6 +35,28 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(4, read.MinMoves);
             Assert.AreEqual(new HexCoord(-3, 2), read.Cells[0].Coord);
             Assert.AreEqual(PaintColor.Black, read.Cells[0].Target);
+        }
+
+        // 음수 부호가 '-'가 아닌 문화권(U+2212)에서 써도 숫자는 Invariant — Stage.Parse가 다시 읽는다
+        [Test]
+        public void ToJson_IgnoresCurrentCultureNegativeSign()
+        {
+            var stage = new Stage("t", new[] { new StageCell(new HexCoord(-3, -2), PaintColor.Red, PaintColor.Red) }, null, null);
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            culture.NumberFormat.NegativeSign = ((char)0x2212).ToString();
+            CultureInfo previous = CultureInfo.CurrentCulture;
+            string json;
+            try
+            {
+                CultureInfo.CurrentCulture = culture;
+                json = StageWriter.ToJson(stage);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
+
+            Assert.AreEqual(new HexCoord(-3, -2), Stage.Parse(json).Cells[0].Coord);
         }
     }
 }
