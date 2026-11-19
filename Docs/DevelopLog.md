@@ -9,6 +9,27 @@
 
 ---
 
+### 📅 [2026-11-20] 솔버 리뷰 후속의 코드 리뷰 반영 — 테스트 단정 보강 · 무한 모드 묶음 읽기 한 곳 · 주석 정리 (Inline Plan)
+
+**작업 내용** (`/code-review` — 대상 `origin/main...HEAD` 7커밋, 읽기만 한 리뷰. 지적 6건 · 정확성 버그 없음. 결정은 `DECISIONS.md` 2026-11-20)
+- 지적 1 — `SolverTests.Search_AnyBudget_MatchesSolve_GameStageAlongSolution`: `Solver.Solve` 결과에 `Assert.IsTrue(Solved, "풀림")`을 먼저 두고, 풀이를 따라가는 `board.Brush`를 `Assert.IsTrue`로 감쌌다(전: 풀리지 않으면 `Path`가 null이라 NullReferenceException · `Brush` 반환값을 안 봄). "풀이 1수 이하인 판은 검증 0건"은 그대로 둠(중간 상태만 보는 테스트 — 시작 상태는 `…_GameStage`가 본다).
+- 지적 2 — `TestStages.ReadEndlessPool(tier)`(새 함수 — 빈 줄을 뺀 줄 배열)를 `SolverTests.…_EndlessPool` · `EndlessTests.Pools_HaveNoNearDuplicates` · `Pool_PuzzlesSolveInRange` 세 곳이 함께 쓴다. `…_EndlessPool`에 `Assert.Greater(lines.Length, 0, "퍼즐이 있음")`을 더하고 빈 줄 `continue`를 지웠다. 안 쓰게 된 `using`(`SolverTests`의 `System.IO` · `EndlessTests`의 `System.IO` · `UnityEngine`)을 지웠다. 세 파일 모두 300줄 · 빈 줄 0이라 표본(난이도마다 100판)은 그대로다.
+- 지적 3 — `…_PumpkinDeadEnd`의 마지막 단정에 `Assert.IsFalse(Limited, "끝까지 탐색함(상한에 걸린 것이 아님)")`을 더했다. 같은 약점이 있던 `…_UnsolvableDeadAndSolved`의 "조용한 막다른 길"(포도)에도 같은 단정을 더했다(리뷰 지적 밖 — 사용자 승인).
+- 지적 5 — `PuzzleController.HintLimit` · `HintFrameMs` 주석에서 측정 이력(날짜별 ms · 재는 방법 차이)을 빼고 값의 근거와 문서 위치(`DECISIONS` 2026-11-17 · 2026-11-19)만 남겼다. 코드 변화 없음. 지운 수치(1,287 · 1,099~1,148 · 896~930 · 942~1,017 · 656~714 · 1,184 · 947 · 1,179 · 704 · 1,004 ms · 프레임 간격 최대 51 ms)가 이 문서 · `DECISIONS.md`에 있음을 대조한 뒤 지웠다.
+- 지적 6 — `SolverSearch` 머리 주석: "Solver.Solve와 같은 순서로 탐색해 같은 결과를 낸다" → 탐색은 여기 한 곳이고(`Solve`는 이 클래스를 끝까지 돌린다) 순서의 기준은 `Assets/Tests/EditMode/ReferenceSolver.cs`라고 고침. 코드 변화 없음.
+- 지적 4(`Expand`가 그은 줄의 칸만 막힘 판정 · 복구) — 하지 않음(`DECISIONS.md` 2026-11-20 — `Board` API 변경 · 이득을 재지 않음 · 플레이어에게 보이는 문제 없음).
+- 런타임 동작이 바뀌지 않아 WebGL 빌드 · 배포 · 폰트 빌더는 하지 않았다(바뀐 런타임 파일 두 개는 주석만).
+
+**확인**
+- 코드 · 테스트: 컴파일 에러 0 · `SolverTests` 166/166 · EditMode 전체 **496/496**(테스트 수 그대로 · CLI `run_tests` 응답의 Duration 27.1초 — 2026-11-19 기록 44.1초와 재는 조건이 같은지 확인하지 않아 견주지 않는다).
+- 새 단정이 잡는지: `…_PumpkinDeadEnd` 마지막 `Solve`의 상한을 잠깐 100으로 바꾸니 "막다른 길"(`Solved == false`)은 통과하고 새 `Limited` 단정에서 실패 — 예전 단정만으로는 상한에 걸린 경우를 못 잡았다. 되돌린 뒤 전체 통과.
+- 확인 못 한 것: 지적 1의 "풀리지 않는 판"· 지적 2의 "빈 파일" 경우는 실제로 만들어 보지 않았다(단정을 더했을 뿐). 지적 4의 이득 크기는 재지 않았다.
+
+**해결된 이슈**
+- "막다른 길" 테스트 두 곳이 상한에 걸려 못 푼 경우에도 통과하던 것.
+- 무한 모드 묶음 읽기 코드가 세 번 복사돼 있고, `SolverTests` 쪽만 빈 파일 · 빈 줄에서 조용히 통과하던 것.
+- 상수 주석 두 줄에 측정 이력이 쌓여 문서와 네 곳을 맞춰야 하던 것 · `SolverSearch` 머리 주석의 순환 참조.
+
 ### 📅 [2026-11-19] 솔버 리뷰 후속 — 참조 탐색으로 회귀 보호 · 층 목록 맞바꾸기 · 막힌 후보는 사전을 보지 않기 (Full Plan · WebGL −30%)
 
 **작업 내용** (계획 `Docs/plans/2026-11-19-solver-review-followup.md` 0 · 1 · 2 · 4단계 — 3단계는 하지 않음. 결정은 `DECISIONS.md` 2026-11-19 "솔버 리뷰 후속")

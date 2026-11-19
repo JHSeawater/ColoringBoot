@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace ColoringBoot.Core
 {
-    // 이어서 돌릴 수 있는 너비 우선 탐색 (2026-11-17) — Solver.Solve와 같은 순서로 탐색해 같은 결과를 낸다.
+    // 이어서 돌릴 수 있는 너비 우선 탐색 (2026-11-17) — 탐색은 여기 한 곳이다(Solver.Solve는 이 클래스를 끝까지 돌린다).
+    // 탐색 순서의 기준은 테스트의 참조 탐색(Assets/Tests/EditMode/ReferenceSolver.cs) — 순서가 바뀌면 SolverTests가 실패한다.
     // 런타임(힌트)은 Step을 프레임마다 조금씩 불러 화면이 멈추지 않게 한다(CLAUDE.md §6). start 배열은 바꾸지 않는다
     public sealed class SolverSearch
     {

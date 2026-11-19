@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace ColoringBoot.Core.Tests
 {
@@ -119,7 +117,7 @@ namespace ColoringBoot.Core.Tests
             var found = new List<string>();
             foreach (string tier in new[] { "Easy", "Normal", "Hard" })
             {
-                string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, "Data/Endless", tier + ".txt")).Where(l => l.Length > 0).ToArray();
+                string[] lines = TestStages.ReadEndlessPool(tier);
                 for (int i = 0; i < lines.Length; i++)
                 {
                     Stage stage = Stage.Parse(lines[i]);
@@ -143,7 +141,7 @@ namespace ColoringBoot.Core.Tests
         [TestCase("Hard", 6, 8)]
         public void Pool_PuzzlesSolveInRange(string tier, int minMoves, int maxMoves)
         {
-            string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, "Data/Endless", tier + ".txt")).Where(l => l.Length > 0).ToArray();
+            string[] lines = TestStages.ReadEndlessPool(tier);
             Assert.Greater(lines.Length, 0, "퍼즐이 있음");
             Assert.AreEqual(lines.Length, lines.Distinct().Count(), "같은 퍼즐 없음");
             foreach (string line in lines)

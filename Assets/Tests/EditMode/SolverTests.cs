@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using NUnit.Framework;
 
 namespace ColoringBoot.Core.Tests
@@ -135,10 +134,12 @@ namespace ColoringBoot.Core.Tests
         {
             var board = new Board(TestStages.ReadGameStage(file));
             PaintColor[] state = board.CreateStartState();
-            IReadOnlyList<BoardMove> path = Solver.Solve(board, state).Path;
+            SolveResult solved = Solver.Solve(board, state);
+            Assert.IsTrue(solved.Solved, "풀림");
+            IReadOnlyList<BoardMove> path = solved.Path;
             for (int i = 0; i < path.Count - 1; i++)
             {
-                board.Brush(state, path[i].Cell, path[i].Direction);
+                Assert.IsTrue(board.Brush(state, path[i].Cell, path[i].Direction), $"{i + 1}번째 획");
                 AssertSearchMatchesSolve(board, state, Solver.DefaultLimit);
             }
         }
@@ -150,12 +151,11 @@ namespace ColoringBoot.Core.Tests
         [TestCase("Hard")]
         public void Search_AnyBudget_MatchesSolve_EndlessPool(string tier)
         {
-            string[] lines = File.ReadAllLines(Path.Combine(TestStages.DataPath, "Endless", tier + ".txt"));
+            string[] lines = TestStages.ReadEndlessPool(tier);
+            Assert.Greater(lines.Length, 0, "퍼즐이 있음");
             for (int i = 0; i < lines.Length; i += 3)
             {
-                string line = lines[i];
-                if (line.Length == 0) continue;
-                var board = new Board(Stage.Parse(line));
+                var board = new Board(Stage.Parse(lines[i]));
                 AssertSearchMatchesSolve(board, board.CreateStartState(), Solver.DefaultLimit);
             }
         }
@@ -181,7 +181,9 @@ namespace ColoringBoot.Core.Tests
                 if (done == strokes.Length) break;
                 Assert.IsTrue(board.Brush(state, board.IndexOf(strokes[done].Item1), strokes[done].Item2), $"{done + 1}번째 획");
             }
-            Assert.IsFalse(Solver.Solve(board, state, HintSearch.RuntimeLimit).Solved, "막다른 길");
+            SolveResult deadEnd = Solver.Solve(board, state, HintSearch.RuntimeLimit);
+            Assert.IsFalse(deadEnd.Solved, "막다른 길");
+            Assert.IsFalse(deadEnd.Limited, "끝까지 탐색함(상한에 걸린 것이 아님)");
         }
 
         [TestCase("Grape")]
@@ -217,7 +219,9 @@ namespace ColoringBoot.Core.Tests
             var board = new Board(Stage.Parse(TestStages.Grape));
             PaintColor[] state = board.CreateStartState();
             Assert.IsTrue(board.Brush(state, board.IndexOf(new HexCoord(3, 3)), HexDirection.Clock9));
-            Assert.IsFalse(Solver.Solve(board, state).Solved, "조용한 막다른 길");
+            SolveResult quiet = Solver.Solve(board, state);
+            Assert.IsFalse(quiet.Solved, "조용한 막다른 길");
+            Assert.IsFalse(quiet.Limited, "끝까지 탐색함(상한에 걸린 것이 아님)");
             AssertSearchMatchesSolve(board, state, Solver.DefaultLimit);
 
             Assert.IsTrue(board.Brush(state, board.IndexOf(new HexCoord(1, 3)), HexDirection.Clock1));

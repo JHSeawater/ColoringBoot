@@ -30,5 +30,9 @@ namespace ColoringBoot.Core.Tests
                 .OrderBy(path => path, StringComparer.Ordinal);
 
         public static Stage ReadGameStage(string file) => Stage.Parse(File.ReadAllText(Path.Combine(DataPath, file)));
+
+        // 무한 모드 묶음(Assets/Data/Endless/<난이도>.txt — 한 줄에 스테이지 코드 하나)의 줄들. 빈 줄은 뺀다
+        public static string[] ReadEndlessPool(string tier) =>
+            File.ReadAllLines(Path.Combine(DataPath, "Endless", tier + ".txt")).Where(line => line.Length > 0).ToArray();
     }
 }
