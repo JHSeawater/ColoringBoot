@@ -31,8 +31,8 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _guideLabel;
         [SerializeField] private SoundController _sound;
 
-        private const int HintLimit = HintSearch.RuntimeLimit;   // 20만. 힌트 탐색 상한(상태 하나당) — 한 번 탐색은 최악 3.6만 상태(챕터 4 호박). 되돌리기 안내는 단계마다 다시 탐색해 합계 13만 상태 · 한 번에 돌면 PC WebGL 1,287 ms라(2026-11-17 실측, DevelopLog) 프레임마다 HintFrameMs씩 나눠 돈다
-        private const long HintFrameMs = 40;      // 힌트 탐색이 한 프레임에 쓰는 시간 — 탐색 중에는 20프레임 남짓으로 그린다. PC WebGL 실측(챕터 4 호박 막다른 길): 프레임 간격 최대 51 ms · 누른 뒤 결과까지 약 1.2초(DECISIONS 2026-11-17 — 처음 값 25 ms에서 바꿈)
+        private const int HintLimit = HintSearch.RuntimeLimit;   // 20만. 힌트 탐색 상한(상태 하나당) — 한 번 탐색은 최악 3.6만 상태(챕터 4 호박). 되돌리기 안내는 단계마다 다시 탐색해 합계 13만 상태 · 한 번에 돌면 PC WebGL 1,287 ms라(2026-11-17 실측, DevelopLog — 2026-11-19 솔버 할당을 줄인 뒤 계산 약 900 ms) 프레임마다 HintFrameMs씩 나눠 돈다
+        private const long HintFrameMs = 40;      // 힌트 탐색이 한 프레임에 쓰는 시간 — 탐색 중에는 20프레임 남짓으로 그린다. PC WebGL 실측(챕터 4 호박 막다른 길): 프레임 간격 최대 51 ms · 누른 뒤 결과까지 약 1.2초(DECISIONS 2026-11-17 — 처음 값 25 ms에서 바꿈) → 솔버 할당을 줄인 뒤 약 0.95초(2026-11-19)
         private const int HintStepStates = 64;    // 상태를 이만큼 펼칠 때마다 시계를 본다
         private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
         private const string HintSearching = "힌트를 찾고 있어요";

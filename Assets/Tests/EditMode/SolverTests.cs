@@ -85,11 +85,14 @@ namespace ColoringBoot.Core.Tests
         // 끝까지 한 번에 돌리는 Solver.Solve와 같은 결과다: 경로의 모든 획 · Explored · Limited · DeadAtStart.
         // (Solve의 옛 본문을 지우기 전에는 이 테스트로 옛 탐색과 새 탐색이 같음을 확인했다 — 지금은 Solve도 SolverSearch를 쓴다.
         // Solve가 예산 int.MaxValue로 도는 것이라 그 예산은 여기서 다시 보지 않는다)
+        // 탐색은 start 배열을 바꾸지 않는다(2026-11-19) — 힌트는 세션이 화면에 쓰는 배열을 그대로 넘긴다(PuzzleSession.StartHint)
         private static readonly int[] Budgets = { 1, 997 };
 
         private static void AssertSearchMatchesSolve(Board board, PaintColor[] start, int limit)
         {
+            var before = (PaintColor[])start.Clone();
             SolveResult expected = Solver.Solve(board, start, limit);
+            CollectionAssert.AreEqual(before, start, "Solve 뒤 start 배열");
             foreach (int budget in Budgets)
             {
                 var search = new SolverSearch(board, start, limit);
@@ -97,6 +100,7 @@ namespace ColoringBoot.Core.Tests
                 if (!done) Assert.IsNull(search.Result, "끝나기 전에는 결과 없음");
                 while (!done) done = search.Step(budget);
                 SolveResult actual = search.Result;
+                CollectionAssert.AreEqual(before, start, $"예산 {budget}: 탐색 뒤 start 배열");
 
                 Assert.AreEqual(expected.Solved, actual.Solved, $"예산 {budget}: 풀림");
                 Assert.AreEqual(expected.Explored, actual.Explored, $"예산 {budget}: 탐색 상태 수");

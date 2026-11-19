@@ -11,10 +11,11 @@ namespace ColoringBoot.Core
         private readonly int _limit;
         private readonly IReadOnlyList<BoardMove> _moves;
         private readonly Solver.StateKey _startKey;
+        // 발견한 상태 → (부모, 획). 방문 여부도 이것 하나로 본다 — 시작 상태는 자기 자신을 부모로 넣어 둔다(PathTo는 시작 키에서 멈춰 읽지 않는다)
         private readonly Dictionary<Solver.StateKey, (Solver.StateKey from, int move)> _previous;
-        private readonly HashSet<Solver.StateKey> _seen;
         private List<PaintColor[]> _frontier;   // 지금 펼치는 층
         private List<PaintColor[]> _next;       // 다음 층
+        private PaintColor[] _scratch;          // Expand의 작업 배열 — 후보를 받아들이면 그 배열은 다음 층으로 가고 새로 만든다
         private int _index;                     // _frontier에서 다음에 펼칠 칸
         private int _explored = 1;
 
@@ -36,10 +37,10 @@ namespace ColoringBoot.Core
             _limit = limit;
             _moves = board.Moves;
             _startKey = Solver.StateKey.Of(start);
-            _previous = new Dictionary<Solver.StateKey, (Solver.StateKey from, int move)>();
-            _seen = new HashSet<Solver.StateKey> { _startKey };
+            _previous = new Dictionary<Solver.StateKey, (Solver.StateKey from, int move)> { [_startKey] = (_startKey, -1) };
             _frontier = new List<PaintColor[]> { start };
             _next = new List<PaintColor[]>();
+            _scratch = new PaintColor[start.Length];
         }
 
         // 탐색 결과 — 끝나기 전에는 null
@@ -68,16 +69,22 @@ namespace ColoringBoot.Core
             return Result != null;
         }
 
+        // 획마다 배열을 새로 만들지 않고 작업 배열 하나에 칠한다(2026-11-19) — state(첫 층은 호출 쪽의 start)에는 칠하지 않는다.
+        // 전제: Board.Brush가 false면 배열은 그대로다(Board.Sweep은 색이 바뀔 때만 칸에 쓴다) → 그 획 뒤에는 되돌릴 것이 없다
         private void Expand(PaintColor[] state)
         {
             Solver.StateKey key = Solver.StateKey.Of(state);
+            PaintColor[] candidate = _scratch;
+            Array.Copy(state, candidate, state.Length);
             for (int m = 0; m < _moves.Count; m++)
             {
-                var candidate = (PaintColor[])state.Clone();
                 if (!_board.Brush(candidate, _moves[m].Cell, _moves[m].Direction)) continue;
                 Solver.StateKey candidateKey = Solver.StateKey.Of(candidate);
-                if (_seen.Contains(candidateKey) || _board.IsDead(candidate)) continue;
-                _seen.Add(candidateKey);
+                if (_previous.ContainsKey(candidateKey) || _board.IsDead(candidate))
+                {
+                    Array.Copy(state, candidate, state.Length);   // 버리는 후보 — 다음 획을 위해 되돌린다
+                    continue;
+                }
                 _previous[candidateKey] = (key, m);
                 _explored++;
                 if (_board.IsSolved(candidate))
@@ -90,7 +97,8 @@ namespace ColoringBoot.Core
                     Result = new SolveResult(null, _explored, true, false);
                     return;
                 }
-                _next.Add(candidate);
+                _next.Add(candidate);   // 받아들인 상태만 새 배열이 된다
+                candidate = _scratch = (PaintColor[])state.Clone();
             }
         }
     }

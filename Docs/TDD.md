@@ -11,7 +11,7 @@
 
 | 위치 | 내용 |
 |---|---|
-| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`). `Rules/`(좌표 · 색 · 보드 · 붓질 · 판정 · 세션) · `Stages/`(스테이지 코드 읽기 · 쓰기) · `Solver/`(솔버 — 탐색은 이어서 돌릴 수 있는 `SolverSearch` 한 곳이고 `Solver.Solve`는 그것을 끝까지 돌린다, 힌트 절차 `HintSearch`(2026-11-17) · 생성기 · 난이도 지표 `StageMetrics` · 그림 맵 시작 칸 찾기 `SeedSearch`) · `Records/`(진행 · 플레이 기록) |
+| `Assets/Scripts/Core/` | `ColoringBoot.Core` — 순수 로직(`noEngineReferences: true`). `Rules/`(좌표 · 색 · 보드 · 붓질 · 판정 · 세션) · `Stages/`(스테이지 코드 읽기 · 쓰기) · `Solver/`(솔버 — 탐색은 이어서 돌릴 수 있는 `SolverSearch` 한 곳이고 `Solver.Solve`는 그것을 끝까지 돌린다. 펼칠 때 작업 배열 하나에 칠해 받아들인 상태만 새 배열이 되고, 방문 여부는 부모 사전 하나로 본다 — 막힌 상태는 기억하지 않는다(2026-11-19, `DECISIONS.md`), 힌트 절차 `HintSearch`(2026-11-17) · 생성기 · 난이도 지표 `StageMetrics` · 그림 맵 시작 칸 찾기 `SeedSearch`) · `Records/`(진행 · 플레이 기록) |
 | `Assets/Scripts/Game/` | `ColoringBoot.Game` — 표현 계층. `Board/`(한 판 — `PuzzleController` · `BoardView` · 칸 · 조합표) · `Screens/`(`GameFlow` · 화면 · 패널 · 전환) · `Data/`(ScriptableObject 타입) · `Platform/`(저장 · 광고 · 소리 · 주소 — 앱인토스 연동 때 바꿀 곳). `BoardView`는 partial 파일 4개: `BoardView.cs`(필드 · 칸 만들기 · 그리기 · 배치 · 선택 — 필드는 모두 여기) · `.Input`(끌기 · 탭 · 키보드) · `.Preview`(미리보기) · `.Motion`(연출) |
 | `Assets/Scripts/LevelEditor/` | `ColoringBoot.LevelEditor` — `defineConstraints: UNITY_EDITOR`(빌드에 안 들어가고 씬에는 붙음) + `Assets/Scenes/LevelEditor.unity`(빌드 목록 제외, 플레이해서 쓴다 · 조작 패널은 IMGUI) |
 | `Assets/Tests/EditMode/` | `ColoringBoot.Core.Tests` — Core와 `ColoringBoot.Game`을 참조(Game은 2026-11-19 — `SaveDataTests`가 `SaveData`를 직접 부름, 어셈블리 이름은 그대로). 프로토타입 스테이지 회귀 기준은 게임 데이터와 분리한 사본 `PrototypeStages/`(고치지 않는다) |
