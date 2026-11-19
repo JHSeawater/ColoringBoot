@@ -59,13 +59,18 @@ namespace ColoringBoot.Core.Tests
             CollectionAssert.AreEqual(new[] { R, R, P, P }, BrushRow(new[] { R, E, B, E }, HexDirection.Clock3));
         }
 
-        // 색이 하나도 바뀌지 않으면 false — 같은 색만 지날 때 · 빈 줄 · 1칸짜리 줄
+        // 색이 하나도 바뀌지 않으면 false이고 배열도 그대로다 — 같은 색만 지날 때 · 빈 줄 · 1칸짜리 줄 · 붓은 섞이지만(파랑 → 보라) 칸은 이미 그 색인 줄.
+        // "false면 배열이 그대로"는 SolverSearch.Expand의 전제다(false인 획 뒤에는 작업 배열을 되돌리지 않는다, 2026-11-19)
         [Test]
         public void Brush_WithoutColorChange_ReturnsFalse()
         {
-            Assert.IsFalse(Changes(HexDirection.Clock3, R, R));
-            Assert.IsFalse(Changes(HexDirection.Clock3, E, E));
-            Assert.IsFalse(Changes(HexDirection.Clock3, R));
+            foreach (PaintColor[] start in new[] { new[] { R, R }, new[] { E, E }, new[] { R }, new[] { B, P, P } })
+            {
+                Board board = MakeRow(start);
+                PaintColor[] state = board.CreateStartState();
+                Assert.IsFalse(board.Brush(state, 0, HexDirection.Clock3), string.Join(" ", start));
+                CollectionAssert.AreEqual(start, state, string.Join(" ", start));
+            }
             Assert.IsTrue(Changes(HexDirection.Clock3, R, E));
         }
 

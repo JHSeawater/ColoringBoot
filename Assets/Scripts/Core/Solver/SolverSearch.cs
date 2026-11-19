@@ -54,9 +54,9 @@ namespace ColoringBoot.Core
             {
                 if (_index == _frontier.Count)
                 {
-                    // 한 층을 다 펼쳤다 — 다음 층이 비었으면 풀이가 없다
-                    _frontier = _next;
-                    _next = new List<PaintColor[]>();
+                    // 한 층을 다 펼쳤다 — 두 목록을 맞바꿔 다 쓴 목록을 다음 층으로 다시 쓴다(2026-11-19). 다음 층이 비었으면 풀이가 없다
+                    (_frontier, _next) = (_next, _frontier);
+                    _next.Clear();
                     _index = 0;
                     if (_frontier.Count == 0)
                     {
@@ -79,17 +79,16 @@ namespace ColoringBoot.Core
             for (int m = 0; m < _moves.Count; m++)
             {
                 if (!_board.Brush(candidate, _moves[m].Cell, _moves[m].Direction)) continue;
-                Solver.StateKey candidateKey = Solver.StateKey.Of(candidate);
-                if (_previous.ContainsKey(candidateKey) || _board.IsDead(candidate))
+                // 막힌 후보는 _previous에 들어간 적이 없다 → 막힘을 먼저 보고, 막히지 않은 후보만 키를 만들어 조회 한 번(TryAdd)으로 방문 확인과 기록을 함께 한다(2026-11-19)
+                if (_board.IsDead(candidate) || !_previous.TryAdd(Solver.StateKey.Of(candidate), (key, m)))
                 {
                     Array.Copy(state, candidate, state.Length);   // 버리는 후보 — 다음 획을 위해 되돌린다
                     continue;
                 }
-                _previous[candidateKey] = (key, m);
                 _explored++;
                 if (_board.IsSolved(candidate))
                 {
-                    Result = new SolveResult(Solver.PathTo(candidateKey, _startKey, _previous, _moves), _explored, false, false);
+                    Result = new SolveResult(Solver.PathTo(Solver.StateKey.Of(candidate), _startKey, _previous, _moves), _explored, false, false);
                     return;
                 }
                 if (_explored > _limit)
