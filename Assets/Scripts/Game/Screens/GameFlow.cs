@@ -22,7 +22,7 @@ namespace ColoringBoot.Game
         private const string NextText = "다음";
         private const string NextChapterText = "다음 챕터";
         private const string ListText = "목록";
-        private const string CompleteText = "그림 완성!";
+        private const string CompleteText = "그림 완성!";   // 부제가 빈 챕터만 — 완성 문구는 챕터 부제(2026-11-20 사용자)
         private const int AndroidFrameRate = 60;     // 모바일 기본 30fps면 끌기가 끊겨 보인다. 120은 배터리 · 발열 부담 대비 얻는 것이 적다(2026-11-10)
         // 무한 모드 난이도(2026-10-07): 기록의 키(EndlessProgress · 퍼즐 id "Endless{키}{번호}") · 화면 이름 — _endlessPools와 같은 순서
         private static readonly string[] EndlessKeys = { "Easy", "Normal", "Hard" };
@@ -330,7 +330,8 @@ namespace ColoringBoot.Game
         // 본편 첫 클리어인데 아직 칠하지 않았다(띠 위 카드 · 목록의 작은 그림 · 큰 그림 화면 중 한 곳에서 한 번만 칠한다)
         private bool PaintPending => !_lab && _current >= 0 && _puzzle.FirstClear && !_paintShown;
 
-        private string PaintCaption(int total) => $"색칠 {_data.Progress.ClearedCount(_stages)} / {total}";
+        // 진행 문구 = 챕터 부제 + 칠한 수(2026-11-20 사용자 — "색칠"을 빼고 부제로). 부제가 비면 숫자만
+        private string PaintCaption(int total) => $"{CurrentChapter.Subtitle} {_data.Progress.ClearedCount(_stages)} / {total}".TrimStart();
 
 
         // 클리어 띠의 "다음" — 챕터를 막 완성했으면 그림 화면에서 완성 연출 뒤, 아니면 바로 다음 스테이지(마지막이면 목록)
@@ -367,7 +368,8 @@ namespace ColoringBoot.Game
             bool[] painted = UpdatePainted();
             bool complete = _data.Progress.IsComplete(_stages);
             _toNextChapter = complete && _chapterIndex + 1 < _chapterList.Length;
-            _chapterCaption.text = complete ? CompleteText : PaintCaption(painted.Length);
+            _chapterCaption.text = !complete ? PaintCaption(painted.Length)
+                : string.IsNullOrEmpty(CurrentChapter.Subtitle) ? CompleteText : CurrentChapter.Subtitle;
             _chapterNextLabel.text = _toNextChapter ? NextChapterText : step + 1 < _stages.Length ? NextText : ListText;
             _chapterPicture.Show(CurrentChapter.Art, painted, step, complete);
         }
