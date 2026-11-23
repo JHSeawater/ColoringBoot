@@ -103,7 +103,7 @@ namespace ColoringBoot.Game
                 bool isCleared = _data.Progress.IsCleared(stage);
                 if (isCleared) cleared++;
                 Color fill = !unlocked ? _lockedFill : isCleared ? _clearedFills[i] : _openFill;
-                _buttons[i].Set(i + 1, unlocked, _data.Progress.IsPerfect(stage, _minMoves[i]), i == next, isCleared, fill, isCleared ? _clearedText : _openText);
+                _buttons[i].Set(i + 1, unlocked, _data.Progress.IsPerfect(stage, _minMoves[i]), i == next, fill, isCleared ? _clearedText : _openText);
             }
             _title.text = _chapterLocked ? $"{_listName} · {ChapterLockedTitle}" : $"{_listName} · {cleared} / {_stages.Count}";
         }

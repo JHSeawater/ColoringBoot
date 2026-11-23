@@ -270,6 +270,7 @@ public static class BoardSceneBuilder
         clearLabel.enableAutoSizing = true;
         clearLabel.fontSizeMin = 32f;
         clearLabel.fontSizeMax = 52f;
+        Outlined(clearLabel, T.Star);   // 띠 문구는 진갈색 띠 위라 노란 글자 + 외곽선(2026-11-23)
         Button nextButton = BannerButton(clearBanner, "NextButton", "다음", Strong);
         GameObject paintCard = PaintCard(clearBanner, out ChapterView paintPicture, out TMP_Text paintProgress);
         GameObject stuckBanner = Banner(boardScreen, "StuckBanner", Warn, "목표에 없는 색이 섞였어요", 300f);
@@ -424,7 +425,15 @@ public static class BoardSceneBuilder
             fill.raycastTarget = false;
             AddImage("Outline", chip, "HexLine", Lead, 0f, 1f);
         }
-        CenterText(screen, "Title", -820f, 200f, 160f, Strong).text = "컬러링붓";
+        TMP_Text gameTitle = CenterText(screen, "Title", -820f, 200f, 160f, Strong);
+        Outlined(gameTitle, StrongInk);
+        // 제목 글자마다 기본색(2026-11-23 사용자): 컬 빨강 · 러 노랑 · 링 파랑(위 세 칸과 같은 차례) · 붓 초록(섞인 색). 외곽선은 진갈색 그대로
+        var titleColors = new[] { ColoringBoot.Core.PaintColor.Red, ColoringBoot.Core.PaintColor.Yellow, ColoringBoot.Core.PaintColor.Blue, ColoringBoot.Core.PaintColor.Green };
+        const string titleText = "컬러링붓";
+        var titleBuilder = new System.Text.StringBuilder();
+        for (int i = 0; i < titleText.Length; i++)
+            titleBuilder.Append($"<color=#{ColorUtility.ToHtmlStringRGB(palette.Get(titleColors[i]))}>{titleText[i]}</color>");
+        gameTitle.text = titleBuilder.ToString();
         // 동글은 받침이 기준선 아래로 내려가 -960이면 제목의 받침과 겹쳤다(2026-11-23)
         CenterText(screen, "Subtitle", -1010f, 70f, 48f, Muted).text = "붓으로 칠하는 육각 퍼즐";
         // [시작]은 무한 모드 버튼이 있든 없든 늘 위 자리 (2026-11-14 사용자 결정 — 읽는 순서대로 시작이 먼저, 버튼이 생겨도 자리가 바뀌지 않게)
@@ -549,6 +558,7 @@ public static class BoardSceneBuilder
         Stretch(screen, Vector2.zero, Vector2.zero);
         Fade(screen);
         TMP_Text title = TopLeftText(screen, "Title", -40f, 90f, 64f, Strong);
+        Outlined(title, StrongInk);
         optionsButton = TopButton(screen, "OptionsButton", "옵션", true);
         TMP_Text subtitle = TopLeftText(screen, "Subtitle", -125f, 60f, 40f, Muted);
         // 본문(2026-11-11): 위 -210부터 잠김 안내 띠 위까지. 격자는 줄 수만큼, 작은 그림은 남는 높이만큼(최대 480 × 600) —
@@ -621,32 +631,38 @@ public static class BoardSceneBuilder
         starRect.anchorMax = new Vector2(0.61f, 0.34f);
         AddImage("Fill", star.gameObject, "Star", T.Star, 0.14f, 0.86f);
         var buttonView = template.AddComponent<StageButtonView>();
-        SetRefs(buttonView, ("_button", button), ("_fill", fill), ("_ring", ring), ("_number", number), ("_lock", lockIcon), ("_star", star),
-            ("_clearedNumberMaterial", OutlinedNumberMaterial(number)));
+        SetRefs(buttonView, ("_button", button), ("_fill", fill), ("_ring", ring), ("_number", number), ("_lock", lockIcon), ("_star", star));
+        Outlined(number, StrongInk);
         template.SetActive(false);
 
         var view = screen.AddComponent<StageSelectView>();
         SetRefs(view, ("_title", title), ("_subtitle", subtitle), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText),
             ("_prevChapterButton", prevChapter), ("_nextChapterButton", nextChapter));
-        SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_openText", Strong), ("_clearedText", StrongInk));
+        SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_openText", StrongInk), ("_clearedText", StrongInk));
         screen.SetActive(false);
         return view;
     }
 
     private const float StageCell = 259f;   // 선택 화면 육각 버튼 칸(정사각형) 한 변
-    private const string OutlinedNumberPath = "Assets/Art/Fonts/Dongle SDF Stage Number.mat";
+    private const string OutlineMaterialPath = "Assets/Art/Fonts/Dongle SDF Outline.mat";
+    private static Material _outline;
 
-    // 깬 판 번호 재질 — 폰트 재질에 진갈색 외곽선. 폰트를 다시 만들면 아틀라스가 바뀌므로 씬을 만들 때마다 새로 만든다
-    private static Material OutlinedNumberMaterial(TMP_Text text)
+    // 테두리 글자(2026-11-23 사용자 — 타이틀 · 목록 제목 · 육각 번호 · 클리어 띠 문구): 글자 색 + 진갈색 외곽선 재질.
+    // 재질은 폰트 재질로 빌드마다 한 번 새로 만든다 — 폰트를 다시 만들면 아틀라스가 바뀌기 때문(그래서 FontBuilder 뒤에 BuildScene)
+    private static void Outlined(TMP_Text text, Color color)
     {
-        var material = new Material(text.font.material) { name = "Dongle SDF Stage Number" };
-        material.EnableKeyword("OUTLINE_ON");
-        material.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.3f);
-        material.SetColor(ShaderUtilities.ID_OutlineColor, Lead);
-        material.SetFloat(ShaderUtilities.ID_FaceDilate, 0.1f);
-        AssetDatabase.DeleteAsset(OutlinedNumberPath);
-        AssetDatabase.CreateAsset(material, OutlinedNumberPath);
-        return material;
+        if (_outline == null)
+        {
+            _outline = new Material(text.font.material) { name = "Dongle SDF Outline" };
+            _outline.EnableKeyword("OUTLINE_ON");
+            _outline.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.25f);
+            _outline.SetColor(ShaderUtilities.ID_OutlineColor, Lead);
+            _outline.SetFloat(ShaderUtilities.ID_FaceDilate, 0.25f);   // 외곽선은 가장자리 안팎에 반씩 — 면을 키워야 "챕"처럼 획이 많은 글자의 안쪽이 남는다(0.1 · 0.3은 크림색이 거의 사라짐)
+            AssetDatabase.DeleteAsset(OutlineMaterialPath);
+            AssetDatabase.CreateAsset(_outline, OutlineMaterialPath);
+        }
+        text.fontSharedMaterial = _outline;
+        text.color = color;
     }
 
     // 챕터 넘기기 버튼 — 작은 그림 칸(PictureSlot) 세로 가운데 양옆, 외곽선 버튼 + 화살표(side -1 = 왼쪽, 화살표를 뒤집음)

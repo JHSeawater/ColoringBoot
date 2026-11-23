@@ -18,25 +18,21 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _number;
         [SerializeField] private Image _lock;
         [SerializeField] private Image _star;
-        [SerializeField] private Material _clearedNumberMaterial;   // 색 위 번호 — 크림색 글자에 진갈색 외곽선(빌더가 폰트 재질로 만든다)
 
         private RectTransform _rect;
-        private Material _numberMaterial;
 
         public Button Button => _button;
 
         private void Awake()
         {
             _rect = (RectTransform)transform;
-            _numberMaterial = _number.fontSharedMaterial;
         }
 
-        public void Set(int number, bool unlocked, bool perfect, bool next, bool cleared, Color fill, Color text)
+        public void Set(int number, bool unlocked, bool perfect, bool next, Color fill, Color text)
         {
             _fill.color = fill;
             _number.text = number.ToString();
             _number.color = text;
-            _number.fontSharedMaterial = cleared ? _clearedNumberMaterial : _numberMaterial;
             _number.gameObject.SetActive(unlocked);
             _lock.gameObject.SetActive(!unlocked);
             _star.gameObject.SetActive(perfect);

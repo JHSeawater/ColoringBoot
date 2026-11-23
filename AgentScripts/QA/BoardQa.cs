@@ -168,7 +168,8 @@ public static class BoardQa
             {
                 Transform b = grid.GetChild(i);
                 bool locked = b.Find("Lock").gameObject.activeSelf;
-                bool cleared = b.Find("Label").GetComponent<TMPro.TMP_Text>().color.r > 0.5f;   // 깬 판 번호는 크림색(바탕은 판마다 대표 색, 2026-11-23)
+                Color fill = b.GetComponent<Image>().color;
+                bool cleared = !locked && fill.r + fill.g + fill.b < 2.9f;   // 열린 판 바탕은 종이색(합 2.96) · 깬 판은 그 판 대표 색(가장 밝은 연노랑도 2.5, 2026-11-23)
                 return $"{(b.Find("Ring").gameObject.activeSelf ? ">" : "")}{(locked ? "L" : (i + 1).ToString())}{(cleared ? "#" : "")}{(b.Find("Star").gameObject.activeSelf ? "*" : "")}";
             });
             Transform notice = safe.Find("SelectScreen/Notice");
