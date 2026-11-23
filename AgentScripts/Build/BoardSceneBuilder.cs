@@ -542,7 +542,7 @@ public static class BoardSceneBuilder
         return view;
     }
 
-    // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 챕터 그림(작게) · 육각 번호 버튼 격자(4열) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
+    // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 챕터 그림(작게) · 육각 번호 버튼 벌집(4 · 3줄 번갈아, 2026-11-23) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
     private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton, out ChapterView picture, out Button endlessButton)
     {
         var screen = NewUI("SelectScreen", parent);
@@ -577,15 +577,13 @@ public static class BoardSceneBuilder
         Button prevChapter = ChapterArrow(pictureSlot, "PrevChapterButton", -1);
         Button nextChapter = ChapterArrow(pictureSlot, "NextChapterButton", 1);
 
+        // 벌집(2026-11-23 사용자 — 선택 화면 A안): 육각 너비 220 · 틈 16. 칸 = 육각을 담는 정사각형(스프라이트 반지름 0.98 → 220 / (0.98 × √3/2) ≈ 259),
+        // 줄 사이 = 육각 높이(0.98 × 259 ≈ 254)의 3/4 + 틈 × √3/2 ≈ 204. 넓은 줄 너비 259 + 3 × 236 = 967
         var grid = NewUI("Grid", body);
         var gridRect = (RectTransform)grid.transform;
-        gridRect.sizeDelta = new Vector2(940f, 0f);
-        var gridLayout = grid.AddComponent<GridLayoutGroup>();
-        gridLayout.cellSize = new Vector2(200f, 230f); // 꼭짓점이 위인 육각형 비율(너비 = 높이 × √3/2)
-        gridLayout.spacing = new Vector2(36f, 16f);
-        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        gridLayout.constraintCount = 4;
-        gridLayout.childAlignment = TextAnchor.UpperCenter;
+        gridRect.sizeDelta = new Vector2(980f, 0f);
+        var gridLayout = grid.AddComponent<HoneycombLayout>();
+        SetValues(gridLayout, ("_cell", StageCell), ("_columnStep", 236f), ("_rowStep", 204f), ("_wideRow", 4));
 
         var notice = NewUI("Notice", screen);
         var noticeRect = (RectTransform)notice.transform;
@@ -606,29 +604,49 @@ public static class BoardSceneBuilder
 
         // 버튼 원본: 육각 바탕 · 다음 스테이지 테두리 · 번호 · 자물쇠 · 별
         var template = NewUI("StageButtonTemplate", screen);
-        ((RectTransform)template.transform).sizeDelta = gridLayout.cellSize;
+        ((RectTransform)template.transform).sizeDelta = new Vector2(StageCell, StageCell);
         var fill = template.AddComponent<Image>();
         fill.sprite = Sprite("HexFill");
         Button button = template.AddComponent<Button>();
         button.targetGraphic = fill;
         AddImage("Outline", template, "HexLine", Lead, 0f, 1f);
-        Image ring = AddImage("Ring", template, "HexRing", T.Next, -0.05f, 1.05f);
+        // 다음 판 테두리는 육각 안쪽에 — 벌집에서 밖으로 나가면 이웃 버튼을 덮는다
+        Image ring = AddImage("Ring", template, "HexRing", T.Next, 0f, 1f);
         TMP_Text number = Label(template, "", 72f);
         Image lockIcon = AddImage("Lock", template, "Lock", Muted, 0.3f, 0.7f);
-        Image star = AddImage("Star", template, "Star", T.Star, 0.36f, 0.64f);
+        // 별: 진갈색 별 위에 조금 작은 노란 별 — 깬 판 색(노랑 · 주황)에서도 보이게(2026-11-23)
+        Image star = AddImage("Star", template, "Star", Lead, 0f, 1f);
         var starRect = star.rectTransform;
-        starRect.anchorMin = new Vector2(0.36f, 0.04f);
-        starRect.anchorMax = new Vector2(0.64f, 0.28f);
+        starRect.anchorMin = new Vector2(0.39f, 0.12f);
+        starRect.anchorMax = new Vector2(0.61f, 0.34f);
+        AddImage("Fill", star.gameObject, "Star", T.Star, 0.14f, 0.86f);
         var buttonView = template.AddComponent<StageButtonView>();
-        SetRefs(buttonView, ("_button", button), ("_fill", fill), ("_ring", ring), ("_number", number), ("_lock", lockIcon), ("_star", star));
+        SetRefs(buttonView, ("_button", button), ("_fill", fill), ("_ring", ring), ("_number", number), ("_lock", lockIcon), ("_star", star),
+            ("_clearedNumberMaterial", OutlinedNumberMaterial(number)));
         template.SetActive(false);
 
         var view = screen.AddComponent<StageSelectView>();
         SetRefs(view, ("_title", title), ("_subtitle", subtitle), ("_grid", gridRect), ("_buttonTemplate", buttonView), ("_noticePanel", notice), ("_notice", noticeText),
             ("_prevChapterButton", prevChapter), ("_nextChapterButton", nextChapter));
-        SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_clearedFill", Strong), ("_openText", Strong), ("_clearedText", StrongInk));
+        SetValues(view, ("_lockedFill", T.Locked), ("_openFill", T.Surface), ("_openText", Strong), ("_clearedText", StrongInk));
         screen.SetActive(false);
         return view;
+    }
+
+    private const float StageCell = 259f;   // 선택 화면 육각 버튼 칸(정사각형) 한 변
+    private const string OutlinedNumberPath = "Assets/Art/Fonts/Dongle SDF Stage Number.mat";
+
+    // 깬 판 번호 재질 — 폰트 재질에 진갈색 외곽선. 폰트를 다시 만들면 아틀라스가 바뀌므로 씬을 만들 때마다 새로 만든다
+    private static Material OutlinedNumberMaterial(TMP_Text text)
+    {
+        var material = new Material(text.font.material) { name = "Dongle SDF Stage Number" };
+        material.EnableKeyword("OUTLINE_ON");
+        material.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.3f);
+        material.SetColor(ShaderUtilities.ID_OutlineColor, Lead);
+        material.SetFloat(ShaderUtilities.ID_FaceDilate, 0.1f);
+        AssetDatabase.DeleteAsset(OutlinedNumberPath);
+        AssetDatabase.CreateAsset(material, OutlinedNumberPath);
+        return material;
     }
 
     // 챕터 넘기기 버튼 — 작은 그림 칸(PictureSlot) 세로 가운데 양옆, 외곽선 버튼 + 화살표(side -1 = 왼쪽, 화살표를 뒤집음)
@@ -785,6 +803,7 @@ public static class BoardSceneBuilder
             SerializedProperty property = so.FindProperty(field) ?? throw new System.ArgumentException($"{target.GetType().Name}에 필드 {field} 없음");
             if (value is bool b) property.boolValue = b;
             else if (value is Color c) property.colorValue = c;
+            else if (value is int i) property.intValue = i;
             else property.floatValue = (float)value;
         }
         so.ApplyModifiedPropertiesWithoutUndo();

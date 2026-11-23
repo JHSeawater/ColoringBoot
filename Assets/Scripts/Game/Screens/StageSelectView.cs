@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace ColoringBoot.Game
 {
-    // 스테이지 선택 화면 — 목록 순서대로 육각 번호 버튼(격자 배치는 _grid의 GridLayoutGroup), 차례 해금 · 클리어 · 완벽 표시 (GDD §5).
+    // 스테이지 선택 화면 — 목록 순서대로 육각 번호 버튼(벌집 배치는 _grid의 HoneycombLayout, 2026-11-23), 차례 해금 · 클리어(그 판 대표 색) · 완벽 표시 (GDD §5).
     // 챕터 넘기기(2026-10-11): 작은 그림 양옆 ◀ ▶ — 잠긴 챕터는 버튼이 모두 잠기고 제목에 "잠김"
     public sealed class StageSelectView : MonoBehaviour
     {
@@ -26,13 +26,13 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _nextChapterButton;
         [SerializeField] private Color _lockedFill = new Color32(0xB3, 0xBD, 0xB7, 0xFF);
         [SerializeField] private Color _openFill = new Color32(0xF6, 0xF7, 0xF3, 0xFF);
-        [SerializeField] private Color _clearedFill = new Color32(0x1C, 0x22, 0x2C, 0xFF);
         [SerializeField] private Color _openText = new Color32(0x1C, 0x22, 0x2C, 0xFF);
         [SerializeField] private Color _clearedText = new Color32(0xF6, 0xF7, 0xF3, 0xFF);
 
         private readonly List<StageButtonView> _buttons = new List<StageButtonView>();
         private IReadOnlyList<string> _stages;
         private IReadOnlyList<int?> _minMoves;
+        private IReadOnlyList<Color> _clearedFills;
         private SaveData _data;
         private string _listName;
         private bool _allOpen;
@@ -60,14 +60,15 @@ namespace ColoringBoot.Game
         private void StepBack() => ChapterStepped?.Invoke(-1);
         private void StepForward() => ChapterStepped?.Invoke(1);
 
-        // stages: 스테이지 파일 이름(기록의 키), minMoves: 스테이지별 최소 수(완벽 판정).
+        // stages: 스테이지 파일 이름(기록의 키), minMoves: 스테이지별 최소 수(완벽 판정), clearedFills: 깬 판 버튼 색(그 판 대표 색 — GameFlow가 팔레트로 고른다).
         // title: 제목 줄의 목록 이름(챕터 제목 · "시험"), subtitle: 챕터 부제(없으면 그 줄을 숨김), allOpen: 해금과 상관없이 모두 열림(시험 목록),
         // chapterLocked: 앞 챕터를 아직 완성하지 않음 — 모두 잠김. hasPrev · hasNext: 넘길 챕터가 있으면 그쪽 화살표를 보인다
-        public void Show(IReadOnlyList<string> stages, IReadOnlyList<int?> minMoves, SaveData data, string title, string subtitle, bool allOpen,
+        public void Show(IReadOnlyList<string> stages, IReadOnlyList<int?> minMoves, IReadOnlyList<Color> clearedFills, SaveData data, string title, string subtitle, bool allOpen,
             bool chapterLocked, bool hasPrev, bool hasNext)
         {
             _stages = stages;
             _minMoves = minMoves;
+            _clearedFills = clearedFills;
             _data = data;
             _listName = title;
             _allOpen = allOpen;
@@ -101,8 +102,8 @@ namespace ColoringBoot.Game
                 bool unlocked = !_chapterLocked && (_allOpen || _data.Progress.IsUnlocked(_stages, i));
                 bool isCleared = _data.Progress.IsCleared(stage);
                 if (isCleared) cleared++;
-                Color fill = !unlocked ? _lockedFill : isCleared ? _clearedFill : _openFill;
-                _buttons[i].Set(i + 1, unlocked, _data.Progress.IsPerfect(stage, _minMoves[i]), i == next, fill, isCleared ? _clearedText : _openText);
+                Color fill = !unlocked ? _lockedFill : isCleared ? _clearedFills[i] : _openFill;
+                _buttons[i].Set(i + 1, unlocked, _data.Progress.IsPerfect(stage, _minMoves[i]), i == next, isCleared, fill, isCleared ? _clearedText : _openText);
             }
             _title.text = _chapterLocked ? $"{_listName} · {ChapterLockedTitle}" : $"{_listName} · {cleared} / {_stages.Count}";
         }

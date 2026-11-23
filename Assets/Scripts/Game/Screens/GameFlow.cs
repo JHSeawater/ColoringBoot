@@ -77,6 +77,7 @@ namespace ColoringBoot.Game
         private int _lesson = -1;    // 따라 하기 중이면 레슨 번호
         private string[] _stages;    // 스테이지 파일 이름 — 기록의 키
         private int?[] _minMoves;
+        private Color[] _clearedFills;   // 선택 화면의 깬 판 버튼 색 — 판마다 대표 색(Stage.MainTargetColor)을 그 판 팔레트로(2026-11-23)
         private int _current = -1;
         private bool _paintShown;    // 지금 판의 첫 클리어 연출을 이미 보여 줬는가
         private bool[] _painted;
@@ -131,12 +132,15 @@ namespace ColoringBoot.Game
             _lab = lab;
             _stages = new string[list.Stages.Count];
             _minMoves = new int?[_stages.Length];
+            _clearedFills = new Color[_stages.Length];
             for (int i = 0; i < _stages.Length; i++)
             {
                 _stages[i] = list.Stages[i].name;
                 try
                 {
-                    _minMoves[i] = Stage.Parse(list.Stages[i].text).MinMoves;
+                    Stage stage = Stage.Parse(list.Stages[i].text);
+                    _minMoves[i] = stage.MinMoves;
+                    _clearedFills[i] = _puzzle.StageColor(stage, list.Stages[i].name, stage.MainTargetColor(), _paletteOverride);
                 }
                 catch (FormatException)
                 {
@@ -227,7 +231,11 @@ namespace ColoringBoot.Game
             // QA 주소 기능(?palette= · ?unlock · ?lab · ?stage= · ?stats — ?reset은 Awake)은 테스트 주소에서만 (2026-10-07, UrlQuery.IsQaHost)
             bool qa = UrlQuery.IsQaHost(url);
             ApplySettings();
-            if (qa && UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0) _paletteOverride = palette;
+            if (qa && UrlQuery.TryGet(url, PaletteQuery, out string palette) && palette.Length > 0)
+            {
+                _paletteOverride = palette;
+                UseList(_list, _lab);   // Awake에서 고른 깬 판 버튼 색을 바꾼 팔레트로 다시
+            }
             if (qa && UrlQuery.TryGet(url, UnlockQuery, out _)) _unlockAll = true;
             if (qa && UrlQuery.TryGet(url, LabQuery, out _)) UseList(_labCatalog, true);
 
@@ -279,7 +287,7 @@ namespace ColoringBoot.Game
             _endless.gameObject.SetActive(false);
             _selectEndlessButton.gameObject.SetActive(!_lab && _data.TutorialSeen);
             bool locked = !_lab && !_unlockAll && !_data.Progress.IsChapterUnlocked(_chapterStages, _chapterIndex);
-            _select.Show(_stages, _minMoves, _data, _lab ? LabTitle : CurrentChapter.Title, _lab ? null : CurrentChapter.Subtitle, _lab || _unlockAll,
+            _select.Show(_stages, _minMoves, _clearedFills, _data, _lab ? LabTitle : CurrentChapter.Title, _lab ? null : CurrentChapter.Subtitle, _lab || _unlockAll,
                 locked, !_lab && _chapterIndex > 0, !_lab && _chapterIndex + 1 < _chapterList.Length);
             _selectPicture.gameObject.SetActive(!_lab);
             if (!_lab) _selectPicture.Show(CurrentChapter.Art, UpdatePainted(), justPainted);

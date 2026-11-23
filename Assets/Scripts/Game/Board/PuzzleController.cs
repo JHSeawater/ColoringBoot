@@ -134,6 +134,11 @@ namespace ColoringBoot.Game
         // 광고 자리 — 힌트는 보상형 광고를 거친다(지금은 NoAdService라 바로 준다)
         public void SetAds(IAdService ads) => _ads = ads;
 
+        // 스테이지 색 하나의 화면 색 — 판을 열 때와 같은 팔레트(주소 ?palette= 우선)로. 선택 화면의 깬 판 버튼 색(2026-11-23).
+        // 빈칸이면 흰색(목표가 모두 빈칸인 판은 없다 — ContentRegressionTests가 모든 판을 풀어 본다)
+        public Color StageColor(Stage stage, string name, PaintColor color, string paletteOverride) =>
+            color == PaintColor.Empty ? Color.white : ChoosePalette(paletteOverride ?? stage.Palette, name).Get(color);
+
         // 스테이지의 팔레트 이름 → 팔레트 에셋. 이름이 없으면 기본, 모르는 이름이면 기본 + 경고
         private ColorPalette ChoosePalette(string id, string stage)
         {

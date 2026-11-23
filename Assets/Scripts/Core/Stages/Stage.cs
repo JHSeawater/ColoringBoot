@@ -50,6 +50,23 @@ namespace ColoringBoot.Core
         // 최소 수. null이면 수 카운터에 표시하지 않는다 — 값은 솔버가 채운다 (Phase 3)
         public int? MinMoves { get; }
 
+        // 대표 색 = 목표에서 칸이 가장 많은 색(빈칸 제외) — 선택 화면이 깬 판 버튼을 이 색으로 채운다(2026-11-23 사용자).
+        // 칸 수가 같으면 색 값이 작은 쪽(기본색이 섞인 색 · 검정보다 먼저). 목표가 모두 빈칸이면 Empty
+        public PaintColor MainTargetColor()
+        {
+            var counts = new int[(int)PaintColor.Black + 1];
+            foreach (StageCell cell in Cells) counts[(int)cell.Target]++;
+            var main = PaintColor.Empty;
+            int best = 0;
+            for (int c = (int)PaintColor.Black; c > 0; c--)   // 큰 값부터 — 같은 수면 뒤에 오는 작은 값이 이긴다
+            {
+                if (counts[c] == 0 || counts[c] < best) continue;
+                main = (PaintColor)c;
+                best = counts[c];
+            }
+            return main;
+        }
+
         // 스테이지 코드(JSON)를 읽는다. 형식이 틀리면 FormatException
         public static Stage Parse(string json) => StageParser.Parse(json);
     }

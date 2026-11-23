@@ -72,5 +72,17 @@ namespace ColoringBoot.Core.Tests
         {
             Assert.Throws<ArgumentNullException>(() => Stage.Parse(null));
         }
+
+        // 대표 색(선택 화면의 깬 판 채움, 2026-11-23): 목표에서 가장 많은 색 · 빈칸은 세지 않음 · 같은 수면 작은 색 값
+        [TestCase(@"[[0,0,0,0],[1,0,0,0],[2,0,0,0],[3,0,0,6],[4,0,0,6],[5,0,0,1]]", PaintColor.Green)]    // 빈칸 3칸보다 적어도 색 중 가장 많은 초록
+        [TestCase(@"[[0,0,0,7],[1,0,0,7],[2,0,0,1],[3,0,0,1]]", PaintColor.Red)]                          // 검정 2 · 빨강 2 → 빨강
+        [TestCase(@"[[0,0,0,5],[1,0,0,3]]", PaintColor.Orange)]                                         // 보라 1 · 주황 1 → 주황(3 < 5)
+        [TestCase(@"[[0,0,1,0],[1,0,2,0]]", PaintColor.Empty)]                                          // 목표가 모두 빈칸
+        public void MainTargetColor_MostCellsThenSmallerValue(string cells, PaintColor expected)
+        {
+            Stage stage = Stage.Parse(@"{""name"":""t"",""cells"":" + cells + "}");
+
+            Assert.AreEqual(expected, stage.MainTargetColor());
+        }
     }
 }
