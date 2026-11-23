@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using ColoringBoot.Core;
 using TMPro;
@@ -51,6 +52,10 @@ namespace ColoringBoot.Game
         [SerializeField] private TMP_Text _chapterCaption;
         [SerializeField] private Button _chapterNextButton;
         [SerializeField] private TMP_Text _chapterNextLabel;
+        [Header("책장 넘기기 (2026-11-24)")]
+        [SerializeField] private BookPage _selectBook;         // 선택 화면 작은 그림 책장 — ◀ ▶로 챕터를 넘길 때
+        [SerializeField] private BookPage _chapterBook;        // 큰 그림 책장 — 챕터를 완성하고 다음 챕터로 갈 때
+        [SerializeField] private float _turnHoldSeconds = 0.4f;   // 큰 그림을 넘긴 뒤 새 장을 보여 주는 초(그 뒤 다음 챕터 목록)
         [Header("타이틀 (Phase 7.3)")]
         [SerializeField] private GameObject _titleScreen;      // 실행하면 처음 보는 화면(주소에 ?stage=가 있으면 건너뜀)
         [SerializeField] private Button _startButton;
@@ -289,17 +294,20 @@ namespace ColoringBoot.Game
             bool locked = !_lab && !_unlockAll && !_data.Progress.IsChapterUnlocked(_chapterStages, _chapterIndex);
             _select.Show(_stages, _minMoves, _clearedFills, _data, _lab ? LabTitle : CurrentChapter.Title, _lab ? null : CurrentChapter.Subtitle, _lab || _unlockAll,
                 locked, !_lab && _chapterIndex > 0, !_lab && _chapterIndex + 1 < _chapterList.Length);
-            _selectPicture.gameObject.SetActive(!_lab);
+            _selectBook.gameObject.SetActive(!_lab);
             if (!_lab) _selectPicture.Show(CurrentChapter.Art, UpdatePainted(), justPainted);
         }
 
-        // 목록의 ◀ ▶ — 앞 · 다음 챕터 목록 (잠긴 챕터도 보여 준다)
+        // 목록의 ◀ ▶ — 앞 · 다음 챕터 목록 (잠긴 챕터도 보여 준다). 작은 그림은 책장처럼 넘긴다(2026-11-24 사용자)
         private void StepChapter(int step)
         {
             int index = _chapterIndex + step;
             if (_lab || index < 0 || index >= _chapterList.Length) return;
+            ChapterArt fromArt = CurrentChapter.Art;
+            bool[] fromPainted = (bool[])UpdatePainted().Clone();
             UseChapter(index);
             ShowSelect();
+            _selectBook.Turn(fromArt, fromPainted, step);
         }
 
         private void OpenStage(int index)
@@ -388,8 +396,7 @@ namespace ColoringBoot.Game
             if (_toNextChapter)
             {
                 _toNextChapter = false;
-                UseChapter(_chapterIndex + 1);
-                ShowSelect();
+                StartCoroutine(TurnToNextChapter());
                 return;
             }
             if (_current < 0 || _current + 1 >= _stages.Length)
@@ -399,6 +406,21 @@ namespace ColoringBoot.Game
             }
             int next = _current + 1;
             _ads.ShowBetweenStages(() => OpenStage(next));
+        }
+
+        // 완성한 그림 장을 넘겨 다음 챕터의 빈 장을 잠깐 보여 준 뒤 그 목록으로(2026-11-24 사용자 — 컬러링북처럼). 넘기는 동안 버튼은 잠근다
+        private IEnumerator TurnToNextChapter()
+        {
+            ChapterArt fromArt = CurrentChapter.Art;
+            bool[] fromPainted = (bool[])UpdatePainted().Clone();
+            UseChapter(_chapterIndex + 1);
+            _chapterPicture.Show(CurrentChapter.Art, UpdatePainted());
+            _chapterNextButton.interactable = false;
+            _chapterBook.Turn(fromArt, fromPainted, 1);
+            float wait = _chapterBook.Seconds + _turnHoldSeconds;
+            for (float time = 0f; time < wait; time += Time.unscaledDeltaTime) yield return null;
+            _chapterNextButton.interactable = true;
+            if (_chapterScreen.activeSelf) ShowSelect();   // 그사이 뒤로가기로 이미 목록이면 그대로
         }
 
         // 단계 i = i번째 스테이지를 클리어했는가

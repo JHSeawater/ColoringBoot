@@ -65,9 +65,11 @@ public static class QaScene
         CheckRefs(flow, Expect, "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
             "_selectPicture", "_paintCard", "_paintPicture", "_paintProgress", "_paintCardCenter", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
+            "_selectBook", "_chapterBook",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
             "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
-        foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Picture", "ChapterScreen/Picture", "BoardScreen/ClearBanner/PaintCard/Picture" })
+        foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Book/Picture", "ChapterScreen/Book/Picture", "BoardScreen/ClearBanner/PaintCard/Picture",
+            "SelectScreen/Body/PictureSlot/Book/TurnPage", "ChapterScreen/Book/TurnPage" })
         {
             var view = safeArea.Find(picture)?.GetComponent<ChapterView>();
             Expect(view != null, $"{picture} ChapterView");
@@ -78,6 +80,25 @@ public static class QaScene
             Expect(viewSo.FindProperty("_frame").objectReferenceValue != null, $"{picture} 테두리 연결");
             Expect(picture.Contains("PaintCard") ? zoom > 1f : zoom <= 1f, $"{picture} 확대 배율 {zoom}");
         }
+        // 책장(2026-11-24): 선택 화면 · 큰 그림 — 두 장(그림 · 넘기는 장, 넘기는 장은 꺼 둠) · 넘기기 셰이더 · 겹친 종이 · 스프링(맨 위)
+        foreach (string bookPath in new[] { "SelectScreen/Body/PictureSlot/Book", "ChapterScreen/Book" })
+        {
+            var book = safeArea.Find(bookPath)?.GetComponent<BookPage>();
+            Expect(book != null, $"{bookPath} BookPage");
+            if (book == null) continue;
+            CheckRefs(book, Expect, "_page", "_turning", "_turnShader");
+            var bookSo = new SerializedObject(book);
+            Expect((bookSo.FindProperty("_page").objectReferenceValue as ChapterView)?.name == "Picture"
+                && (bookSo.FindProperty("_turning").objectReferenceValue as ChapterView)?.gameObject.activeSelf == false, $"{bookPath} 그림 장 · 넘기는 장(꺼짐)");
+            Expect(book.transform.Find("Stack")?.GetSiblingIndex() == 0 && book.transform.Find("Rings")?.GetSiblingIndex() == book.transform.childCount - 1,
+                $"{bookPath} 겹친 종이 맨 아래 · 스프링 맨 위");
+            // 들린 장은 자기 사각형 밖으로 커진다 — 따로 캔버스여야 계층 순서대로 그린다(◀ ▶ 아래)
+            Expect(book.GetComponent<Canvas>() != null, $"{bookPath} 자체 Canvas");
+        }
+        // 선택 화면: 그림 칸을 격자보다 뒤에 그려 들린 장이 격자 위로 지나가게(배치는 reverseArrangement로 그림 칸이 위)
+        Transform body = safeArea.Find("SelectScreen/Body");
+        Expect(body != null && body.GetComponent<VerticalLayoutGroup>().reverseArrangement
+            && body.Find("Grid").GetSiblingIndex() < body.Find("PictureSlot").GetSiblingIndex(), "선택 화면 Body 계층 격자 → 그림 칸 · 배치 거꾸로");
         CheckRefs(Object.FindAnyObjectByType<StageSelectView>(FindObjectsInactive.Include), Expect, "_title", "_subtitle", "_grid", "_buttonTemplate", "_noticePanel", "_notice",
             "_prevChapterButton", "_nextChapterButton");
         CheckRefs(Object.FindAnyObjectByType<StageButtonView>(FindObjectsInactive.Include), Expect, "_button", "_fill", "_ring", "_number", "_lock", "_star");

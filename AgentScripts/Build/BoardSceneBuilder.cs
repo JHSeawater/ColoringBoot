@@ -205,7 +205,7 @@ public static class BoardSceneBuilder
 
         // 화면(타이틀 · 선택 · 보드 · 그림)은 GameFlow가 켜고 끈다. 옵션 · 기록 패널은 그 위를 덮는다. 모두 켜질 때 짧게 나타난다(ScreenFade)
         GameObject titleScreen = TitleScreen(safeArea, out Button startButton, out Button endlessButton);
-        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton, out ChapterView selectPicture, out Button selectEndlessButton);
+        StageSelectView selectView = SelectScreen(safeArea, out Button selectOptionsButton, out ChapterView selectPicture, out BookPage selectBook, out Button selectEndlessButton);
         EndlessView endlessView = EndlessScreen(safeArea);
         var boardScreen = NewUI("BoardScreen", safeArea);
         Stretch(boardScreen, Vector2.zero, Vector2.zero);
@@ -290,7 +290,7 @@ public static class BoardSceneBuilder
         Button hintButton = BottomButton(boardScreen, "HintButton", "힌트", 340f, 300f, false);
         boardScreen.SetActive(false);
 
-        GameObject chapterScreen = ChapterScreen(safeArea, out ChapterView chapterPicture, out TMP_Text chapterCaption, out Button chapterNextButton);
+        GameObject chapterScreen = ChapterScreen(safeArea, out ChapterView chapterPicture, out BookPage chapterBook, out TMP_Text chapterCaption, out Button chapterNextButton);
 
         OptionsView optionsView = OptionsPanel(safeArea);
         // 플레이테스트 기록 (주소 ?stats) — 맨 위를 덮는 패널, 처음엔 숨김
@@ -356,6 +356,8 @@ public static class BoardSceneBuilder
             ("_chapterCaption", chapterCaption),
             ("_chapterNextButton", chapterNextButton),
             ("_chapterNextLabel", chapterNextButton.GetComponentInChildren<TMP_Text>()),
+            ("_selectBook", selectBook),
+            ("_chapterBook", chapterBook),
             ("_titleScreen", titleScreen),
             ("_startButton", startButton),
             ("_labCatalog", AssetDatabase.LoadAssetAtPath<StageCatalog>(LabCatalogPath)),
@@ -499,13 +501,13 @@ public static class BoardSceneBuilder
     }
 
     // 챕터 그림 화면 (Phase 5): 진행 글자(왼쪽 위) · 큰 그림(캔버스 4:5) · 다음 버튼. 처음 클리어한 뒤 GameFlow가 켠다
-    private static GameObject ChapterScreen(GameObject parent, out ChapterView picture, out TMP_Text caption, out Button next)
+    private static GameObject ChapterScreen(GameObject parent, out ChapterView picture, out BookPage book, out TMP_Text caption, out Button next)
     {
         var screen = NewUI("ChapterScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
         Fade(screen);
         caption = TopLeftText(screen, "Caption", -40f, 90f, 64f, Strong);
-        picture = Picture(screen, -150f, new Vector2(960f, 1200f));
+        book = BookPicture(screen, -150f, new Vector2(960f, 1200f), out picture);
         next = BottomButton(screen, "NextButton", "다음", 0f, 460f, true);
         screen.SetActive(false);
         return screen;
@@ -541,18 +543,102 @@ public static class BoardSceneBuilder
     private static ChapterView Picture(GameObject parent, float y, Vector2 size)
     {
         var go = NewUI("Picture", parent);
+        PlaceTop(go, y, size);
+        return AddPage(go);
+    }
+
+    private static void PlaceTop(GameObject go, float y, Vector2 size)
+    {
         var rect = (RectTransform)go.transform;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = size;
+    }
+
+    private static ChapterView AddPage(GameObject go)
+    {
         var view = go.AddComponent<ChapterView>();
         SetRefs(view, ("_frame", Sprite("FrameRing")), ("_brushShader", BrushShader()));
         SetValues(view, ("_frameColor", Lead));
         return view;
     }
 
+    // 챕터 그림 책장(2026-11-24 사용자 — 컬러링북처럼, 선택 화면 · 큰 그림 화면): Book(크기 · 자리) 안에 아래부터 겹친 종이 · 그림 장(Picture) · 넘기는 장(TurnPage, 평소 꺼짐) · 왼쪽 스프링.
+    // 장은 Book을 꽉 채운다. 넘기기는 BookPage가 두 장의 순서를 바꿔 가며 한다(스프링은 늘 맨 위)
+    private static BookPage BookPicture(GameObject parent, float y, Vector2 size, out ChapterView page)
+    {
+        var book = NewUI("Book", parent);
+        PlaceTop(book, y, size);
+        // 넘기는 장은 셰이더가 자기 사각형 밖으로 키워 그린다 — 캔버스는 원래 사각형으로 겹침을 판단해 이웃 UI(◀ ▶)와 그리는 순서가 뒤바뀔 수 있다.
+        // 책장을 따로 캔버스로 묶어 계층 순서대로 그리게 한다(앞 형제 아래 · 뒤 형제(◀ ▶ · 격자) 위 — 비교 페이지 B안과 같음)
+        book.AddComponent<Canvas>();
+        var stack = NewUI("Stack", book);
+        Stretch(stack, Vector2.zero, Vector2.zero);
+        for (int k = SheetCount; k >= 1; k--) Sheet(stack, k);
+        page = PageLayer(book, "Picture");
+        ChapterView turning = PageLayer(book, "TurnPage");
+        turning.gameObject.SetActive(false);
+        Rings(book);
+        var view = book.AddComponent<BookPage>();
+        SetRefs(view, ("_page", page), ("_turning", turning), ("_turnShader", PageTurnShader()));
+        return view;
+    }
+
+    private static ChapterView PageLayer(GameObject book, string name)
+    {
+        var go = NewUI(name, book);
+        Stretch(go, Vector2.zero, Vector2.zero);
+        return AddPage(go);
+    }
+
+    private const int SheetCount = 2;            // 그림 장 밑에 겹쳐 보이는 종이 수
+    private const float SheetStep = 0.022f;      // 한 장마다 오른쪽 아래로 비켜나는 정도(장 너비 비율 — 세로는 4:5에 맞춰 같은 픽셀)
+    private const float SheetShade = 0.035f;     // 밑의 종이일수록 이만큼씩 어둡게
+    private const float PageFrameOutset = 7f;    // 테두리를 장 밖으로 넓히는 폭 — ChapterView._frameOutset과 같게
+    private static readonly Color PagePaper = new Color32(0xFB, 0xFA, 0xF7, 0xFF);   // ChapterView._paper와 같게
+
+    private static void Sheet(GameObject stack, int k)
+    {
+        var go = NewUI($"Sheet{k}", stack);
+        var rect = (RectTransform)go.transform;
+        float dx = SheetStep * k, dy = SheetStep * k * 0.8f;
+        rect.anchorMin = new Vector2(dx, -dy);
+        rect.anchorMax = new Vector2(1f + dx, 1f - dy);
+        rect.offsetMin = rect.offsetMax = Vector2.zero;
+        var paper = go.AddComponent<Image>();
+        paper.color = Color.Lerp(PagePaper, Color.black, SheetShade * k);
+        paper.raycastTarget = false;
+        Image frame = AddImage("Frame", go, "FrameRing", Lead, 0f, 1f);
+        frame.type = Image.Type.Sliced;
+        frame.rectTransform.offsetMin = -Vector2.one * PageFrameOutset;
+        frame.rectTransform.offsetMax = Vector2.one * PageFrameOutset;
+    }
+
+    // 왼쪽 스프링: 고리마다 종이 구멍 · 고리(진갈색 테두리 + 은색 속). 모두 Circle 스프라이트 하나라 한 번에 그려지게 종류별로 모아 둔다(구멍 → 테두리 → 속).
+    // 자리 · 크기는 장 비율(가로 W · 세로 H, 4:5 — 세로 값 = 가로 값 × 0.8이면 같은 픽셀)
+    private const int RingCount = 12;
+    private static readonly Color RingMetal = new Color32(0xC9, 0xCD, 0xD4, 0xFF);
+
+    private static void Rings(GameObject book)
+    {
+        var rings = NewUI("Rings", book);
+        Stretch(rings, Vector2.zero, Vector2.zero);
+        var y = new float[RingCount];
+        for (int i = 0; i < RingCount; i++) y[i] = 0.055f + i * 0.89f / (RingCount - 1);
+        for (int i = 0; i < RingCount; i++) RingPart(rings, $"Hole{i + 1:00}", Lead, 0.024f, 0.06f, y[i], 0.0144f);
+        for (int i = 0; i < RingCount; i++) RingPart(rings, $"Ring{i + 1:00}", Lead, -0.05f, 0.046f, y[i], 0.015f);
+        for (int i = 0; i < RingCount; i++) RingPart(rings, $"Metal{i + 1:00}", RingMetal, -0.042f, 0.038f, y[i], 0.0086f);
+    }
+
+    private static void RingPart(GameObject parent, string name, Color color, float left, float right, float y, float halfHeight)
+    {
+        Image image = AddImage(name, parent, "Circle", color, 0f, 1f);
+        image.rectTransform.anchorMin = new Vector2(left, y - halfHeight);
+        image.rectTransform.anchorMax = new Vector2(right, y + halfHeight);
+    }
+
     // 스테이지 선택 화면: 제목(챕터 · 진행) · 옵션 버튼 · 챕터 그림(작게) · 육각 번호 버튼 벌집(4 · 3줄 번갈아, 2026-11-23) · 잠김 안내. 버튼 원본은 꺼 둔 채 두고 StageSelectView가 복제한다
-    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton, out ChapterView picture, out Button endlessButton)
+    private static StageSelectView SelectScreen(GameObject parent, out Button optionsButton, out ChapterView picture, out BookPage book, out Button endlessButton)
     {
         var screen = NewUI("SelectScreen", parent);
         Stretch(screen, Vector2.zero, Vector2.zero);
@@ -573,14 +659,16 @@ public static class BoardSceneBuilder
         bodyLayout.childControlHeight = true;
         bodyLayout.childForceExpandWidth = false;
         bodyLayout.childForceExpandHeight = false;
+        // 계층은 격자 → 그림 칸, 배치는 거꾸로(그림 칸이 위). 책장을 넘길 때 들린 장이 격자 버튼 위로 지나가게 그리는 순서만 바꾼다(2026-11-24)
+        bodyLayout.reverseArrangement = true;
 
         var pictureSlot = NewUI("PictureSlot", body);
         ((RectTransform)pictureSlot.transform).sizeDelta = new Vector2(940f, 600f);
         var slotElement = pictureSlot.AddComponent<LayoutElement>();
         slotElement.minHeight = ChapterArrowSize;
         slotElement.preferredHeight = 600f;
-        picture = Picture(pictureSlot, 0f, new Vector2(480f, 600f));
-        var pictureFitter = picture.gameObject.AddComponent<AspectRatioFitter>();
+        book = BookPicture(pictureSlot, 0f, new Vector2(480f, 600f), out picture);
+        var pictureFitter = book.gameObject.AddComponent<AspectRatioFitter>();
         pictureFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
         pictureFitter.aspectRatio = 480f / 600f;
         // 챕터 넘기기 (2026-10-11): 작은 그림 양옆 — 넘길 챕터가 없으면 StageSelectView가 숨긴다
@@ -594,6 +682,7 @@ public static class BoardSceneBuilder
         gridRect.sizeDelta = new Vector2(980f, 0f);
         var gridLayout = grid.AddComponent<HoneycombLayout>();
         SetValues(gridLayout, ("_cell", StageCell), ("_columnStep", 236f), ("_rowStep", 204f), ("_wideRow", 4));
+        grid.transform.SetAsFirstSibling();
 
         var notice = NewUI("Notice", screen);
         var noticeRect = (RectTransform)notice.transform;
@@ -898,6 +987,11 @@ public static class BoardSceneBuilder
     private const string BrushShaderPath = "Assets/Art/Shaders/BrushReveal.shader";
     private static Shader BrushShader() =>
         AssetDatabase.LoadAssetAtPath<Shader>(BrushShaderPath) ?? throw new System.InvalidOperationException("붓질 셰이더 없음: " + BrushShaderPath);
+
+    // 책장 넘기기 셰이더(2026-11-24) — BookPage가 직렬화 참조로 들고 있어야 빌드에 들어간다
+    private const string PageTurnShaderPath = "Assets/Art/Shaders/PageTurn.shader";
+    private static Shader PageTurnShader() =>
+        AssetDatabase.LoadAssetAtPath<Shader>(PageTurnShaderPath) ?? throw new System.InvalidOperationException("책장 셰이더 없음: " + PageTurnShaderPath);
 
     // 에셋 — 없으면 멈춘다(SetArray는 빈 값을 막지 않으므로)
     private static TAsset Asset<TAsset>(string path) where TAsset : Object =>

@@ -156,9 +156,9 @@ public static class BoardQa
         if (chapter)
         {
             Transform screen = safe.Find("ChapterScreen");
-            text += $" | {screen.Find("Caption").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(screen.Find("Picture"))} [{screen.Find("NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
+            text += $" | {screen.Find("Caption").GetComponentInChildren<TMPro.TMP_Text>().text} · 칠한 단계 {Painted(screen.Find("Book/Picture"))} [{screen.Find("NextButton").GetComponentInChildren<TMPro.TMP_Text>().text}]";
         }
-        if (select) text += $" | 작은 그림 칠한 단계 {Painted(safe.Find("SelectScreen/Body/PictureSlot/Picture"))}";
+        if (select) text += $" | 작은 그림 칠한 단계 {Painted(safe.Find("SelectScreen/Body/PictureSlot/Book/Picture"))}";
         // 챕터 넘기기(2026-10-11): 보이는 화살표
         if (select) text += $" | 넘기기 {(safe.Find("SelectScreen/Body/PictureSlot/PrevChapterButton").gameObject.activeSelf ? "◀" : "-")}{(safe.Find("SelectScreen/Body/PictureSlot/NextChapterButton").gameObject.activeSelf ? "▶" : "-")}";
         if (select)
