@@ -8,16 +8,26 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
 
-// 한글 폰트 에셋 생성 — Pretendard SemiBold, 쓰는 글자만 담은 고정(Static) 아틀라스 (Phase 2, 사용자 결정 2026-09-28)
+// 한글 폰트 에셋 생성 — 동글(Dongle) Bold, 쓰는 글자만 담은 고정(Static) 아틀라스 (Phase 2 사용자 결정 2026-09-28 · 폰트는 2026-11-23 Pretendard SemiBold → 동글, 사용자)
 // 글자 출처: 씬 구성 스크립트 · Game 코드의 문자열 리터럴(주석 제외) + 스테이지 JSON의 name + 챕터 제목 · 부제(Chapter 에셋) + ASCII.
 // 문구나 스테이지 이름을 바꾸면 다시 실행한다 — run_script(file=AgentScripts/Build/FontBuilder.cs, entry=FontBuilder.Build)
 public static class FontBuilder
 {
-    private const string FontPath = "Assets/Art/Fonts/Pretendard-SemiBold.ttf";
-    private const string AssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
+    private const string FontPath = "Assets/Art/Fonts/Dongle-Bold.ttf";
+    private const string AssetPath = "Assets/Art/Fonts/Dongle SDF.asset";
+    private const string AssetName = "Dongle SDF";
     private const string TmpSettingsPath = "Assets/TextMesh Pro/Resources/TMP Settings.asset";
-    private const int SamplingSize = 56;  // 1024² 한 장에 들어가게 (64는 254자에서 두 장이 됨 — 2026-09-30)
-    private const int Padding = 6;
+    // 동글은 em 안에서 한글이 작다(높이 0.35em · 폭 0.45em — Pretendard는 0.88 · 0.83). 아틀라스 속 글자 픽셀이 Pretendard 56일 때와 비슷하게 84,
+    // 패딩도 같은 비율(옛 56 · 6 — 64는 254자에서 두 장이 됨, 2026-09-30)
+    private const int SamplingSize = 84;
+    private const int Padding = 9;
+    // 화면 글자 배율 — 코드 · 씬의 글자 크기는 그대로 두고 폰트 에셋이 키운다(TMP FaceInfo.scale). 1.75면 줄 길이가 Pretendard와 거의 같다
+    // (1.5는 버튼 글자가 작아 보였다 — 2026-11-23 에디터 캡처)
+    private const float FaceScale = 1.75f;
+    // 줄 위 · 아래 선(포인트 크기 배수) = 폰트의 OS/2 typo 값. 동글은 받침 글자가 기준선 아래로 내려간다(돌 -0.40 ~ 리 0.53em) — 이 범위의 가운데가 줄 가운데.
+    // 폰트 에셋 기본 값(hhea 0.85 · -0.6)이면 가운데 정렬한 글자가 위로 뜨고, 받침만 보고 좁힌 값(0.69 · -0.17)은 받침이 아래 줄과 겹쳤다(2026-11-23)
+    private const float AscentLine = 0.57f;
+    private const float DescentLine = -0.43f;
     private const int AtlasSize = 1024;
 
     private static readonly string[] _sourceFiles = { "AgentScripts/Build/BoardSceneBuilder.cs" };
@@ -39,7 +49,7 @@ public static class FontBuilder
         if (font == null) return $"폰트 없음: {FontPath}";
 
         TMP_FontAsset asset = TMP_FontAsset.CreateFontAsset(font, SamplingSize, Padding, GlyphRenderMode.SDFAA, AtlasSize, AtlasSize, AtlasPopulationMode.Dynamic, true);
-        asset.name = "Pretendard SDF";
+        asset.name = AssetName;
         asset.TryAddCharacters(characters, out string missing);
         asset.atlasPopulationMode = AtlasPopulationMode.Static;
 
@@ -48,15 +58,19 @@ public static class FontBuilder
         AssetDatabase.CreateAsset(asset, AssetPath);
         foreach (Texture2D atlas in asset.atlasTextures)
         {
-            atlas.name = "Pretendard SDF Atlas";
+            atlas.name = AssetName + " Atlas";
             AssetDatabase.AddObjectToAsset(atlas, asset);
         }
-        asset.material.name = "Pretendard SDF Material";
+        asset.material.name = AssetName + " Material";
         AssetDatabase.AddObjectToAsset(asset.material, asset);
 
-        // 고정 아틀라스는 런타임에 원본 폰트가 필요 없다 — 참조를 비워 TTF(2.6 MB)가 빌드에 딸려 가지 않게
+        // 고정 아틀라스는 런타임에 원본 폰트가 필요 없다 — 참조를 비워 TTF(4.5 MB)가 빌드에 딸려 가지 않게
         var so = new SerializedObject(asset);
         so.FindProperty("m_SourceFontFile").objectReferenceValue = null;
+        so.FindProperty("m_FaceInfo.m_Scale").floatValue = FaceScale;
+        so.FindProperty("m_FaceInfo.m_AscentLine").floatValue = AscentLine * SamplingSize;
+        so.FindProperty("m_FaceInfo.m_DescentLine").floatValue = DescentLine * SamplingSize;
+        so.FindProperty("m_FaceInfo.m_LineHeight").floatValue = (AscentLine - DescentLine) * SamplingSize;
         so.ApplyModifiedPropertiesWithoutUndo();
 
         // TMP 기본 폰트로 지정 — 새로 만드는 TMP 글자도 한글이 나오게

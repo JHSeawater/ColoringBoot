@@ -11,7 +11,7 @@ using UnityEngine.UI;
 // 실패한 항목만 모아 돌려준다. 모두 통과면 "통과 N항목"
 public static class QaScene
 {
-    private const string FontPath = "Assets/Art/Fonts/Pretendard SDF.asset";
+    private const string FontPath = "Assets/Art/Fonts/Dongle SDF.asset";
 
     public static string Check()
     {
@@ -211,7 +211,7 @@ public static class QaScene
             var importer = (TextureImporter)AssetImporter.GetAtPath($"Assets/Art/Sprites/{name}.png");
             Expect(importer.textureType == TextureImporterType.Sprite && importer.spriteImportMode == SpriteImportMode.Single, $"스프라이트 {name}");
         }
-        Expect(TMP_Settings.defaultFontAsset == font, "TMP 기본 폰트 = Pretendard");
+        Expect(TMP_Settings.defaultFontAsset == font, "TMP 기본 폰트 = Dongle SDF");
         Expect(font.atlasPopulationMode.ToString() == "Static", "폰트 Static"); // TMP가 Static을 폐기 예정으로 표시 — 이름으로 비교(경고 회피)
         Expect(new SerializedObject(font).FindProperty("m_SourceFontFile").objectReferenceValue == null, "폰트 원본 참조 비움");
 

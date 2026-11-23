@@ -6,7 +6,8 @@
 
 | 자료 | 출처 | 라이선스 | 위치 |
 |---|---|---|---|
-| Pretendard 1.3.9 SemiBold | Kil Hyung-jin, https://github.com/orioncactus/pretendard | SIL Open Font License 1.1 (전문은 `Assets/Art/Fonts/Pretendard-LICENSE.txt`) | `Assets/Art/Fonts/` — 게임에 쓰는 글자만 TextMesh Pro 아틀라스로 굽는다 |
+| Dongle Bold | The Dongle Project Authors, https://github.com/yangheeryu/Dongle (받은 곳: https://github.com/google/fonts `ofl/dongle`, 2026-11-23) | SIL Open Font License 1.1 (전문은 `Assets/Art/Fonts/Dongle-LICENSE.txt`) | `Assets/Art/Fonts/` — 게임에 쓰는 글자만 TextMesh Pro 아틀라스로 굽는다 |
+| Pretendard 1.3.9 SemiBold | Kil Hyung-jin, https://github.com/orioncactus/pretendard | SIL Open Font License 1.1 (전문은 `Assets/Art/Fonts/Pretendard-LICENSE.txt`) | `Assets/Art/Fonts/` — 2026-11-23부터 게임에 쓰지 않음(원본 파일만 저장소에 있음) |
 
 ## 효과음
 

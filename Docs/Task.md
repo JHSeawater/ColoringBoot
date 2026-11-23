@@ -198,6 +198,11 @@
 - [ ] [Code] `SolverTests.AssertSearchMatchesSolve` · `HintTests.FindInSteps`의 `while`에 반복 상한 — 넘으면 `Assert.Fail`(지금은 탐색이 끝나지 않는 회귀면 실패 대신 에디터가 멈춤)(지적 M10)
 - [ ] [Code] 테스트 보강 — `UrlQuery.IsQaHost` · `TryGet`(출시 주소에서 `?reset` · `?unlock`을 막는 관문 — 지금 테스트 없음) · `MeasureOrder` 7수 초과면 null · 무한 모드 묶음의 GDD §5 품질 조건(섞인 색 · 막힐 수 있는 칸 비율)(지적 M11)
 
+### 화면 꾸미기 (2026-11-23 사용자)
+- [ ] [Asset] 게임 폰트 Pretendard → 동글(Dongle) Bold — 적용 · `QaScene` 727 · EditMode 496/496 · 에디터 화면 캡처까지 끝(DevelopLog 2026-11-23). 남은 것: WebGL 빌드 용량 · 브라우저 표시 · 휴대폰 작은 글자 가독성(사용자)
+- [ ] [Code] 스테이지 선택 화면 A+B — 버튼을 4 · 3 · 4줄 맞물린 벌집으로 · 깬 판은 그 판 목표에서 가장 많은 색 하나로 채움(시안 · 결정 `DECISIONS.md` 2026-11-23). 끝: 에디터 화면 캡처(챕터별 · 진행 0 / 일부 / 전부) · `QaScene` · WebGL
+- [ ] [Code] 제목 · 숫자 · "완벽!" 띠 글자 테두리 효과(크림색 + 갈색, TMP 외곽선) — 폰트를 화면으로 본 뒤 할지 정함(사용자)
+
 ### 완료
 
 > 끝난 묶음 3개(항목 · 근거는 `Docs/Archive/Task-2026-11-11.md`): **구조 정리** 10항목(폰트 빌더 하위 폴더 · 챕터 데이터 폴더 · 콘텐츠 회귀 테스트 · Game 하위 폴더 · `BoardView` 나누기 · `InputSystem_Actions` 정리 · 붓질 계산 하나로 · 진행 규칙 Core로 · 여러 챕터 흐름 · 코드 점검 수정 확인) · **소재 맵 시험** 7항목(자유 맵 방향 확정, 2026-10-06) · **기믹 시제품** 8항목(벽 · 물 · 코팅 — 시험 뒤 빼기로 결정, 2026-10-12).

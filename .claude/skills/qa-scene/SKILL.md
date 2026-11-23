@@ -52,7 +52,7 @@ Docs/Task.md DoD 4조 "코드는 맞는데 인스펙터가 비어 있음"을 잡
 - `…/BoardScreen/BoardArea` BoardView: `_showTarget` false · `_fitMargin` 1.8 / `…/BoardScreen/TargetView` BoardView: `_showTarget` true · `_fitMargin` < 1. 둘 다 `_cellPrefab` · `_directionButtonPrefab` null 아님
 - 연출 값(Phase 7.4): BoardArea BoardView `_motion` = `Assets/Data/Settings/MotionSettings.asset` · TargetView `_motion` = null(목표 썸네일은 연출 없음)
 - 안내 손가락 표시(2026-10-07): BoardArea BoardView `_guideSprite` null 아님 · TargetView `_guideSprite` = null
-- 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Pretendard SDF.asset`(한글이 □로 나오면 실패)
+- 모든 TextMeshProUGUI의 font = `Assets/Art/Fonts/Dongle SDF.asset`(한글이 □로 나오면 실패)
 
 ## 3. 직렬화 참조 — null이 하나라도 있으면 실패
 - `/Puzzle` PuzzleController: `_palettes`(PaletteCatalog) · `_boardView` · `_targetView` · `_mixTable` · `_stageName` · `_moveCounter` · `_undoButton` · `_restartButton` · `_stuckUndoButton` · `_clearBanner` · `_clearLabel` · `_stuckBanner` · `_hintButton` · `_guideBanner` · `_guideLabel` · `_overlays` = 옵션 · 기록 패널(열려 있으면 키보드 무시, 2026-10-05)
@@ -68,8 +68,8 @@ Docs/Task.md DoD 4조 "코드는 맞는데 인스펙터가 비어 있음"을 잡
 - 목록의 JSON이 모두 `Stage.Parse`로 읽히고, 솔버로 풀리며 `minMoves`가 솔버 최소 수와 같은지
 - `Assets/Data/Palettes/PaletteCatalog.asset`: 2개 이상 · 첫 칸 이름 `default` · 이름 비지 않고 겹치지 않음 · 팔레트마다 `_colors` 7색 · 알파 1 · 색끼리 · 빈칸과 CIEDE2000 20 이상 · 7번이 가장 어두움(GDD §2.3) · 목록의 모든 스테이지 `palette`가 목록에 있음
 - 스프라이트 `Assets/Art/Sprites/*.png`(HexFill · HexRing · Circle · Arrow · Lock · Star · RoundFill · RoundRing · FrameRing · HexLine — 뒤 4개는 Phase 7.1 버튼 · 테두리 모양)(`get_import_settings`): textureType Sprite · spriteImportMode Single
-- `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Pretendard SDF
-- `Pretendard SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자 0 · 아틀라스 1장) · 씬 글자 · 스테이지 이름이 모두 폰트에 있음(`QaScene`이 점검, 2026-10-05)
+- `Assets/TextMesh Pro/Resources/TMP Settings.asset` 존재 · 기본 폰트 = Dongle SDF
+- `Dongle SDF`: 고정(Static) 아틀라스 · `m_SourceFontFile` null(원본 TTF가 빌드에 딸려 가지 않게) · 씬 · 코드의 화면 문구 글자가 모두 들어 있는지(`FontBuilder.Build` 결과의 빠진 글자는 로그에서 모인 `✕`뿐 · 아틀라스 2장) · 씬 글자 · 스테이지 이름이 모두 폰트에 있음(`QaScene`이 점검, 2026-10-05)
 
 ## 5. 빌드 씬 목록 (`get_build_settings`)
 - 활성 씬 목록 = `Assets/Scenes/Board.unity` 하나, enabled

@@ -20,7 +20,7 @@ public static class BoardSceneBuilder
     private const string ButtonPrefabPath = "Assets/Prefabs/DirectionButton.prefab";
     private const string OldScenePath = "Assets/Scenes/SampleScene.unity";
     private const string ScenePath = "Assets/Scenes/Board.unity";
-    private const string FontAssetPath = "Assets/Art/Fonts/Pretendard SDF.asset";
+    private const string FontAssetPath = "Assets/Art/Fonts/Dongle SDF.asset";
     // 게임이 여는 챕터(차례대로) — 데이터는 챕터마다 Assets/Data/Chapters/ChapterN/ (2026-10-07). 챕터를 등록할 때 번호를 하나씩 더한다(2026-11-14)
     private static readonly int[] Chapters = { 1, 2, 3, 4, 5 };
     private static string ChapterFolder(int chapter) => $"Assets/Data/Chapters/Chapter{chapter}";
@@ -224,7 +224,8 @@ public static class BoardSceneBuilder
 
         // 스테이지 이름 · 수 카운터(왼쪽), 목표 그림 썸네일(오른쪽)
         TMP_Text stageName = TopLeftText(boardScreen, "StageName", -150f, 90f, 64f, Strong);
-        TMP_Text moveCounter = TopLeftText(boardScreen, "MoveCounter", -250f, 70f, 52f, Muted);
+        // 동글은 받침이 기준선 아래로 내려가 -250이면 이름의 받침(울타리의 "울")이 수 표시에 닿았다(2026-11-23)
+        TMP_Text moveCounter = TopLeftText(boardScreen, "MoveCounter", -270f, 70f, 52f, Muted);
         var target = NewUI("TargetView", boardScreen);
         var targetRect = (RectTransform)target.transform;
         targetRect.anchorMin = targetRect.anchorMax = targetRect.pivot = new Vector2(1f, 1f);
@@ -424,7 +425,8 @@ public static class BoardSceneBuilder
             AddImage("Outline", chip, "HexLine", Lead, 0f, 1f);
         }
         CenterText(screen, "Title", -820f, 200f, 160f, Strong).text = "컬러링붓";
-        CenterText(screen, "Subtitle", -960f, 70f, 48f, Muted).text = "붓으로 칠하는 육각 퍼즐";
+        // 동글은 받침이 기준선 아래로 내려가 -960이면 제목의 받침과 겹쳤다(2026-11-23)
+        CenterText(screen, "Subtitle", -1010f, 70f, 48f, Muted).text = "붓으로 칠하는 육각 퍼즐";
         // [시작]은 무한 모드 버튼이 있든 없든 늘 위 자리 (2026-11-14 사용자 결정 — 읽는 순서대로 시작이 먼저, 버튼이 생겨도 자리가 바뀌지 않게)
         start = BottomButton(screen, "StartButton", "시작", 0f, 460f, true);
         ((RectTransform)start.transform).anchoredPosition = new Vector2(0f, 310f);
