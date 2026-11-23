@@ -381,7 +381,7 @@ public static class BoardSceneBuilder
         Stretch(screen, Vector2.zero, Vector2.zero);
         Fade(screen);
         Button back = TopButton(screen, "BackButton", "뒤로", false);
-        CenterText(screen, "Title", -300f, 140f, 110f, Strong).text = "무한 모드";
+        CenterText(screen, "Title", -300f, 140f, 110f, Strong).text = "스케치북";
         CenterText(screen, "Subtitle", -420f, 70f, 46f, Muted).text = "난이도를 고르면 퍼즐이 계속 나와요";
         string[] names = { "EasyButton", "NormalButton", "HardButton" };
         var buttons = new Object[names.Length];
@@ -440,7 +440,7 @@ public static class BoardSceneBuilder
         start = BottomButton(screen, "StartButton", "시작", 0f, 460f, true);
         ((RectTransform)start.transform).anchoredPosition = new Vector2(0f, 310f);
         // 무한 모드 (2026-10-07) — 시작 아래, 따라 하기를 본 뒤에 GameFlow가 켠다
-        endless = BottomButton(screen, "EndlessButton", "무한 모드", 0f, 460f, false);
+        endless = BottomButton(screen, "EndlessButton", "스케치북", 0f, 460f, false);
         endless.gameObject.SetActive(false);
         screen.SetActive(false);
         return screen;
@@ -523,7 +523,7 @@ public static class BoardSceneBuilder
         RoundImage(card, "RoundFill", T.Surface).raycastTarget = false;
         AddImage("Outline", card, "RoundRing", Lead, 0f, 1f).type = Image.Type.Sliced;
         picture = Picture(card, -20f, new Vector2(440f, 550f));
-        SetValues(picture, ("_paintScale", 1.15f), ("_focusZoom", 3f));
+        SetValues(picture, ("_focusZoom", 3f));
         var line = NewUI("Progress", card);
         var lineRect = (RectTransform)line.transform;
         lineRect.anchorMin = new Vector2(0f, 0f);
@@ -546,7 +546,7 @@ public static class BoardSceneBuilder
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = size;
         var view = go.AddComponent<ChapterView>();
-        SetRefs(view, ("_frame", Sprite("FrameRing")));
+        SetRefs(view, ("_frame", Sprite("FrameRing")), ("_brushShader", BrushShader()));
         SetValues(view, ("_frameColor", Lead));
         return view;
     }
@@ -606,7 +606,7 @@ public static class BoardSceneBuilder
         notice.SetActive(false);
 
         // 무한 모드 (2026-10-07) — 목록 아래(잠김 안내 띠 밑), 따라 하기를 본 뒤 챕터 목록에서만 GameFlow가 켠다
-        endlessButton = BottomButton(screen, "EndlessButton", "무한 모드", 0f, 460f, false);
+        endlessButton = BottomButton(screen, "EndlessButton", "스케치북", 0f, 460f, false);
         var endlessRect = (RectTransform)endlessButton.transform;
         endlessRect.anchoredPosition = new Vector2(0f, 80f);
         endlessRect.sizeDelta = new Vector2(460f, 110f);
@@ -893,6 +893,11 @@ public static class BoardSceneBuilder
     }
 
     private static Sprite Sprite(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(SpriteFolder + name + ".png");
+
+    // 챕터 그림 붓질 셰이더(2026-11-24) — ChapterView가 직렬화 참조로 들고 있어야 빌드에 들어간다
+    private const string BrushShaderPath = "Assets/Art/Shaders/BrushReveal.shader";
+    private static Shader BrushShader() =>
+        AssetDatabase.LoadAssetAtPath<Shader>(BrushShaderPath) ?? throw new System.InvalidOperationException("붓질 셰이더 없음: " + BrushShaderPath);
 
     // 에셋 — 없으면 멈춘다(SetArray는 빈 값을 막지 않으므로)
     private static TAsset Asset<TAsset>(string path) where TAsset : Object =>

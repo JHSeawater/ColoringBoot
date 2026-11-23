@@ -6,12 +6,15 @@ using UnityEngine.UI;
 namespace ColoringBoot.Game
 {
     // 챕터 그림 (Phase 5) — 종이색 바탕 · 칠한 단계 레이어 · 선화를 겹쳐 그린다. 크기는 이 RectTransform을 따른다(캔버스 비율로 배치할 것).
-    // 막 칠한 단계는 서서히 나타나며 살짝 커졌다 돌아오고, 완성이면 그 뒤 그림 전체가 한 번 더 커졌다 돌아온다
+    // 막 칠한 단계는 붓질처럼 지그재그로 칠해지고(2026-11-24 사용자 — 셰이더 BrushReveal), 완성이면 그 뒤 그림 전체가 한 번 커졌다 돌아온다
     public sealed class ChapterView : MonoBehaviour
     {
+        private static readonly int ProgressId = Shader.PropertyToID("_Progress");
+        private static readonly int RowsId = Shader.PropertyToID("_Rows");
+
         [SerializeField] private Color _paper = new Color32(0xFB, 0xFA, 0xF7, 0xFF);
-        [SerializeField] private float _paintSeconds = 0.6f;
-        [SerializeField] private float _paintScale = 1.06f;
+        [SerializeField] private float _paintSeconds = 1f;
+        [SerializeField] private Shader _brushShader;       // ColoringBoot/UI/BrushReveal — 없으면 붓질 없이 바로 칠한 모습
         [SerializeField] private float _completeSeconds = 0.8f;
         [SerializeField] private float _completeScale = 1.04f;
         [SerializeField] private Sprite _frame;          // 그림 테두리(9-slice, Phase 7.1) — 없으면 안 그림
@@ -23,11 +26,15 @@ namespace ColoringBoot.Game
         [SerializeField] private float _zoomOutSeconds = 0.5f;
 
         private const float FocusFill = 0.8f;   // 확대했을 때 단계가 그림 칸에서 차지하는 비율
+        private const float RowsPerSquare = 3f; // 정사각형 조각의 붓질 줄 수 — 세로로 길면 늘고 가로로 길면 준다(MinRows ~ MaxRows)
+        private const int MinRows = 2;
+        private const int MaxRows = 5;
 
         private readonly List<Image> _steps = new List<Image>();
         private ChapterArt _art;
         private Coroutine _routine;
         private RectTransform _content;   // 바탕 · 단계 · 선화를 담는 층 — 확대는 이 층만(Clip 안, 가운데 피벗 · 원래 자리 0)
+        private Material _brush;          // 칠하는 동안만 그 단계에 건다
 
         // painted[i] = i번째 단계를 칠했는가. animateStep: 막 칠한 단계(-1이면 연출 없음). complete: 그 뒤 완성 연출
         public void Show(ChapterArt art, IReadOnlyList<bool> painted, int animateStep = -1, bool complete = false)
@@ -39,8 +46,7 @@ namespace ColoringBoot.Game
             for (int i = 0; i < _steps.Count; i++)
             {
                 _steps[i].gameObject.SetActive(i < painted.Count && painted[i]);
-                _steps[i].color = Color.white;
-                _steps[i].transform.localScale = Vector3.one;
+                _steps[i].material = null;
             }
             if (animateStep >= 0 && animateStep < _steps.Count && isActiveAndEnabled)
             {
@@ -121,15 +127,22 @@ namespace ColoringBoot.Game
                 _content.localScale = Vector3.one * zoom;
                 _content.anchoredPosition = offset;
             }
-            for (float time = 0f; time < _paintSeconds; time += Time.unscaledDeltaTime)
+            if (_brushShader != null)
             {
-                float k = time / _paintSeconds;
-                step.color = new Color(1f, 1f, 1f, k);
-                t.localScale = Vector3.one * Mathf.Lerp(1f, _paintScale, Mathf.Sin(k * Mathf.PI));
-                yield return null;
+                if (_brush == null) _brush = new Material(_brushShader);
+                Rect rect = ((RectTransform)t).rect;
+                float aspect = rect.width > 0f ? rect.height / rect.width : 1f;
+                _brush.SetFloat(RowsId, Mathf.Clamp(Mathf.RoundToInt(RowsPerSquare * aspect), MinRows, MaxRows));
+                _brush.SetFloat(ProgressId, 0f);
+                step.material = _brush;
+                // 붓은 같은 빠르기로 간다(줄마다 같은 시간)
+                for (float time = 0f; time < _paintSeconds; time += Time.unscaledDeltaTime)
+                {
+                    _brush.SetFloat(ProgressId, time / _paintSeconds);
+                    yield return null;
+                }
+                step.material = null;
             }
-            step.color = Color.white;
-            t.localScale = Vector3.one;
             if (zoom > 1f)
             {
                 for (float time = 0f; time < _focusHold; time += Time.unscaledDeltaTime) yield return null;
@@ -188,11 +201,12 @@ namespace ColoringBoot.Game
             StopCoroutine(_routine);
             _routine = null;
             ResetZoom();
-            foreach (Image step in _steps)
-            {
-                step.color = Color.white;
-                step.transform.localScale = Vector3.one;
-            }
+            foreach (Image step in _steps) step.material = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (_brush != null) Destroy(_brush);
         }
     }
 }

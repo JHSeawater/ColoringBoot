@@ -32,7 +32,7 @@ namespace ColoringBoot.Game
             }
             text.Append("\n따라 하기\n");
             for (int i = 0; i < tutorial.Stages.Count; i++) AppendStage(text, i + 1, tutorial.Stages[i], stats);
-            text.Append("\n무한 모드\n");
+            text.Append("\n스케치북\n");
             for (int i = 0; i < endlessKeys.Count; i++)
             {
                 string key = endlessKeys[i];

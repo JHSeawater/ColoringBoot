@@ -9,6 +9,48 @@
 
 ---
 
+### 📅 [2026-11-24] 챕터 1 벌 몸통 가운데 칸 검정
+
+**작업 내용** (결정은 `DECISIONS.md` 2026-11-24)
+- `ArtSplit.py` 규칙 옵션 `"rgb": [r, g, b]` — 맞은 영역을 원본 중앙값 대신 그 색으로. `"rgb"` 규칙에 맞는 영역이 하나도 없으면 실패(그림이 바뀌어 조용히 빠지지 않게).
+- `ArtSource/Chapter1/_source/split.json`: 벌 세 마리의 몸통 가운데 칸을 좁은 `area`(영역 상자 가운데 ±0.012)로 하나씩 골라 `#25262D` — 일반 노랑 → 벌 규칙보다 앞.
+- `ArtSplit.py` → `ArtCheck.py`(통과) → `ChapterArtExport.py` → `ChapterArtBuilder.Build(1)`. 바뀐 파일은 `06_bee.png`(원본 · 게임) · `reference.png`뿐 — 다른 레이어는 바이트까지 같고, 조각 자리가 그대로라 `ChapterArt.asset`도 그대로.
+
+**확인**
+- 코드 · 테스트: `ArtCheck` 통과 · `QaScene` 727.
+- 화면: `Builds/Qa/brush/bee_reference.png`(나눈 결과 세 마리) · `bee_black.png`(에디터 플레이 — 선택 화면 그림과 클리어 카드에서 칠하는 도중). 에디터 저장 키: 이번 확인 전에 사용자가 에디터에서 벌집 · 하늘 · 길 · 벌을 깬 기록이 있어 건드리지 않음.
+- 확인 못 함: WebGL · 휴대폰.
+
+---
+
+### 📅 [2026-11-24] 그림 칠하기 연출 — 붓질(지그재그)
+
+**작업 내용** (결정은 `DECISIONS.md` 2026-11-24)
+- 새 셰이더 `Assets/Art/Shaders/BrushReveal.shader`(`ColoringBoot/UI/BrushReveal`): UI/Default + `_Progress` · `_Rows` · `_Tip`. 조각 UV를 위에서부터 `_Rows`줄로 나눠 짝수 줄 왼→오 · 홀수 줄 오→왼으로 드러내고, 줄 경계(가로 잡음)와 붓 끝(세로 위치마다 길이가 다른 붓털 잡음)을 울퉁불퉁하게. RectMask2D 잘라내기(클리어 카드 확대) 유지. 텍스처 없이 계산.
+- `ChapterView.Paint`: 알파 · 크기 연출(`_paintScale`) → 칠하는 동안만 그 조각에 붓질 재질을 걸고 `_Progress`를 0→1(`_paintSeconds` 0.6 → 1초, 줄마다 같은 시간). 끝나거나 끊기면(`Show` · `OnDisable`) 원래 재질로. 재질은 뷰마다 하나를 처음 칠할 때 만들고 `OnDestroy`에서 지움.
+- `BoardSceneBuilder.Picture`: `_brushShader` 참조(빌드 포함용) · 클리어 카드의 `_paintScale` 1.15 지움 → `BuildPrefabs` → `BuildScene`.
+
+**확인**
+- 코드 · 테스트: 셰이더 오류 · 경고 0 · `QaScene` 727 · EditMode 500/500 · 콘솔 오류 0. 씬의 `ChapterView` 3개 모두 셰이더 참조.
+- 화면(에디터 플레이, `Builds/Qa/brush/card_mid.png`): 클리어 카드(3배 확대)에서 벌집 조각을 8초로 늦춰 칠하는 도중 캡처 — 위 줄부터 지그재그로 칠해지고 붓 끝이 울퉁불퉁. 카드를 QA로 억지로 켜서 뒤에 선택 화면이 함께 보임. 에디터 저장 키는 플레이 전후 같음.
+- 확인 못 함: 실제 클리어 흐름에서의 1초 속도 느낌 · WebGL(휴대폰 GPU에서 셰이더) · 휴대폰.
+
+---
+
+### 📅 [2026-11-23] "무한 모드" → "스케치북" 이름 변경
+
+**작업 내용** (결정은 `DECISIONS.md` 2026-11-23)
+- 화면 문구: `BoardSceneBuilder`(타이틀 버튼 · 목록 아래 버튼 · 난이도 화면 제목) · `StatsView`(`?stats` 묶음 이름). 코드 이름 · 저장 키 · 기록 키는 그대로.
+- `FontBuilder.Build` → 글자 382개(+2) · 아틀라스 2장 그대로 → `BuildPrefabs` → `BuildScene`. 폰트를 다시 만들어 재질 · `Cell.prefab`의 하위 에셋 fileID가 바뀜(같은 폰트 GUID).
+- 문서: GDD §5 · §8 등 · TDD의 이름을 "스케치북"으로(GDD는 사용자가 이름을 고른 것을 승인으로 봄).
+
+**확인**
+- 코드 · 테스트: `QaScene` 727 · EditMode 500/500.
+- 화면(에디터 플레이 540×960): 타이틀 [스케치북] 버튼 · 난이도 화면 제목 "스케치북" — □ 없음. 에디터 저장 키는 플레이 전후 같음(화면만 넘김).
+- 확인 못 함: WebGL 빌드 · 휴대폰.
+
+---
+
 ### 📅 [2026-11-23] 테두리 글자 — 타이틀 · 목록 제목 · 육각 번호 · 클리어 띠
 
 **작업 내용** (결정은 `DECISIONS.md` 2026-11-23)
@@ -21,7 +63,7 @@
 - 코드 · 테스트: `QaScene` 727 · EditMode 500/500 · 콘솔 오류 0.
 - 화면(에디터 플레이 540×960, `Builds/Qa/outline/sheet2.png` · `zoom2.png` · `title_color.png`): 타이틀 · 챕터 2 목록(6판 깸) · 클리어 띠. 에디터 저장 키는 QA 전 값으로 되돌림 — 그 뒤 에디터에서 사용자 플레이 기록(나뭇잎 6수 · 벌집 열기)이 더해져 있어, 타이틀만 띄운 마지막 캡처 뒤에는 키를 건드리지 않음.
 - WebGL: 13,241,191바이트(−2,841) → Pages `23f3387`(파일 4개 크기 일치) · PC Chrome 색 타이틀 · 콘솔 오류 0.
-- 확인 못 함: 휴대폰, 사용자 판단(유지할지).
+- 사용자 확인(휴대폰 배포본 `23f3387`, 2026-11-23): "휴대폰에서 확인했고 괜찮다" — 유지.
 
 ---
 

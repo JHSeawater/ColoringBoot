@@ -8,6 +8,8 @@
 # 규칙 옵션(2026-11-14): "step": null = 그 영역은 어느 단계에도 넣지 않고 종이로 남긴다(넓은 흰 바탕 — ArtSpec §4 예외).
 #   선 밑 채우기에서는 주인으로 두어 이웃 단계 색이 그쪽 선 밑으로 번지지 않는다.
 #   "keep": true = 중앙값 대신 원본 픽셀 색(노을 같은 그라데이션). 가장자리 2픽셀과 선 밑은 가장 가까운 안쪽 픽셀 색
+#   "rgb": [r, g, b] (2026-11-24) = 원본에 없는 색으로 칠한다(챕터 1 벌 몸통 가운데 칸 → 검정 — 원본에서 진한 색은 선이 되므로).
+#     좁은 area로 한 칸씩 고르고, 맞는 영역이 없으면 실패한다(그림이 바뀌어 조용히 빠지지 않게)
 import json
 import os
 import sys
@@ -73,6 +75,7 @@ def split(chapter_dir):
     keep_of = np.zeros(count, bool)              # 원본 색 그대로 쓰는 영역
     keep_px = np.zeros((h0, w0), bool)           # 그 영역의 색을 가져올 안쪽 픽셀
     small = 0
+    recolored = set()                            # 영역이 하나라도 맞은 규칙(id) — "rgb" 규칙 검사용
     for i in range(1, count):
         x, y, w, h, area = stats[i]
         if area < MIN_AREA:
@@ -98,10 +101,12 @@ def split(chapter_dir):
             step_of[i] = PAPER
             continue
         step_of[i] = steps.index(rule['step']) + 1
-        color_of[i] = color
+        color_of[i] = rule.get('rgb', color)
+        recolored.add(id(rule))
         if rule.get('keep'):
             keep_of[i] = True
             keep_px[y0:y1, x0:x1] |= inner if inner.sum() > 10 else mask
+    fails += [f'규칙 {n}: "rgb" 규칙에 맞는 영역 없음' for n, r in enumerate(cfg['rules'], 1) if 'rgb' in r and id(r) not in recolored]
     stop_if(fails)
 
     # 선 · 작은 조각 밑을 가장 가까운 영역으로
