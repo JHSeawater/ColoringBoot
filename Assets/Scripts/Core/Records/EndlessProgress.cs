@@ -39,7 +39,8 @@ namespace ColoringBoot.Core
                 e = new Entry();
                 _tiers.Add(tier, e);
             }
-            e.Current = (e.Current + 1) % poolSize;
+            // 먼저 묶음 길이로 줄인다 — 저장된 번호가 int 끝 근처여도 + 1이 넘치지 않게(2026-11-25 — 지적 M7). 결과는 (번호 + 1) % 길이와 같다
+            e.Current = (e.Current % poolSize + 1) % poolSize;
             return e;
         }
 

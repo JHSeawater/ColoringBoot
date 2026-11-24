@@ -67,6 +67,18 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(RecordReadStatus.Ok, status, "끝의 빈 줄은 버림이 아님");
         }
 
+        // 저장된 번호가 int 끝이어도 다음 번호가 넘치지 않는다(2026-11-25 — 지적 M7: 전에는 음수가 돼 GameFlow의 pool[번호 % 길이]가 예외)
+        [Test]
+        public void Progress_AdvanceFromMaxValue_StaysInPool()
+        {
+            EndlessProgress read = EndlessProgress.Deserialize($"endless 1\nEasy\t{int.MaxValue}\t0\t0\n", out _);
+
+            read.Solve("Easy", 300);
+            Assert.AreEqual((int)(((long)int.MaxValue + 1) % 300), read.Current("Easy"), "번호 + 1을 묶음 길이로 나눈 나머지");
+            read.Skip("Easy", 300);
+            Assert.That(read.Current("Easy"), Is.InRange(0, 299));
+        }
+
         [Test]
         public void Progress_Status_LinesDropped_KeepsReadLines()
         {

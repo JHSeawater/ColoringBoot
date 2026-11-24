@@ -109,6 +109,19 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(RecordReadStatus.Ok, status, "끝의 빈 줄은 버림이 아님");
         }
 
+        // 걸린 시간이 수가 아닌 값(NaN · 무한대) — double.TryParse가 읽어 들이므로 따로 버린다(2026-11-25 — 지적 M7)
+        [TestCase("NaN")]
+        [TestCase("Infinity")]
+        [TestCase("-Infinity")]
+        public void Deserialize_NonFiniteSeconds_DropsLine(string seconds)
+        {
+            PlayStats read = PlayStats.Deserialize($"stats 2\nGrape\t2\t9\t1\t0\t0\t30.0\t5\nHive\t1\t3\t0\t0\t0\t{seconds}\t-\n", out RecordReadStatus status);
+
+            Assert.AreEqual(RecordReadStatus.LinesDropped, status);
+            Assert.AreEqual(2, read.Get("Grape").Opens);
+            Assert.AreEqual(0, read.Get("Hive").Opens);
+        }
+
         [Test]
         public void Deserialize_Status_LinesDropped_KeepsReadLines()
         {

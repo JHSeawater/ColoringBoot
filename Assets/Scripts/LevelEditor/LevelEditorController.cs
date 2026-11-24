@@ -430,28 +430,53 @@ namespace ColoringBoot.LevelEditor
             }
         }
 
-        // 편집 범위(반지름 4) 안으로 옮겨 담는다 — 프로토타입 fromLevel과 같은 가운데 맞춤.
-        // 옮겨도 범위를 넘거나 칸이 40개를 넘으면 열지 않는다(격자에 안 보이는 칸이 그대로 저장되므로) — 상태 줄에 알리고 false
+        // 편집 범위(반지름 4) 안으로 옮겨 담는다 — 먼저 프로토타입 fromLevel과 같은 가운데 맞춤, 안 들어가면 가운데에서 가장 가까운 다른 평행 이동(2026-11-25 — 지적 H1:
+        // 경계 상자 가운데만 보던 때는 BeachPalm 1칸 · WinterStar 2칸이 밖이라 거부했지만 다른 자리로는 들어간다).
+        // 어디로 옮겨도 범위를 넘거나 칸이 40개를 넘으면 열지 않는다(격자에 안 보이는 칸이 그대로 저장되므로) — 상태 줄에 알리고 false
         private bool SetStage(Stage stage)
         {
             int minQ = stage.Cells.Min(c => c.Coord.Q), maxQ = stage.Cells.Max(c => c.Coord.Q);
             int minR = stage.Cells.Min(c => c.Coord.R), maxR = stage.Cells.Max(c => c.Coord.R);
             int centerQ = (int)Math.Floor((minQ + maxQ) / 2.0 + 0.5), centerR = (int)Math.Floor((minR + maxR) / 2.0 + 0.5);
-            HexCoord[] coords = stage.Cells.Select(c => new HexCoord(c.Coord.Q - centerQ, c.Coord.R - centerR)).ToArray();
-            int outside = coords.Count(c => Math.Max(Math.Abs(c.Q), Math.Max(Math.Abs(c.R), Math.Abs(c.Q + c.R))) > PaintGridView.Radius);
-            if (stage.Cells.Count > MaxCells || outside > 0)
+            bool fits = TryFit(stage, centerQ, centerR, out HexCoord shift);
+            if (stage.Cells.Count > MaxCells || !fits)
             {
                 _status = $"열지 않았어요 — '{stage.Name}' {stage.Cells.Count}칸"
                     + (stage.Cells.Count > MaxCells ? $", 칸은 {MaxCells}개까지예요 (GDD §6)" : "")
-                    + (outside > 0 ? $", 가운데로 옮겨도 {outside}칸이 편집 범위(반지름 {PaintGridView.Radius})를 넘어요" : "") + ".";
+                    + (!fits ? $", 어디로 옮겨도 편집 범위(반지름 {PaintGridView.Radius})를 넘어요" : "") + ".";
                 return false;
             }
+            HexCoord[] coords = stage.Cells.Select(c => new HexCoord(c.Coord.Q - shift.Q, c.Coord.R - shift.R)).ToArray();
             _cells.Clear();
             for (int i = 0; i < coords.Length; i++) _cells[coords[i]] = (stage.Cells[i].Start, stage.Cells[i].Target);
             _targetLayer = false;
             RenderGrid();
             return true;
         }
+
+        // 모든 칸을 편집 범위 안에 넣는 평행 이동(칸 좌표에서 뺄 값) 중 (centerQ, centerR)에서 육각 거리가 가장 가까운 것. 없으면 false.
+        // 후보는 경계 상자를 반지름만큼 넓힌 범위면 충분하다(그보다 멀면 어떤 칸은 반드시 범위 밖). 같은 거리면 q · r이 작은 쪽
+        private static bool TryFit(Stage stage, int centerQ, int centerR, out HexCoord shift)
+        {
+            int radius = PaintGridView.Radius;
+            int minQ = stage.Cells.Min(c => c.Coord.Q), maxQ = stage.Cells.Max(c => c.Coord.Q);
+            int minR = stage.Cells.Min(c => c.Coord.R), maxR = stage.Cells.Max(c => c.Coord.R);
+            shift = default;
+            int best = int.MaxValue;
+            for (int q = maxQ - radius; q <= minQ + radius; q++)
+            for (int r = maxR - radius; r <= minR + radius; r++)
+            {
+                int distance = HexDistance(q - centerQ, r - centerR);
+                if (distance >= best) continue;
+                int dq = q, dr = r;
+                if (!stage.Cells.All(c => HexDistance(c.Coord.Q - dq, c.Coord.R - dr) <= radius)) continue;
+                best = distance;
+                shift = new HexCoord(q, r);
+            }
+            return best != int.MaxValue;
+        }
+
+        private static int HexDistance(int q, int r) => Math.Max(Math.Abs(q), Math.Max(Math.Abs(r), Math.Abs(q + r)));
 
         // 칸 순서는 프로토타입 toLevel과 같이 r → q
         private Stage BuildStage(int? minMoves)

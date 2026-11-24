@@ -9,6 +9,19 @@
 
 ---
 
+### 📅 [2026-11-25] 깨진 저장 값 · 레벨 에디터 불러오기 거부
+
+**작업 내용** (`Task.md` "코드 점검 — 전체 (2026-11-20)" 지적 M7 · H1 — 저장 형식은 그대로)
+- `PlayStats` 읽기: 걸린 시간이 `NaN` · `Infinity`면 그 줄을 버림(`double.TryParse`가 읽어 들이고, NaN은 `< 0` 검사를 빠져나갔다).
+- `EndlessProgress.Advance`: `(번호 % 길이 + 1) % 길이` — 저장된 번호가 `int.MaxValue`여도 넘치지 않음(전에는 음수 → `GameFlow`의 `pool[번호 % 길이]` 예외). 보통 값에서는 결과가 전과 같다.
+- `LevelEditorController.SetStage`: 경계 상자 가운데로 옮겨 안 들어가면, 모든 칸이 편집 범위(반지름 4) 안에 드는 평행 이동 중 가운데에서 육각 거리가 가장 가까운 것(`TryFit`). 하나도 없을 때만 거부 — 문구도 "어디로 옮겨도 … 넘어요".
+
+**확인**
+- 코드 · 테스트: 새 케이스(`PlayStatsTests.Deserialize_NonFiniteSeconds_DropsLine` 3 · `EndlessTests.Progress_AdvanceFromMaxValue_StaysInPool`)가 고치기 전 실패 — NaN · Infinity 줄이 `Ok`로 읽힘, 다음 번호 −248 — 고친 뒤 통과. EditMode 534/534. 콘솔 오류 1건은 다시 컴파일할 때 끊긴 에디터 연결 요청 로그("Thread was being aborted")로 프로젝트 코드가 아님.
+- 레벨 에디터: `Assets/Data` 스테이지 중 40칸 이하 71개 모두 들어감 — 가운데가 아닌 자리는 `BeachPalm`(가운데 2,3 → 1,3) · `WinterStar`(3,3 → 2,3)뿐, 나머지 69개는 전과 같은 가운데. 에디터 플레이(`LevelEditor.unity`)에서 불러오기 경로(`Open`)로 두 판 모두 열림 — 16칸 · 15칸, 격자 안에 다 보임(`Builds/Qa/editor/`). 끝나고 보드 씬을 다시 엶 · 씬 파일 변화 없음.
+
+---
+
 ### 📅 [2026-11-25] 테스트 보강 — 주소 쿼리 관문 · 순서 민감도 경계 · 스케치북 묶음 품질 조건
 
 **작업 내용** (`Task.md` "코드 점검 — 전체 (2026-11-20)" 지적 M11)

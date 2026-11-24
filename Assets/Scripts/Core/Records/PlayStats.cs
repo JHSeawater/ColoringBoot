@@ -125,7 +125,9 @@ namespace ColoringBoot.Core
             if (!TryCount(f[1], out int opens) || !TryCount(f[2], out int strokes) || !TryCount(f[3], out int undos) || !TryCount(f[4], out int restarts)) return false;
             int hints = 0;
             if (hasHints && !TryCount(f[5], out hints)) return false;
-            if (!double.TryParse(f[fields - 2], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) || seconds < 0) return false;
+            // NaN · Infinity도 TryParse가 읽어 들인다 — 수가 아니면 버린다(2026-11-25 — 지적 M7, NaN은 "< 0"을 빠져나감)
+            if (!double.TryParse(f[fields - 2], NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds)
+                || double.IsNaN(seconds) || double.IsInfinity(seconds) || seconds < 0) return false;
             int? clearMoves = null;
             if (f[fields - 1] != NotCleared)
             {
