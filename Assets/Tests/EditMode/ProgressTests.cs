@@ -37,6 +37,16 @@ namespace ColoringBoot.Core.Tests
             Assert.IsTrue(progress.IsPerfect("Grape", 5));
         }
 
+        // 클리어 띠 문구(2026-11-25 — 지적 L1): 이번 판의 수로 정한다 — 기록이 완벽이어도 이번에 더 많이 두면 "완성!"
+        [TestCase(5, 5, 5, "완벽! 최소 5수")]      // 최소 수로 깸
+        [TestCase(7, 5, 5, "완성! 최고 5수")]      // 기록은 완벽(5수)인데 이번은 7수
+        [TestCase(7, 5, 7, "완성! 최고 7수")]      // 첫 클리어가 7수
+        [TestCase(4, null, 4, "완성! 최고 4수")]   // 최소 수가 없는 스테이지
+        public void ClearText_PerfectOnlyForThisPlay(int moves, int? minMoves, int best, string expected)
+        {
+            Assert.AreEqual(expected, ColoringBoot.Game.PuzzleController.ClearText(moves, minMoves, best));
+        }
+
         [Test]
         public void IsUnlocked_FirstStageOrPreviousCleared()
         {

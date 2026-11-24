@@ -15,7 +15,8 @@ namespace ColoringBoot.Core.Tests
 
         private static readonly (string Rule, Regex Pattern, string AllowedFile)[] Rules =
         {
-            ("스레드 금지(WebGL 단일 스레드)", new Regex(@"\b(Thread|ThreadPool)\b|\bTask\.Run\b|\bParallel\."), null),
+            // System.Threading · System.Timers(2026-11-25 — 지적 M9): using 줄이나 전체 이름에서 잡힌다. Task.Delay · Task.Factory는 따로도(이름공간을 다른 줄에서 열어도)
+            ("스레드 금지(WebGL 단일 스레드)", new Regex(@"\b(Thread|ThreadPool)\b|\bTask\.(Run|Delay|Factory)\b|\bParallel\.|\bSystem\.(Threading|Timers)\b"), null),
             ("System.IO 금지(저장은 IKeyValueStore)", new Regex(@"\bSystem\.IO\b"), null),
             ("PlayerPrefs 직접 호출 금지(IKeyValueStore 뒤로)", new Regex(@"\bPlayerPrefs\b"), "PlayerPrefsStore.cs"),
             ("LoadScene 금지(화면 전환은 GameFlow)", new Regex(@"\bLoadScene"), null),

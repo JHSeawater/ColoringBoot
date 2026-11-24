@@ -9,6 +9,21 @@
 
 ---
 
+### 📅 [2026-11-25] 코드 점검 쉬운 항목 셋 — 스레드 금지 패턴 · 테스트 반복 상한 · "완벽!" 문구
+
+**작업 내용** (`Task.md` "코드 점검 — 전체 (2026-11-20)" 지적 M9 · M10 · L1)
+- `SourceRuleTests`: 스레드 금지 패턴에 `System.Threading` · `System.Timers` · `Task.Delay` · `Task.Factory`(지금 런타임 코드에는 하나도 없음).
+- `SolverTests.StepCap`(= (limit + 1) / budget + 2 — 한 번에 budget개 · 한 탐색이 펼치는 상태 ≤ limit + 1): `AssertSearchMatchesSolve` · `HintTests.FindInSteps`(× (수 + 1) — 되돌린 상태마다 탐색 하나)가 넘으면 `Assert.Fail`.
+- `PuzzleController.ClearText`: 클리어 띠 "완벽!"을 이번 판의 수로 정함(전에는 저장된 최고 기록 — 완벽 기록이 있는 판을 더 많이 둬도 "완벽!"). 목록 별은 기록 기준 그대로(`DECISIONS.md` 2026-11-25). `ProgressTests`에 문구 4건. `BoardQa.SolveLong`(첫 획을 최적이 아닌 것으로 둬 최소 수보다 길게 풂) · `ClearLabel` 추가.
+- 에디터는 MCP 도구가 빠져 CLI(`unity command … --json`)로 다룸.
+
+**확인**
+- 코드 · 테스트: EditMode 504/504(+4) · 컴파일 오류 0. 금지 패턴 — 임시 파일 `Assets/Scripts/Game/RuleProbe.cs`(using `System.Threading.Tasks` · `Task.Delay` · `System.Timers.Timer`)로 세 줄 모두 실패 확인 뒤 지움. 반복 상한 — 잠깐 1로 하면 `HintTests` 4건이 "Step을 n번 불러도 끝나지 않음"으로 실패(멈추지 않음) 확인 뒤 되돌림.
+- 화면(에디터 플레이, `Builds/Qa/perfect/`): 바구니(최소 5 · 기록 5)를 6수로 → `long.png` "완성! 최고 5수", 처음부터 5수로 → `min.png` "완벽! 최소 5수". 에디터 저장 키는 플레이 전후 같음(이미 깬 판이라 기록이 바뀌지 않음).
+- 확인 못 함: WebGL · 휴대폰(띠 문구만 바뀜).
+
+---
+
 ### 📅 [2026-11-24] 챕터 그림 책장 — 왼쪽 스프링 · 겹친 종이 · 들어 올려 넘기기
 
 **작업 내용** (결정은 `DECISIONS.md` 2026-11-24)

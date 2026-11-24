@@ -117,6 +117,32 @@ public static class BoardQa
         return $"풀이 {result.Path.Count}수 → {Flow()}";
     }
 
+    // 최소 수보다 많이 둬서 실제 끌기로 푼다(2026-11-25 — 클리어 띠 "완벽!" 문구 QA): 첫 획은 막히지 않으면서 최적이 아닌 것, 그 뒤는 솔버 풀이
+    public static string SolveLong()
+    {
+        Board board = Session().Board;
+        PaintColor[] start = board.CreateStartState();
+        int min = Solver.Solve(board, start).Path.Count;
+        foreach (BoardMove first in board.Moves)
+        {
+            var state = (PaintColor[])start.Clone();
+            if (!board.Brush(state, first.Cell, first.Direction) || board.IsDead(state)) continue;
+            SolveResult rest = Solver.Solve(board, state);
+            if (!rest.Solved || rest.Path.Count + 1 <= min) continue;
+            foreach (BoardMove move in new[] { first }.Concat(rest.Path))
+            {
+                HexCoord c = board.CoordOf(move.Cell);
+                Drag(c.Q, c.R, (int)move.Direction, 1.2f, true);
+            }
+            return $"최소 {min}수 · 이번 {rest.Path.Count + 1}수 → 띠 문구 \"{ClearLabel()}\" · {State()}";
+        }
+        return "최소 수보다 길게 푸는 길 없음";
+    }
+
+    // 클리어 띠 문구(띠는 연출 뒤 켜지지만 문구는 클리어 순간 정해진다)
+    public static string ClearLabel() =>
+        ((TMPro.TMP_Text)typeof(PuzzleController).GetField("_clearLabel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(UnityEngine.Object.FindAnyObjectByType<PuzzleController>())).text;
+
     public static string Undo()
     {
         var button = GameObject.Find("Canvas/SafeArea/BoardScreen/UndoButton").GetComponent<Button>();

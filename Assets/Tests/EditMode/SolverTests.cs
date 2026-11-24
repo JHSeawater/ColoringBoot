@@ -89,6 +89,10 @@ namespace ColoringBoot.Core.Tests
         // 탐색은 start 배열을 바꾸지 않는다(2026-11-19) — 힌트는 세션이 화면에 쓰는 배열을 그대로 넘긴다(PuzzleSession.StartHint)
         private static readonly int[] Budgets = { 1, 997 };
 
+        // 나눠 도는 탐색의 Step 호출 상한(2026-11-25 — 지적 M10): 한 번에 상태를 budget개까지 펼치고, 한 탐색이 펼치는 상태는 limit + 1개를 넘지 않는다.
+        // 이보다 많이 불러야 하면 끝나지 않는 회귀다 — 에디터가 멈추는 대신 실패시킨다(HintTests도 씀)
+        internal static long StepCap(int limit, int budget) => ((long)limit + 1) / budget + 2;
+
         private static void AssertSearchMatchesSolve(Board board, PaintColor[] start, int limit)
         {
             var before = (PaintColor[])start.Clone();
@@ -100,7 +104,11 @@ namespace ColoringBoot.Core.Tests
                 var search = new SolverSearch(board, start, limit);
                 bool done = search.Step(budget);
                 if (!done) Assert.IsNull(search.Result, "끝나기 전에는 결과 없음");
-                while (!done) done = search.Step(budget);
+                for (long steps = 1; !done; steps++)
+                {
+                    if (steps >= StepCap(limit, budget)) Assert.Fail($"예산 {budget}: Step을 {steps}번 불러도 끝나지 않음(상한 {StepCap(limit, budget)})");
+                    done = search.Step(budget);
+                }
                 CollectionAssert.AreEqual(before, start, $"예산 {budget}: 탐색 뒤 start 배열");
                 AssertSameResult(expected, search.Result, $"예산 {budget}");
             }

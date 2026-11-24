@@ -369,7 +369,7 @@ namespace ColoringBoot.Game
             if (solved)
             {
                 if (_lesson >= 0) _clearLabel.text = TutorialLessons.Done(_lesson);
-                else _clearLabel.text = _data.Progress.IsPerfect(_stageId, _minMoves) ? $"완벽! 최소 {best.Value}수" : $"완성! 최고 {best.Value}수";
+                else _clearLabel.text = ClearText(_session.MoveCount, _minMoves, best.Value);
             }
             _stuckBanner.SetActive(!solved && _session.IsDead && !holdBanners);
             _undoButton.interactable = _session.MoveCount > 0 && !searching;
@@ -380,6 +380,11 @@ namespace ColoringBoot.Game
             _hintButton.interactable = !solved && !searching && (_lesson < 0 || TutorialLessons.IsFree(_lesson));
             if (_lesson >= 0 && !solved) ShowLessonGuide();
         }
+
+        // 클리어 띠 문구(2026-11-25 — 지적 L1): "완벽!"은 이번 판을 최소 수로 깼을 때만. 저장된 최고 기록이 완벽이어도 이번에 더 많이 뒀으면 "완성!"
+        // (목록 버튼의 별은 기록 기준 그대로 — 한 번이라도 최소 수로 깼다는 표시). moves: 이번 판의 수, best: 이번 판까지 넣은 최고 기록
+        public static string ClearText(int moves, int? minMoves, int best) =>
+            minMoves.HasValue && moves <= minMoves.Value ? $"완벽! 최소 {moves}수" : $"완성! 최고 {best}수";
 
         // 따라 하기: 지금 그을 획이 있으면 손가락 표시 · 한 줄 설명(막혀서 되돌려야 할 때는 막힘 띠의 되돌리기를 쓴다). 혼자 풀기 레슨은 안내 한 줄만
         private void ShowLessonGuide()

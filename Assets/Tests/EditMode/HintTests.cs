@@ -59,11 +59,16 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(HintKind.Unknown, Grape().FindHint(1).Kind);
         }
 
-        // 나눠 도는 힌트 탐색(HintSearch, 2026-11-17) — 상태를 budget개씩 펼쳐도 한 번에 도는 FindHint와 같은 힌트다
+        // 나눠 도는 힌트 탐색(HintSearch, 2026-11-17) — 상태를 budget개씩 펼쳐도 한 번에 도는 FindHint와 같은 힌트다.
+        // Step 호출 상한(2026-11-25 — 지적 M10): 지금 상태 + 되돌린 상태마다 탐색 하나씩 → SolverTests.StepCap × (수 + 1). 넘으면 끝나지 않는 회귀
         private static Hint FindInSteps(PuzzleSession session, int limit, int budget)
         {
             HintSearch search = session.StartHint(limit);
-            while (!search.Step(budget)) { }
+            long cap = SolverTests.StepCap(limit, budget) * (session.MoveCount + 1);
+            for (long steps = 1; !search.Step(budget); steps++)
+            {
+                if (steps >= cap) Assert.Fail($"예산 {budget}: 힌트 Step을 {steps}번 불러도 끝나지 않음(상한 {cap})");
+            }
             return search.Result;
         }
 

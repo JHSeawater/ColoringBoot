@@ -36,7 +36,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 하는 일 | entry |
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
-| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `Drag` · `State` · `Lab`(시험 목록 열기) · `UnlockAll`(주소 `?unlock`처럼 모든 챕터 · 스테이지를 엶) · `ClearChapter`(args=`[챕터 번호, 남길 판 수]` — 그 챕터를 깬 기록을 게임의 `SaveData`로 씀, 2026-11-15) · `HintProbe`(args=`[목록으로 나갈지]` — 힌트를 누른 같은 호출 안에서 되돌리기 · 처음부터 · 끌기 · 붓질 메서드 · 힌트를 직접 불러 탐색 중 잠금을 봄, 탐색이 여러 프레임에 걸치는 판에서) · `HintStatus`(탐색 중인지 · 힌트 횟수 · 잠금, 2026-11-17) 등 |
+| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `SolveLong`(최소 수보다 많이 둬서 풂 — "완벽!" 문구 확인, 2026-11-25) · `ClearLabel` · `Drag` · `State` · `Lab`(시험 목록 열기) · `UnlockAll`(주소 `?unlock`처럼 모든 챕터 · 스테이지를 엶) · `ClearChapter`(args=`[챕터 번호, 남길 판 수]` — 그 챕터를 깬 기록을 게임의 `SaveData`로 씀, 2026-11-15) · `HintProbe`(args=`[목록으로 나갈지]` — 힌트를 누른 같은 호출 안에서 되돌리기 · 처음부터 · 끌기 · 붓질 메서드 · 힌트를 직접 불러 탐색 중 잠금을 봄, 탐색이 여러 프레임에 걸치는 판에서) · `HintStatus`(탐색 중인지 · 힌트 횟수 · 잠금, 2026-11-17) 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 · 생성 조건 · 그림 → 시작 칸 찾기 · 붙여넣기 · 시험 플레이(2026-10-13) | `Paint` · `Record` · `Check` · `Save` · `GenerateWith` · `FindSeeds` · `Paste` · `Play` · `PlaySolve` · `PlayDeadMove` · `PlayUndo` 등 (시험 플레이 열기와 끌기는 다른 호출로) |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
 
