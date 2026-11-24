@@ -2,8 +2,8 @@ using System;
 
 namespace ColoringBoot.Game
 {
-    // 주소 쿼리 읽기 (?stage=Grape&stats) — QA · 플레이테스트용. WebGL만 주소가 있다(에디터에서는 빈 문자열)
-    internal static class UrlQuery
+    // 주소 쿼리 읽기 (?stage=Grape&stats) — QA · 플레이테스트용. WebGL만 주소가 있다(에디터에서는 빈 문자열). 테스트(UrlQueryTests)가 쓰므로 public
+    public static class UrlQuery
     {
         // QA 주소 기능을 켜는 테스트 주소 (2026-10-07 — 출시 주소(앱인토스 등)에서는 받은 링크 하나로 진행이 지워지거나 해금을 건너뛰지 않게)
         private static readonly string[] _qaHosts = { "jhseawater.github.io", "localhost", "127.0.0.1" };

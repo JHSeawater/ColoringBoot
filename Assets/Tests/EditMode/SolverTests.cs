@@ -75,11 +75,17 @@ namespace ColoringBoot.Core.Tests
             Assert.IsTrue(result.Limited);
         }
 
-        [Test]
-        public void MeasureOrder_NullOutsideTwoToSevenMoves()
+        // 2~7수만 잰다(7! = 5040가지 — 8수부터는 40320가지라 재지 않음). 경계 양쪽(2026-11-25 — 지적 M11: 7수 초과가 없었음)
+        [TestCase(1, false)]
+        [TestCase(2, true)]
+        [TestCase(7, true)]
+        [TestCase(8, false)]
+        public void MeasureOrder_NullOutsideTwoToSevenMoves(int moves, bool measured)
         {
             var board = new Board(Stage.Parse(TestStages.Grape));
-            Assert.IsNull(Solver.MeasureOrder(board, board.CreateStartState(), new[] { board.Moves[0] }));
+            var path = new BoardMove[moves];
+            for (int i = 0; i < moves; i++) path[i] = board.Moves[i];
+            Assert.AreEqual(measured, Solver.MeasureOrder(board, board.CreateStartState(), path).HasValue);
         }
 
         // 탐색 결과의 기준은 참조 탐색(ReferenceSolver — SolverSearch와 따로 쓴 단순한 너비 우선, 2026-11-19)이다.

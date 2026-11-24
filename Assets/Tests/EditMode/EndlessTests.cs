@@ -135,6 +135,31 @@ namespace ColoringBoot.Core.Tests
             CollectionAssert.IsEmpty(found, "거의 같은 퍼즐");
         }
 
+        // 묶음의 품질 조건(GDD §5 · §8, 2026-11-25 — 지적 M11): 섞인 색 비율(칠해지는 목표 칸 중) ≥ 0.3 · 막힐 수 있는 칸 비율(모든 칸 중) ≥ 난이도 하한.
+        // 값과 계산은 AgentScripts/Build/EndlessPoolBuilder.cs → Generator.MeetsConditions와 같다 — 묶음을 다시 만들 때 조건이 빠지면 여기서 걸린다
+        [TestCase("Easy", 0.2)]
+        [TestCase("Normal", 0.4)]
+        [TestCase("Hard", 0.5)]
+        public void Pool_MeetsQualityConditions(string tier, double minTrapRatio)
+        {
+            const double MinMixedRatio = 0.3;
+            foreach (string line in TestStages.ReadEndlessPool(tier))
+            {
+                Stage stage = Stage.Parse(line);
+                var start = new PaintColor[stage.Cells.Count];
+                var target = new PaintColor[stage.Cells.Count];
+                for (int i = 0; i < start.Length; i++)
+                {
+                    start[i] = stage.Cells[i].Start;
+                    target[i] = stage.Cells[i].Target;
+                }
+                int mixed = StageMetrics.CountMixedCells(target, out int painted);
+                Assert.That(painted > 0 && (double)mixed / painted >= MinMixedRatio, $"섞인 색 {mixed} / {painted}: {line}");
+                int trap = StageMetrics.CountTrapCells(start, target);
+                Assert.That((double)trap / target.Length >= minTrapRatio, $"막힐 수 있는 칸 {trap} / {target.Length}: {line}");
+            }
+        }
+
         // 묶음: 모든 줄이 읽히고 · 풀리고 · minMoves = 솔버 최소 수 · 난이도 범위 안 · 같은 퍼즐 없음
         [TestCase("Easy", 3, 4)]
         [TestCase("Normal", 5, 6)]

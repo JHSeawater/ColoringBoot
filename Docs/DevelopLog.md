@@ -9,6 +9,19 @@
 
 ---
 
+### 📅 [2026-11-25] 테스트 보강 — 주소 쿼리 관문 · 순서 민감도 경계 · 스케치북 묶음 품질 조건
+
+**작업 내용** (`Task.md` "코드 점검 — 전체 (2026-11-20)" 지적 M11)
+- `UrlQueryTests`(새 파일): `IsQaHost` — 테스트 주소(Pages · localhost · 127.0.0.1, 호스트 대소문자 무관)만 true, 출시 주소 · 테스트 주소로 시작하는 다른 호스트 · 쿼리에만 테스트 주소 · file: · 빈 주소 · null은 false. `TryGet` — 값 · 값 없는 키 · 키 대소문자 · `#` 뒤 · 퍼센트 인코딩 · 경로의 같은 글자 · 이름이 비슷한 키. 테스트가 보게 `UrlQuery`를 `internal` → `public`(유일한 게임 코드 변경).
+- `SolverTests.MeasureOrder_NullOutsideTwoToSevenMoves`: 1수만 보던 것을 1 · 2 · 7 · 8수 경계로.
+- `EndlessTests.Pool_MeetsQualityConditions`: 세 묶음 모든 퍼즐이 섞인 색 비율(칠해지는 목표 칸 중) ≥ 0.3 · 막힐 수 있는 칸 비율(모든 칸 중) ≥ 쉬움 0.2 · 보통 0.4 · 어려움 0.5 — `EndlessPoolBuilder` → `Generator.MeetsConditions`와 같은 계산.
+
+**확인**
+- 코드 · 테스트: EditMode 530/530(+26) · 컴파일 오류 0.
+- 일부러 깨뜨려 확인 뒤 되돌림: 테스트 주소 목록에 example.com 추가 → `IsQaHost_OtherAddresses` 2건 실패 · `Solver.MaxOrderMoves` 8 → 8수 경계 실패 · 쉬움 묶음에 단색 퍼즐 한 줄 → 품질 조건 "섞인 색 0 / 3"으로 실패.
+
+---
+
 ### 📅 [2026-11-25] 코드 점검 쉬운 항목 셋 — 스레드 금지 패턴 · 테스트 반복 상한 · "완벽!" 문구
 
 **작업 내용** (`Task.md` "코드 점검 — 전체 (2026-11-20)" 지적 M9 · M10 · L1)
