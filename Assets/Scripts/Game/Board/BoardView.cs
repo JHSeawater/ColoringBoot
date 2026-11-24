@@ -78,6 +78,9 @@ namespace ColoringBoot.Game
         private int[] _traceCells;
         private PaintColor[] _traceBrushes;
         private int _selected = -1;
+        // 지금 보이는 미리보기(안내 · 끌기 · 방향 버튼) — 배치가 바뀌면 다시 그린다(2026-11-25 지적 M3). 없으면 -1
+        private int _previewCell = -1;
+        private HexDirection _previewDirection;
         private float _radius;
         private bool _interactable = true;
         private bool _layoutDirty;
@@ -128,6 +131,7 @@ namespace ColoringBoot.Game
             StopMotion();
             StopGuide();
             _selected = -1;
+            _previewCell = -1;
             _pointerId = NoPointer;
             _dragDirection = -1;
             _interactable = true;
@@ -189,17 +193,20 @@ namespace ColoringBoot.Game
         public void Render()
         {
             StopMotion();
-            for (int i = 0; i < _cells.Length; i++)
-            {
-                PaintColor target = _board.TargetOf(i);
-                PaintColor color = _showTarget ? target : _session.ColorAt(i);
-                _cells[i].SetFill(ColorOf(color));
-                // 목표 마커: 아직 목표 색이 아니고 목표가 빈칸이 아닐 때 (프로토타입과 같음)
-                _cells[i].SetMarker(_showJudgement && color != target && target != PaintColor.Empty, ColorOf(target));
-                _cells[i].SetDead(_showJudgement && !_showTarget && _session.IsDeadCell(i));
-                // 밝은 칸은 어두운 기호 — 팔레트마다 밝기가 다르다(파스텔은 대부분 밝음)
-                _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", ColorOf(color).grayscale > _symbolDarkAbove ? _symbolDark : _symbolLight);
-            }
+            for (int i = 0; i < _cells.Length; i++) DrawCell(i, _showTarget ? _board.TargetOf(i) : _session.ColorAt(i));
+        }
+
+        // 칸 하나를 color로 그린다 — 채움 · 목표 마커 · 막힘 링 · 기호가 모두 이 색을 따른다
+        // (붓질 물결은 아직 닿지 않은 칸을 긋기 전 색으로 그린다, 2026-11-25 지적 M2)
+        private void DrawCell(int i, PaintColor color)
+        {
+            PaintColor target = _board.TargetOf(i);
+            _cells[i].SetFill(ColorOf(color));
+            // 목표 마커: 아직 목표 색이 아니고 목표가 빈칸이 아닐 때 (프로토타입과 같음)
+            _cells[i].SetMarker(_showJudgement && color != target && target != PaintColor.Empty, ColorOf(target));
+            _cells[i].SetDead(_showJudgement && !_showTarget && _board.IsDeadColor(i, color));
+            // 밝은 칸은 어두운 기호 — 팔레트마다 밝기가 다르다(파스텔은 대부분 밝음)
+            _cells[i].SetSymbol(_showSymbols ? _symbols[(int)color] : "", ColorOf(color).grayscale > _symbolDarkAbove ? _symbolDark : _symbolLight);
         }
 
         public void SetSymbols(bool visible)
@@ -255,6 +262,8 @@ namespace ColoringBoot.Game
                 cellRect.sizeDelta = Vector2.one * (2f * _radius);
             }
             PlaceButtons();
+            // 미리보기 선은 칸의 자식이 아니라 옛 자리 · 굵기에 남는다 — 켜져 있으면 새 칸 자리로 다시 그린다(회전 · 안전영역)
+            if (_previewCell >= 0) ShowPreview(_previewCell, _previewDirection);
         }
 
         private void Select(int cell)

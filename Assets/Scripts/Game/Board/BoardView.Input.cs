@@ -45,7 +45,7 @@ namespace ColoringBoot.Game
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (!_interactable || _board == null || _pointerId != NoPointer) return;
+            if (!_interactable || _board == null || _pointerId != NoPointer || !IsPrimary(eventData)) return;
             Vector2 local = ToBoardLocal(eventData);
             int cell = CellAt(local);
             if (cell < 0)
@@ -61,7 +61,7 @@ namespace ColoringBoot.Game
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (eventData.pointerId != _pointerId) return;
+            if (eventData.pointerId != _pointerId || !IsPrimary(eventData)) return;
             Vector2 delta = ToBoardLocal(eventData) - _dragStart;
             int direction = delta.magnitude < DragThreshold * _radius ? -1 : NearestDirection(delta);
             if (direction == _dragDirection) return;
@@ -77,7 +77,7 @@ namespace ColoringBoot.Game
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (eventData.pointerId != _pointerId) return;
+            if (eventData.pointerId != _pointerId || !IsPrimary(eventData)) return;
             if (IsCanceledTouch(eventData))
             {
                 CancelDrag();
@@ -123,6 +123,10 @@ namespace ColoringBoot.Game
             }
             return false;
         }
+
+        // 보드는 마우스 왼쪽 버튼만 받는다(터치 · 펜은 왼쪽으로 온다). 마우스 버튼들은 같은 pointerId라
+        // 오른쪽 · 가운데 버튼으로 끌거나, 왼쪽으로 끄는 중 오른쪽을 떼도 획이 되던 것(2026-11-25 지적 M1 — 사용자 PC 재현)
+        private static bool IsPrimary(PointerEventData eventData) => eventData.button == PointerEventData.InputButton.Left;
 
         private int CellAt(Vector2 local)
         {

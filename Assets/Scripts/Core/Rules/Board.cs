@@ -132,7 +132,10 @@ namespace ColoringBoot.Core
         }
 
         // 막힌 칸 (GDD §2.5): 목표 색에 없는 기본색이 들어갔다. 색은 빠지지 않으므로 이 칸은 다시 목표 색이 될 수 없다
-        public bool IsDeadCell(PaintColor[] state, int cell) => (state[cell] & ~_target[cell]) != PaintColor.Empty;
+        public bool IsDeadCell(PaintColor[] state, int cell) => IsDeadColor(cell, state[cell]);
+
+        // 칸 cell이 color라면 막힌 칸인가 — 화면이 세션 상태가 아닌 색을 그릴 때(붓질 물결이 닿기 전 칸, 2026-11-25 지적 M2)
+        public bool IsDeadColor(int cell, PaintColor color) => (color & ~_target[cell]) != PaintColor.Empty;
 
         // 막힘: 막힌 칸이 하나라도 있다
         public bool IsDead(PaintColor[] state)

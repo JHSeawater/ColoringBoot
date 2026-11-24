@@ -60,6 +60,8 @@ namespace ColoringBoot.Game
         {
             ClearPreview();
             if (cell < 0 || _board.LineLength(cell, dir) < 2) return;
+            _previewCell = cell;
+            _previewDirection = dir;
 
             int count = _session.Trace(cell, dir, _traceCells, _traceBrushes);
             Vector2 toward = _directionVectors[(int)dir];
@@ -82,6 +84,7 @@ namespace ColoringBoot.Game
 
         private void ClearPreview()
         {
+            _previewCell = -1;
             if (_trail == null) return;
             for (int k = 0; k < _trail.Length; k++) _trail[k].gameObject.SetActive(false);
             for (int i = 0; i < _cells.Length; i++) _cells[i].SetGhost(false, Color.clear);

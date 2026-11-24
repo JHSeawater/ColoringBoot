@@ -9,7 +9,8 @@ namespace ColoringBoot.Game
     public sealed partial class BoardView
     {
         // 붓질 물결: Render 뒤에 부른다. cells = 붓이 지나간 칸(출발 쪽부터, PuzzleSession.Trace), before = 긋기 전 색.
-        // 칸마다 차례로 새 색이 되며 튄다. 끝나는 데 걸리는 시간(초)을 돌려준다 — 연출이 없으면 0
+        // 지나간 칸을 긋기 전 모습(색 · 마커 · 막힘 링 · 기호)으로 되돌려 두고, 칸마다 차례로 새 모습이 되며 튄다.
+        // 끝나는 데 걸리는 시간(초)을 돌려준다 — 연출이 없으면 0
         public float PlayStroke(int[] cells, PaintColor[] before, int count)
         {
             if (_motion == null || count <= 0) return 0f;
@@ -17,6 +18,7 @@ namespace ColoringBoot.Game
             Array.Copy(cells, _waveCells, count);
             Array.Copy(before, _waveBefore, count);
             _waveCount = count;
+            for (int k = 0; k < count; k++) DrawCell(_waveCells[k], _waveBefore[k]);
             _motionRoutine = StartCoroutine(Wave());
             return (count - 1) * _motion.StrokeStep + _motion.PopSeconds;
         }
@@ -43,21 +45,21 @@ namespace ColoringBoot.Game
         {
             float step = _motion.StrokeStep, pop = _motion.PopSeconds;
             float total = (_waveCount - 1) * step + pop;
-            int next = 0;   // 아직 칠해지지 않은 첫 칸
+            int next = 0;   // 물결이 아직 닿지 않은 첫 칸 — 여기부터는 긋기 전 모습
             for (float time = 0f; time < total; time += Time.unscaledDeltaTime)
             {
-                for (int k = 0; k < _waveCount; k++)
-                {
-                    int cell = _waveCells[k];
-                    float local = time - k * step;
-                    PaintColor now = _session.ColorAt(cell);
-                    _cells[cell].SetFill(ColorOf(local < 0f ? _waveBefore[k] : now));
-                    bool changed = now != _waveBefore[k];
-                    _cells[cell].transform.localScale = Vector3.one * (changed ? Pop(local, pop, _motion.PopScale) : 1f);
-                }
+                // 물결이 닿은 칸은 새 모습으로 — 색 · 마커 · 막힘 링 · 기호 함께(칸마다 한 번)
                 for (; next < _waveCount && time >= next * step; next++)
                 {
-                    if (_session.ColorAt(_waveCells[next]) != _waveBefore[next]) CellPainted?.Invoke();
+                    int cell = _waveCells[next];
+                    PaintColor now = _session.ColorAt(cell);
+                    DrawCell(cell, now);
+                    if (now != _waveBefore[next]) CellPainted?.Invoke();
+                }
+                for (int k = 0; k < _waveCount; k++)
+                {
+                    bool changed = _session.ColorAt(_waveCells[k]) != _waveBefore[k];
+                    _cells[_waveCells[k]].transform.localScale = Vector3.one * (changed ? Pop(time - k * step, pop, _motion.PopScale) : 1f);
                 }
                 yield return null;
             }
@@ -96,7 +98,7 @@ namespace ColoringBoot.Game
         private static float Pop(float local, float seconds, float scale) =>
             local <= 0f || local >= seconds ? 1f : 1f + (scale - 1f) * Mathf.Sin(local / seconds * Mathf.PI);
 
-        // 연출을 끝난 모습으로: 크기 · 위치 원래대로, 물결 중이던 칸은 지금 색으로
+        // 연출을 끝난 모습으로: 크기 · 위치 원래대로, 물결 중이던 칸은 지금 상태로
         private void StopMotion()
         {
             if (_motionRoutine == null) return;
@@ -108,7 +110,7 @@ namespace ColoringBoot.Game
         {
             _motionRoutine = null;
             if (_cells == null) return;
-            for (int k = 0; k < _waveCount; k++) _cells[_waveCells[k]].SetFill(ColorOf(_session.ColorAt(_waveCells[k])));
+            for (int k = 0; k < _waveCount; k++) DrawCell(_waveCells[k], _session.ColorAt(_waveCells[k]));
             _waveCount = 0;
             foreach (CellView cell in _cells) cell.transform.localScale = Vector3.one;
             _rect.anchoredPosition = _basePosition;
