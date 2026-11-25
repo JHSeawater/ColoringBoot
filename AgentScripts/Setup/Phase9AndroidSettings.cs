@@ -5,8 +5,8 @@ using UnityEditor.Build;
 // 패키지 이름은 Android만, 회사 이름 · 화면 방향은 WebGL과 함께 쓰는 값이다(계획 Docs/plans/2026-11-10-android-build.md)
 public static class Phase9AndroidSettings
 {
-    private const string PackageName = "com.jhseawater.coloringboot";
-    private const string CompanyName = "JHSeawater";
+    private const string PackageName = "com.mulbadastudio.coloringboot";   // 2026-11-25 개발사 이름 Mulbada Studio(DECISIONS.md) — 전에는 com.jhseawater.coloringboot
+    private const string CompanyName = "Mulbada Studio";
 
     public static string Preview() => $"지금: {Current()} → 적용하면: android {PackageName} · company {CompanyName} · orientation {UIOrientation.Portrait}";
 

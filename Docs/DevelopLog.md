@@ -9,6 +9,23 @@
 
 ---
 
+### 📅 [2026-11-25] 개발사 이름 Mulbada Studio — 문서 · 회사 · 패키지 이름
+
+**작업 내용** (`DECISIONS.md` 2026-11-25 "개발사 이름 Mulbada Studio · 문의 이메일")
+- 문서: `Docs/PrivacyPolicy.md` · `Docs/StoreListing.md` 개발자 Mulbada Studio · 문의 이메일 mulbadastudio@gmail.com. 처리방침 시행일은 원스토어 등록 날.
+- 설정: `AgentScripts/Setup/Phase9AndroidSettings.cs` 값을 고쳐 `Apply` — `ProjectSettings.asset`의 `companyName: Mulbada Studio` · Android `com.mulbadastudio.coloringboot` 두 줄만 바뀜.
+
+**확인**
+- 웹 배포본 저장 영향(바꾸기 전): Pages 같은 도메인의 없는 페이지에서 IndexedDB를 읽기만 함 — `/idbfs/adae717847ad094d8cca56bb452f0f8a/PlayerPrefs`. 이 해시는 `https://jhseawater.github.io/ColoringBoot`의 MD5와 같다 → 회사 · 제품 이름은 들어가지 않고 페이지 주소로만 정해진다. 회사 이름을 바꿔도 브라우저의 진행 기록은 그대로(배포 주소가 같으면).
+- 앱인토스 SDK는 회사 이름을 빌드 정보 기록(`AITUnityMetadata`) · 템플릿 글자 바꾸기에만 쓴다. 우리 템플릿은 로더 설정 `companyName`으로만 넘긴다.
+- 에디터 저장 키: 바꾼 직후 `ColoringBoot.Progress` 없음(레지스트리 위치가 회사 이름을 따라감) → 바꾸기 전 백업을 새 위치로 복원, 다시 백업한 값이 바꾸기 전과 같음.
+- EditMode 534/534.
+
+**확인 못 함**
+- 새 패키지 이름으로 Android 빌드 · 설치 — 9.3 출시용 빌드(서명 키) 때.
+
+---
+
 ### 📅 [2026-11-25] 스토어 자료 · 개인정보 처리방침 초안 (원스토어 판)
 
 **작업 내용** (`Task.md` 9.1 — 원스토어 첫 출시는 광고 없이, `DECISIONS.md` 2026-11-25)
