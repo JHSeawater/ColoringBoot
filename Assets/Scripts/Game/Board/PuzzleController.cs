@@ -396,7 +396,8 @@ namespace ColoringBoot.Game
                 return;
             }
             if (!TutorialLessons.TryGetGuide(_lesson, _session.MoveCount, _trapDone, out TutorialLessons.Guide guide)) return;
-            _boardView.ShowGuide(_session.Board.IndexOf(guide.Cell), guide.Direction);
+            // 손가락만 — 안내선 · 결과 색은 끌 때 보인다(사용자 2026-11-25: "손가락만 보이는게 더 직관적")
+            _boardView.ShowGuide(_session.Board.IndexOf(guide.Cell), guide.Direction, withPreview: false);
             ShowGuideText(guide.Caption);
         }
 

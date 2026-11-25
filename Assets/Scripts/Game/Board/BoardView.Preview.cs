@@ -8,8 +8,9 @@ namespace ColoringBoot.Game
     // BoardView 붓질 미리보기 — 붓 경로 선 · 칠해질 칸의 결과 색 (경로는 Core Trace, 필드는 BoardView.cs) · 안내 손가락 표시
     public sealed partial class BoardView
     {
-        // 안내 (튜토리얼 · 힌트, 2026-10-07): cell에서 dir 쪽으로 끄는 손가락 표시 + 그 획의 미리보기. HideGuide · 다음 끌기까지 남는다
-        public void ShowGuide(int cell, HexDirection dir)
+        // 안내 (튜토리얼 · 힌트, 2026-10-07): cell에서 dir 쪽으로 끄는 손가락 표시 + 그 획의 미리보기. HideGuide · 다음 끌기까지 남는다.
+        // withPreview=false면 손가락만 — 따라 하기는 끌기 전에 안내선 · 결과 색을 보이지 않는다(끌면 평소 미리보기, 사용자 2026-11-25)
+        public void ShowGuide(int cell, HexDirection dir, bool withPreview = true)
         {
             StopGuide();
             if (_layoutDirty)
@@ -18,7 +19,8 @@ namespace ColoringBoot.Game
                 _layoutDirty = false;
                 Layout();
             }
-            ShowPreview(cell, dir);
+            if (withPreview) ShowPreview(cell, dir);
+            else ClearPreview();
             if (_guide == null) return;
             _guideCell = cell;
             _guideDirection = dir;
