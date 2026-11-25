@@ -3,6 +3,13 @@
 > 2026-11-07부터 기록한다. 그 전 결정은 `GDD.md` §5 "정한 사항"과 `DevelopLog.md`(더 옛 기록은 `Docs/Archive/`)에 있다.
 > 사용자 의견과 AI 정리를 섞지 않는다 — AI 제안이 사용자 결정으로 둔갑하지 않게. 하지 않기로 한 일 · 폐기한 기획도 이유와 함께 여기에 적는다.
 
+## 2026-11-25 — Unity 엔진 진단 끔 · 출시 버전 1.0.0
+- 상태: 채택(사용자).
+- 사용자 의견: 버전 "1.0.0으로 하자" · 엔진 진단은 AI가 낸 두 안 중 "끄고 다시 빌드 (권장)".
+- 배경(AI 확인): 출시 APK 빌드 경고 "Diagnostics Data is enabled"로 알게 됨. 프로젝트는 처음 셋업(`5aa49dd`)부터 Unity Cloud에 연결돼 있고(`cloudProjectId`) `UnityConnectSettings`의 `m_EngineDiagnosticsEnabled: 1`(Unity 6 기본값)이었다 — Unity 문서상 클라우드에 연결된 프로젝트는 진단 데이터를 Unity가 대신 수집한다(무엇을 어디로 보내는지는 문서에 없어 확인 못 함). 처리방침 "오류 보고를 … 보내지 않습니다"와 어긋나 끔. 분석 · 크래시 보고 · 성능 보고는 원래 꺼져 있었다. 그동안 배포한 WebGL · 시험 APK는 켜진 채 빌드됐다 — 다음 WebGL 빌드부터 꺼짐.
+- 정한 것: Project Settings > Services > Diagnostics = Disabled(`EngineDiagnosticsSettings.enabled = false`, 모든 플랫폼). 대가: Unity 대시보드에서 오류 보고를 볼 수 없다. 광고 등으로 처리방침을 고칠 때 함께 다시 본다.
+- 출시 버전: `bundleVersion` 0.1.0 → **1.0.0**(Android 버전 코드 1 그대로, WebGL과 공용 값).
+
 ## 2026-11-25 — 개발사 이름 Mulbada Studio · 문의 이메일
 - 상태: 채택(사용자). 2026-11-10 "회사(개발자) 이름 `JHSeawater`"를 바꾼다.
 - 사용자 의견: "문의 이메일을 mulbadastudio@gmail.com로 하기로 함. 개발자 표기도 Mulbada Studio 로 하고, 앞으로 내 개발사 명으로 쓰기로 함." · "등록 날짜는 가능한 빨리 하고 싶은데, 남은 작업들이 끝나고 출시 준비가 끝나는대로 하고 싶음."

@@ -9,6 +9,18 @@
 
 ---
 
+### 📅 [2026-11-25] 출시 서명 키 · 출시 APK 1.0.0 · 엔진 진단 끔
+
+**작업 내용**
+- 서명 키: 사용자가 Unity Keystore Manager로 만듦(저장소 밖 `C:/Keystroes/ColoringBoot/mulbadastudio.keystore` · 별칭 `coloringboot`). AI는 비밀번호를 다루지 않고 에디터 메모리에 들어 있는지만 확인. `.gitignore`에 키 파일 패턴(`*.keystore` · `*.jks` · `*.p12` · `*.pepk` · `keystore.properties`) — `git check-ignore`로 확인.
+- 버전 1.0.0(코드 1) → Android 전환 → `Builds/Android/ColoringBoot-1.0.0.apk` 빌드. `apksigner verify` 통과(v2, `CN=Mulbada Studio`) · `aapt2 dump badging`: 패키지 `com.mulbadastudio.coloringboot` · 1.0.0 · 타깃 36 · `arm64-v8a` · 권한 `INTERNET` + 앱 내부 서명 권한 하나 · debuggable 아님.
+- 첫 빌드 경고 "Diagnostics Data is enabled" → 엔진 진단이 켜져 있었음(클라우드 연결 프로젝트, Unity 6 기본값) — 처리방침과 어긋나 사용자 결정으로 끄고 APK를 지운 뒤 다시 빌드(경고 사라짐 · 에러 0 · 35,654,849바이트). 결정은 `DECISIONS.md` 같은 날.
+- WebGL로 되돌림. 부산물 `UniversalRenderPipelineGlobalSettings.asset` · `UnityConnectSettings` `m_Enabled`는 되돌림(진단 끔 한 줄만 남김).
+
+**해결된 이슈**
+- 출시 빌드가 처리방침과 달리 Unity에 진단 데이터를 보낼 수 있던 설정.
+- 휴대폰: USB 연결 뒤 adb로 새 설치 · 실행 → 타이틀 정상, 오류 로그는 알려진 `AssetPackManager` 한 줄뿐. 플레이 · 진행 유지 · 뒤로가기는 사용자 확인("휴대폰에서 확인했고 괜찮다"). 첫 빌드의 에러 1건은 빌드 중 보낸 MCP 조회의 시간 초과(빌드와 무관). `ProjectSettings`에 Player 설정 창이 남긴 차이(Android 빈 아이콘 칸 목록 빠짐 · WebGL 텍스처 압축 항목 DXTC — Unity WebGL 기본값, 챕터 그림은 텍스처별 ASTC라 영향 없음)도 함께 있음.
+
 ### 📅 [2026-11-25] 개발사 이름 Mulbada Studio — 문서 · 회사 · 패키지 이름
 
 **작업 내용** (`DECISIONS.md` 2026-11-25 "개발사 이름 Mulbada Studio · 문의 이메일")
