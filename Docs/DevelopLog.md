@@ -9,6 +9,25 @@
 
 ---
 
+### 📅 [2026-11-25] 스토어 자료 · 개인정보 처리방침 초안 (원스토어 판)
+
+**작업 내용** (`Task.md` 9.1 — 원스토어 첫 출시는 광고 없이, `DECISIONS.md` 2026-11-25)
+- `Docs/StoreListing.md`: 기본 정보 · 짧은 소개 · 자세한 소개(규칙 · 다섯 챕터 · 편의 기능 · 광고 · 결제 없음) · 키워드 후보 · 스크린샷 표 · 등록 때 확인할 것.
+- `Docs/PrivacyPolicy.md`: 개인정보 수집 없음 · 기기 안 저장 항목(진행 · 플레이 기록 · 설정) · 제3자 제공 없음 · 권한(인터넷 — 엔진 기본, 전송에 쓰지 않음) · 문의처 · 시행일은 자리만.
+- 스크린샷 6장 `Builds/Store/`(1080×1920, git 무시): 타이틀 · 플레이(끄는 중 미리보기) · 클리어 그림 카드 · 책장 목록 · 따라 하기 · 스케치북.
+
+**"수집 없음"의 근거(코드 · 설정으로 확인)**
+- 게임 코드에 네트워크 호출 없음(`UnityWebRequest` · `HttpClient` 등 검색 0). 저장은 `PlayerPrefsStore`(기기 안).
+- `ProjectSettings/UnityConnectSettings.asset`: Unity Analytics · Crash Reporting · Performance Reporting 모두 꺼짐. `ForceInternetPermission: 0`.
+- 시험 APK(2026-11-10) 매니페스트 권한은 `android.permission.INTERNET` 하나 — Unity 웹 요청 모듈이 있으면 붙는 기본 권한.
+- 앱인토스 SDK 런타임: `AITPerformanceLogger`가 플랫폼 구분 없이 시작되지만 전송(`__AITDebugLog_Send`)은 `UNITY_WEBGL && !UNITY_EDITOR`에서만 — Android에서는 빈 함수. `AppsInToss.Sentry`는 Sentry 패키지가 없어 동작하지 않음.
+
+**확인 못 함**
+- 원스토어 공식 규격(소개 글자 수 · 스크린샷 장수 · 크기) — 검색으로 못 찾음, 등록 화면에서 확인.
+- 출시용 빌드(서명 키 · 릴리스 설정)의 매니페스트 — 서명 키 작업 뒤 다시 본다.
+
+---
+
 ### 📅 [2026-11-25] Phase 8 닫음 — 콘텐츠 확장 · 사운드
 
 **작업 내용** (`/phase-close 8`)
