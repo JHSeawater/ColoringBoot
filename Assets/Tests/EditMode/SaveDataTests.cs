@@ -14,8 +14,10 @@ namespace ColoringBoot.Core.Tests
         private const string ProgressKey = "ColoringBoot.Progress";
         private const string StatsKey = "ColoringBoot.PlayStats";
         private const string EndlessKey = "ColoringBoot.Endless";
+        private const string HintsKey = "ColoringBoot.Hints";
         private const string Backup = ".Unread";
-        private static readonly string[] RecordKeys = { ProgressKey, StatsKey, EndlessKey };
+        private const long Now = 1_800_000_000;   // 힌트 테스트 기준 시각(유닉스 초)
+        private static readonly string[] RecordKeys = { ProgressKey, StatsKey, EndlessKey, HintsKey };
 
         private sealed class MemoryStore : IKeyValueStore
         {
@@ -33,11 +35,13 @@ namespace ColoringBoot.Core.Tests
         {
             if (key == ProgressKey) data.SaveProgress();
             else if (key == StatsKey) data.SaveStats();
-            else data.SaveEndless();
+            else if (key == EndlessKey) data.SaveEndless();
+            else data.SaveHints();
         }
 
         private static string Serialized(SaveData data, string key) =>
-            key == ProgressKey ? data.Progress.Serialize() : key == StatsKey ? data.Stats.Serialize() : data.Endless.Serialize();
+            key == ProgressKey ? data.Progress.Serialize() : key == StatsKey ? data.Stats.Serialize()
+            : key == EndlessKey ? data.Endless.Serialize() : data.Hints.Serialize();
 
         [Test]
         public void NormalOrMissingValues_NoWarningNoBackup()
@@ -65,6 +69,8 @@ namespace ColoringBoot.Core.Tests
         [TestCase(StatsKey, "stats 2\nGrape\t1\t2\t0\t0\t0\t3.0\t-\nbroken\n")]
         [TestCase(EndlessKey, "progress 1\nGrape\t5\n")]
         [TestCase(EndlessKey, "endless 1\nEasy\t5\t4\t1\nbroken line\n")]
+        [TestCase(HintsKey, "garbage")]
+        [TestCase(HintsKey, "hints 1\n9\t100\n")]
         public void DroppedValue_WarnsOnceBacksUpOriginalAndKeepsSaving(string key, string text)
         {
             var store = new MemoryStore();
@@ -81,6 +87,42 @@ namespace ColoringBoot.Core.Tests
             Assert.AreEqual(Serialized(data, key), store.Load(key), "백업 뒤에는 지금처럼 저장");
             Assert.AreEqual(text, store.Load(key + Backup), "저장해도 백업은 그대로");
             LogAssert.NoUnexpectedReceived();   // 저장할 때 로그를 더 남기지 않음
+        }
+
+        // 힌트 개수 (2026-11-25, Docs/plans/2026-11-25-hint-stock.md) — 저장 값이 없으면 3개, 쓴 뒤 저장하면 다시 만든 SaveData가 같은 개수 · 같은 충전 시각
+        [Test]
+        public void Hints_SavedCountSurvivesReload()
+        {
+            var store = new MemoryStore();
+            var data = new SaveData(store);
+            Assert.AreEqual(HintStock.Max, data.Hints.Count(Now), "처음 실행은 3개");
+            Assert.IsNull(store.Load(HintsKey), "읽기만으로 키가 생기지 않음");
+
+            Assert.IsTrue(data.Hints.TrySpend(Now));
+            Assert.IsTrue(data.Hints.TrySpend(Now + 60));
+            data.SaveHints();
+            var again = new SaveData(store);
+
+            Assert.AreEqual(1, again.Hints.Count(Now + 60));
+            Assert.AreEqual(HintStock.ChargeSeconds - 60, again.Hints.SecondsToNext(Now + 60), "충전 시계는 첫 힌트를 쓴 시각부터");
+            Assert.AreEqual(2, again.Hints.Count(Now + HintStock.ChargeSeconds), "꺼져 있던 시간도 친다");
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        // 깨진 힌트 값은 원본을 백업하고 3개로 시작한다(손해 방향이 플레이어 쪽이라 받아들임)
+        [Test]
+        public void Hints_BrokenValue_BacksUpAndStartsFull()
+        {
+            const string broken = "hints 1\n-1\t100\n";
+            var store = new MemoryStore();
+            store.Values[HintsKey] = broken;
+            ExpectWarning(HintsKey);
+
+            var data = new SaveData(store);
+
+            Assert.AreEqual(HintStock.Max, data.Hints.Count(Now));
+            Assert.AreEqual(broken, store.Load(HintsKey + Backup));
+            LogAssert.NoUnexpectedReceived();
         }
 
         // 일부 줄만 버려 백업이 생긴 뒤, 다음에 값 전체가 깨지면 그 원본(진행 대부분)이 백업에 남아야 한다 (2026-11-19 코드 리뷰)
@@ -108,6 +150,7 @@ namespace ColoringBoot.Core.Tests
         [TestCase(ProgressKey, "progress 2\nGrape\t5\n")]
         [TestCase(StatsKey, "stats 3\nGrape\t1\t1\t0\t0\t0\t1.0\t-\t9\n")]
         [TestCase(EndlessKey, "endless 2\nEasy\t5\t4\t1\n")]
+        [TestCase(HintsKey, "hints 2\n1\t100\n")]
         public void NewerVersion_WarnsOnceAndDoesNotWriteThatKey(string key, string text)
         {
             var store = new MemoryStore();
@@ -121,6 +164,7 @@ namespace ColoringBoot.Core.Tests
             data.Progress.RecordClear("Grape", 7);
             data.Stats.Opened("Grape");
             data.Endless.Solve("Easy", 3);
+            data.Hints.TrySpend(Now);
             foreach (string k in RecordKeys) Save(data, k);
 
             Assert.AreEqual(text, store.Load(key), "옛 빌드가 새 형식 값을 덮지 않음");
@@ -157,6 +201,8 @@ namespace ColoringBoot.Core.Tests
             store.Values[ProgressKey] = "progress 2\nGrape\t5\n";
             store.Values[StatsKey] = "garbage";
             store.Values[EndlessKey + Backup] = "endless x";
+            store.Values[HintsKey] = "hints 1\n0\t1800000000\n";
+            store.Values[HintsKey + Backup] = "hints x";
             store.Values["ColoringBoot.Tutorial"] = "1";
             store.Values["ColoringBoot.Sound"] = "0";
 
@@ -169,6 +215,7 @@ namespace ColoringBoot.Core.Tests
                 Assert.IsNull(store.Load(key), $"{key} 지움");
                 Assert.IsNull(store.Load(key + Backup), $"{key}{Backup} 지움");
             }
+            Assert.AreEqual(HintStock.Max, data.Hints.Count(Now), "힌트도 처음 상태(3개)로");
             Assert.IsFalse(data.TutorialSeen, "따라 하기 기록도 지움");
             Assert.IsFalse(data.Sound, "설정은 남김");
             data.Progress.RecordClear("Grape", 7);

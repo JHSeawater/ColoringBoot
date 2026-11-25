@@ -149,7 +149,7 @@ for cell in 줄의 칸들 (고른 방향의 반대편 끝 → 고른 방향 끝)
 
 **플랫폼 서비스** (세부는 `Docs/TDD.md` §5)
 * 저장은 `PlayerPrefs`를 직접 부르지 않고 `IKeyValueStore` 뒤에 둔다(앱인토스에서 네이티브 저장소로 교체). 광고는 `IAdService` 자리만. 사운드 켜고 끄기와 백그라운드 전환 시 정지는 구조에 넣는다.
-* 저장 형식은 머리줄 버전(`progress 1` · `stats 2` · `endless 1`)으로 시작한다. 형식을 바꾸면 옛 형식 읽기를 남기고 테스트한다(Full Plan).
+* 저장 형식은 머리줄 버전(`progress 1` · `stats 2` · `endless 1` · `hints 1`)으로 시작한다. 형식을 바꾸면 옛 형식 읽기를 남기고 테스트한다(Full Plan).
 * QA 주소 쿼리(`?stage=` · `?stats` · `?reset` · `?palette=` · `?lab` · `?unlock`)는 테스트 주소에서만 켜진다(`UrlQuery.IsQaHost`).
 
 **회귀 기준 — 포도 스테이지 (GDD §3)**: 최소 풀이 5수, 그 5수의 순서 120가지 중 8가지만 성공. 붓질 · 판정 · 솔버를 바꾸면 이 결과가 `GrapeRegressionTests`로 유지되어야 한다.

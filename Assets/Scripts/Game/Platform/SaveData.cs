@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ColoringBoot.Game
 {
-    // 저장하는 것 전부 — 진행(Progress) · 플레이테스트 기록(PlayStats) · 무한 모드 진행(EndlessProgress) · 설정(기호 · 소리). 저장소는 인터페이스 뒤(CLAUDE.md §5 플랫폼 서비스)
+    // 저장하는 것 전부 — 진행(Progress) · 플레이테스트 기록(PlayStats) · 무한 모드 진행(EndlessProgress) · 힌트 개수(HintStock) · 설정(기호 · 소리). 저장소는 인터페이스 뒤(CLAUDE.md §5 플랫폼 서비스)
     public sealed class SaveData
     {
         private const string ProgressKey = "ColoringBoot.Progress";
@@ -13,10 +13,11 @@ namespace ColoringBoot.Game
         private const string SoundKey = "ColoringBoot.Sound";
         private const string TutorialKey = "ColoringBoot.Tutorial";   // 따라 하기를 봤는가 (2026-10-07)
         private const string EndlessKey = "ColoringBoot.Endless";     // 무한 모드 진행 (2026-10-07)
+        private const string HintsKey = "ColoringBoot.Hints";         // 힌트 개수 · 충전 시각 (2026-11-25)
         private const string UnreadSuffix = ".Unread";                // 읽다 버린 원본 백업 (2026-11-19)
         private const string On = "1";
         private const string Off = "0";
-        private static readonly string[] RecordKeys = { ProgressKey, StatsKey, EndlessKey };   // 읽기 상태 · 백업 · ?reset 대상
+        private static readonly string[] RecordKeys = { ProgressKey, StatsKey, EndlessKey, HintsKey };   // 읽기 상태 · 백업 · ?reset 대상
 
         private delegate T Parse<T>(string text, out RecordReadStatus status);
 
@@ -32,6 +33,7 @@ namespace ColoringBoot.Game
             Progress = Read<Progress>(ProgressKey, Progress.Deserialize);
             Stats = Read<PlayStats>(StatsKey, PlayStats.Deserialize);
             Endless = Read<EndlessProgress>(EndlessKey, EndlessProgress.Deserialize);
+            Hints = Read<HintStock>(HintsKey, HintStock.Deserialize);
             _symbols = store.Load(SymbolsKey) == On;   // 기본 끔
             _sound = store.Load(SoundKey) != Off;      // 기본 켬
             _tutorialSeen = store.Load(TutorialKey) == On;
@@ -40,6 +42,7 @@ namespace ColoringBoot.Game
         public Progress Progress { get; }
         public PlayStats Stats { get; }
         public EndlessProgress Endless { get; }
+        public HintStock Hints { get; }
 
         public bool Symbols
         {
@@ -76,6 +79,9 @@ namespace ColoringBoot.Game
         public void SaveStats() => SaveRecord(StatsKey, Stats.Serialize());
         public void SaveEndless() => SaveRecord(EndlessKey, Endless.Serialize());
 
+        // 힌트는 쓸 때 · 채울 때만 저장한다 — 시간 충전은 저장한 (개수, 시각)에서 다시 계산된다
+        public void SaveHints() => SaveRecord(HintsKey, Hints.Serialize());
+
         private void SaveRecord(string key, string text)
         {
             if (!_blocked.Contains(key)) _store.Save(key, text);
@@ -108,7 +114,7 @@ namespace ColoringBoot.Game
             return record;
         }
 
-        // 주소 ?reset — 진행 · 플레이테스트 기록 · 무한 모드 진행과 읽다 버린 원본 백업을 지운다(설정은 남긴다). 휴대폰 하나로 여러 명이 테스트할 때 —
+        // 주소 ?reset — 진행 · 플레이테스트 기록 · 무한 모드 진행 · 힌트 개수와 읽다 버린 원본 백업을 지운다(설정은 남긴다). 휴대폰 하나로 여러 명이 테스트할 때 —
         // 다음 사람이 따라 하기부터 보게 그 기록도 지운다. SaveData를 만들기 전에 부른다 — 읽은 뒤면 곧 지울 값에 경고 · 백업이 생긴다
         public static void ClearRecords(IKeyValueStore store)
         {

@@ -288,6 +288,8 @@ public static class BoardSceneBuilder
         Button undoButton = BottomButton(boardScreen, "UndoButton", "되돌리기", -340f, 300f, false);
         Button restartButton = BottomButton(boardScreen, "RestartButton", "처음부터", 0f, 300f, false);
         Button hintButton = BottomButton(boardScreen, "HintButton", "힌트", 340f, 300f, false);
+        // 건너뛰기 확인 창 (2026-11-25) — 보드 화면의 맨 위 자식: 보드 전체를 덮고, 보드 화면을 끄면 함께 안 보인다
+        SkipConfirmView skipConfirm = SkipConfirmPanel(boardScreen);
         boardScreen.SetActive(false);
 
         GameObject chapterScreen = ChapterScreen(safeArea, out ChapterView chapterPicture, out BookPage chapterBook, out TMP_Text chapterCaption, out Button chapterNextButton);
@@ -326,11 +328,12 @@ public static class BoardSceneBuilder
             ("_clearLabel", clearLabel),
             ("_stuckBanner", stuckBanner),
             ("_hintButton", hintButton),
+            ("_hintLabel", hintButton.GetComponentInChildren<TMP_Text>()),
             ("_guideBanner", guideBanner),
             ("_guideLabel", guideLabel),
             ("_sound", soundController));
-        // 보드를 덮는 패널 — 열려 있으면 키보드가 뒤의 보드를 움직이지 않는다(2026-10-05)
-        SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject);
+        // 보드를 덮는 패널 — 열려 있으면 키보드가 뒤의 보드를 움직이지 않는다(2026-10-05 · 건너뛰기 확인 창 2026-11-25)
+        SetArray(controller, "_overlays", optionsView.gameObject, statsView.gameObject, skipConfirm.gameObject);
 
         var game = new GameObject("Game", typeof(GameFlow));
         SetArray(game.GetComponent<GameFlow>(), "_chapters", Chapters.Select(c => (Object)Asset<Chapter>(ChapterPath(c))).ToArray());
@@ -365,7 +368,8 @@ public static class BoardSceneBuilder
             ("_endless", endlessView),
             ("_endlessButton", endlessButton),
             ("_selectEndlessButton", selectEndlessButton),
-            ("_skipButton", skipButton));
+            ("_skipButton", skipButton),
+            ("_skipConfirm", skipConfirm));
         SetArray(game.GetComponent<GameFlow>(), "_endlessPools", System.Array.ConvertAll(EndlessTiers, tier =>
             (Object)(AssetDatabase.LoadAssetAtPath<TextAsset>($"{EndlessFolder}/{tier}.txt") ?? throw new System.InvalidOperationException($"{tier}.txt 없음 — EndlessPoolBuilder 먼저"))));
         // 버튼 소리 — 씬의 모든 버튼(복제되는 스테이지 버튼 원본 포함). 방향 버튼은 프리팹이라 빠진다(획 소리만 난다)
@@ -793,6 +797,46 @@ public static class BoardSceneBuilder
             ("_closeButton", close), ("_tutorialButton", tutorial));
         panel.SetActive(false);
         return view;
+    }
+
+    // 건너뛰기 확인 창 (2026-11-25): 보드 화면 전체는 반투명 덮개(아래 입력을 막음 — 눌러도 닫히지 않는다), 가운데에 카드 —
+    // 묻는 말 · 남은 힌트(SkipConfirmView가 채움) · [건너뛰기] [취소]. 화면을 가득 채우지 않고 가운데 카드로(사용자 2026-11-26)
+    private static SkipConfirmView SkipConfirmPanel(GameObject parent)
+    {
+        var panel = NewUI("SkipConfirmPanel", parent);
+        Stretch(panel, Vector2.zero, Vector2.zero);
+        Fade(panel);
+        panel.AddComponent<Image>().color = new Color(Strong.r, Strong.g, Strong.b, 0.6f);
+        var card = NewUI("Card", panel);
+        var cardRect = (RectTransform)card.transform;
+        cardRect.anchorMin = cardRect.anchorMax = cardRect.pivot = new Vector2(0.5f, 0.5f);
+        cardRect.sizeDelta = new Vector2(900f, 680f);
+        RoundImage(card, "RoundFill", Strong);
+        PanelText(card, "Question", "힌트 1개를 써서 이 판을 건너뛸까요?", 220f, 52f);
+        TMP_Text count = PanelText(card, "Count", "", 110f, 48f);
+        Button confirm = PanelButton(card, "ConfirmButton", "건너뛰기", -60f);
+        Button cancel = PanelButton(card, "CancelButton", "취소", -220f);
+
+        var view = panel.AddComponent<SkipConfirmView>();
+        SetRefs(view, ("_countLabel", count), ("_confirmButton", confirm), ("_cancelButton", cancel));
+        panel.SetActive(false);
+        return view;
+    }
+
+    // 패널 가운데 줄의 글자 (y = 가운데 기준) — 길면 한 줄 그대로 글자를 줄인다
+    private static TMP_Text PanelText(GameObject parent, string name, string text, float y, float size)
+    {
+        var go = NewUI(name, parent);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, y);
+        rect.sizeDelta = new Vector2(820f, 110f);
+        TMP_Text label = Label(go, text, size);
+        label.textWrappingMode = TextWrappingModes.NoWrap;
+        label.enableAutoSizing = true;
+        label.fontSizeMin = 32f;
+        label.fontSizeMax = size;
+        return label;
     }
 
     // 패널 가운데 줄의 밝은 버튼 (y = 가운데 기준)

@@ -56,18 +56,29 @@ public static class QaScene
         CheckRefs(Object.FindAnyObjectByType<PuzzleController>(), Expect,
             "_palettes", "_boardView", "_targetView", "_mixTable", "_stageName", "_moveCounter",
             "_undoButton", "_restartButton", "_stuckUndoButton", "_clearBanner", "_clearLabel", "_stuckBanner",
-            "_hintButton", "_guideBanner", "_guideLabel", "_sound");
-        // 보드를 덮는 패널(옵션 · 기록) — 열려 있으면 키보드 입력을 받지 않는다(2026-10-05)
+            "_hintButton", "_hintLabel", "_guideBanner", "_guideLabel", "_sound");
+        // 보드를 덮는 패널(옵션 · 기록 · 건너뛰기 확인 창) — 열려 있으면 키보드 입력을 받지 않는다(2026-10-05 · 확인 창 2026-11-25)
         SerializedProperty overlays = new SerializedObject(Object.FindAnyObjectByType<PuzzleController>()).FindProperty("_overlays");
-        Expect(overlays.arraySize == 2 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
-            && (overlays.GetArrayElementAtIndex(1).objectReferenceValue as GameObject)?.name == "StatsPanel", "PuzzleController._overlays = 옵션 · 기록 패널");
+        Expect(overlays.arraySize == 3 && (overlays.GetArrayElementAtIndex(0).objectReferenceValue as GameObject)?.name == "OptionsPanel"
+            && (overlays.GetArrayElementAtIndex(1).objectReferenceValue as GameObject)?.name == "StatsPanel"
+            && (overlays.GetArrayElementAtIndex(2).objectReferenceValue as GameObject)?.name == "SkipConfirmPanel", "PuzzleController._overlays = 옵션 · 기록 패널 · 건너뛰기 확인 창");
+        // 건너뛰기 확인 창(2026-11-25): 보드 화면의 맨 위 자식 · 처음엔 꺼짐 · 글자와 버튼 연결
+        Transform skipPanel = safeArea.Find("BoardScreen/SkipConfirmPanel");
+        Expect(skipPanel != null && !skipPanel.gameObject.activeSelf && skipPanel.GetSiblingIndex() == skipPanel.parent.childCount - 1, "SkipConfirmPanel 있음 · 처음엔 꺼짐 · 보드 화면 맨 위");
+        Expect(skipPanel?.GetComponent<ScreenFade>() != null && skipPanel.GetComponent<Image>()?.raycastTarget == true, "SkipConfirmPanel 전환(ScreenFade) · 아래 입력 막음");
+        // 화면 전체는 덮개(보드 화면에 꽉 참)이고 창은 가운데 카드(사용자 2026-11-26)
+        var skipRect = skipPanel as RectTransform;
+        Expect(skipRect != null && skipRect.anchorMin == Vector2.zero && skipRect.anchorMax == Vector2.one && skipRect.offsetMin == Vector2.zero && skipRect.offsetMax == Vector2.zero
+            && skipPanel.Find("Card") != null, "SkipConfirmPanel 덮개는 보드 화면 전체 · 가운데 카드");
+        if (skipPanel?.GetComponent<SkipConfirmView>() != null) CheckRefs(skipPanel.GetComponent<SkipConfirmView>(), Expect, "_countLabel", "_confirmButton", "_cancelButton");
+        else Expect(false, "SkipConfirmPanel SkipConfirmView");
         var flow = Object.FindAnyObjectByType<GameFlow>();
         CheckRefs(flow, Expect, "_puzzle", "_sound", "_boardScreen", "_select", "_options", "_statsView",
             "_backButton", "_boardOptionsButton", "_selectOptionsButton", "_nextButton", "_nextLabel",
             "_selectPicture", "_paintCard", "_paintPicture", "_paintProgress", "_paintCardCenter", "_chapterScreen", "_chapterPicture", "_chapterCaption", "_chapterNextButton", "_chapterNextLabel",
             "_selectBook", "_chapterBook",
             "_titleScreen", "_startButton", "_labCatalog", "_tutorialCatalog",
-            "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton");
+            "_endless", "_endlessButton", "_selectEndlessButton", "_skipButton", "_skipConfirm");
         foreach (string picture in new[] { "SelectScreen/Body/PictureSlot/Book/Picture", "ChapterScreen/Book/Picture", "BoardScreen/ClearBanner/PaintCard/Picture",
             "SelectScreen/Body/PictureSlot/Book/TurnPage", "ChapterScreen/Book/TurnPage" })
         {

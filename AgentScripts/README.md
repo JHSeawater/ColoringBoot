@@ -36,7 +36,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 | 파일 | 하는 일 | entry |
 |---|---|---|
 | `QaScene.cs` | 보드 씬 셋업 전수 점검(`/qa-scene`) — 참조 누락 · 폰트(씬 글자 · 스테이지 이름이 폰트에 있는지 포함) · 팔레트 · 스테이지가 풀리는지 · 그림 단계 수 | `Check` |
-| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `SolveLong`(최소 수보다 많이 둬서 풂 — "완벽!" 문구 확인, 2026-11-25) · `ClearLabel` · `Drag` · `State` · `Lab`(시험 목록 열기) · `UnlockAll`(주소 `?unlock`처럼 모든 챕터 · 스테이지를 엶) · `ClearChapter`(args=`[챕터 번호, 남길 판 수]` — 그 챕터를 깬 기록을 게임의 `SaveData`로 씀, 2026-11-15) · `HintProbe`(args=`[목록으로 나갈지]` — 힌트를 누른 같은 호출 안에서 되돌리기 · 처음부터 · 끌기 · 붓질 메서드 · 힌트를 직접 불러 탐색 중 잠금을 봄, 탐색이 여러 프레임에 걸치는 판에서) · `HintStatus`(탐색 중인지 · 힌트 횟수 · 잠금, 2026-11-17) 등 |
+| `BoardQa.cs` | 에디터 플레이 보드 QA — 실제 포인터 이벤트로 탭 · 끌기 · 버튼 · 흐름(아래 "BoardQa 사용 순서", 플레이 요령은 CLAUDE.md §3) | `Flow` · `ChooseStage` · `Press` · `SolveByDrag` · `SolveLong`(최소 수보다 많이 둬서 풂 — "완벽!" 문구 확인, 2026-11-25) · `ClearLabel` · `Drag` · `State` · `Lab`(시험 목록 열기) · `UnlockAll`(주소 `?unlock`처럼 모든 챕터 · 스테이지를 엶) · `ClearChapter`(args=`[챕터 번호, 남길 판 수]` — 그 챕터를 깬 기록을 게임의 `SaveData`로 씀, 2026-11-15) · `HintProbe`(args=`[목록으로 나갈지]` — 힌트를 누른 같은 호출 안에서 되돌리기 · 처음부터 · 끌기 · 붓질 메서드 · 힌트를 직접 불러 탐색 중 잠금을 봄, 탐색이 여러 프레임에 걸치는 판에서) · `HintStatus`(탐색 중인지 · 힌트 횟수 · 잠금, 2026-11-17) · 힌트 개수(2026-11-25): `HintSeed`(args=`[개수, 몇 분 전]` — **플레이 전**에 저장 값을 씀. `SaveData`는 `GameFlow.Awake`에서 한 번만 읽는다) · `HintPull`(args=`[분]` — 플레이 중 메모리의 충전 시각을 당김, 분 단위라 버튼 글자가 바뀌는 분 경계는 그대로) · `Hints`(개수 · 남은 초 · 버튼 글자 · 저장 값) · `Saved`(args=`["Endless"]` 등 — 저장 키 값 그대로) · `SolveStep`(풀이 한 수) · `DeadStroke`(긋자마자 막히는 획) · `QuietDeadEnd`(한 획으로 가는 조용한 막다른 길) · `Lesson`(args=`[레슨 번호]` — 레슨을 바로 엶, 4 = 혼자 풀기) · 건너뛰기 확인 창: `SkipProbe`(힌트를 누른 같은 호출에서 건너뛰기 — 돌던 탐색이 버려지는지) · `EndlessWith`(args=`["AutumnPumpkin"]` — 스케치북 어려움 자리에 큰 판을 메모리에서만 끼움. 스케치북 퍼즐은 작아 탐색이 한 프레임에 끝난다) → 다른 호출에서 `PumpkinDeadEnd` · `TopHit`(args=`[q, r]` — 칸 자리의 실제 레이캐스트: 덮개가 입력을 막는지) · `Back`(Android 뒤로가기 `HandleBack` 직접 호출) · `ClearSave`(플레이 밖 — 에디터 저장 키 지움) · 리뷰 후속(2026-11-26): `DeadThenPress`(args=`[건너뛰기인지]` — 막히는 획을 긋고 물결이 끝나기 전에 힌트 · 건너뛰기를 누름: 0개일 때 막힘 띠가 가려지지 않는지, 1.5초 뒤 `Flow`) · `DragThenSkip`(끄는 중에 건너뛰기를 누르고 그 뒤에 뗌 — 창 뒤에서 획이 그어지지 않는지) · `ClockBack`(args=`[분]` — 플레이 중 기기 시계가 뒤로 간 것과 같은 상태를 만듦: 버튼 글자가 다음 프레임에 다시 맞춰지는지) 등 |
 | `LevelEditorQa.cs` | 레벨 에디터 씬 플레이 QA — 칠하기 · 획 기록 · 저장 · 생성 조건 · 그림 → 시작 칸 찾기 · 붙여넣기 · 시험 플레이(2026-10-13) | `Paint` · `Record` · `Check` · `Save` · `GenerateWith` · `FindSeeds` · `Paste` · `Play` · `PlaySolve` · `PlayDeadMove` · `PlayUndo` 등 (시험 플레이 열기와 끌기는 다른 호출로) |
 | `ConsoleDump.cs` | 콘솔 창의 에러를 직접 읽음(MCP 버퍼가 놓친 것까지) | `Errors` |
 
@@ -47,6 +47,7 @@ python AgentScripts/Build/ArtCheck.py ArtSource/Chapter1
 - 연속 플레이: `SolveByDrag`(솔버 풀이를 실제 끌기로) → 1.5초 기다린 뒤 다음 호출에서 `Press("BoardScreen/ClearBanner/NextButton")` 반복(`run_script` 한 번에 한 스테이지씩 확인).
 - 시험 목록(`?lab`)은 에디터에 주소가 없어 `Lab()`으로, 모든 챕터 열기(`?unlock`)는 `UnlockAll()`로 켠다. 앞 챕터를 깬 상태가 필요하면 `ClearChapter(n)`(마지막 판만 남기려면 `ClearChapter(n, 1)`) — 타이틀이나 목록에서 부르고, 끝나면 저장 키를 지운다.
 - 호출 나누기 · 띠가 켜지는 때 · 끝난 뒤 저장 키 지우기는 `CLAUDE.md` §3 "에디터 플레이 확인".
+- `BuildScene` 직후에는 씬이 "수정됨"으로 남는다(다시 저장해도 파일 차이 없음 — 표시뿐). 그대로 EditMode `run_tests`를 돌리면 테스트 러너가 "씬이 수정됨" 대화상자를 띄워 에디터가 멈춘다 → `save_scene` 뒤 `list_open_scenes`의 `isDirty: false`를 보고 돌린다(2026-11-25).
 
 ## Tools/
 

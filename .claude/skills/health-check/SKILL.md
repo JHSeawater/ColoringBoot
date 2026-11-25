@@ -30,7 +30,7 @@ argument-hint: "[quick]"
 
 ## 4. 에디터 플레이 핵심 흐름 (`quick`이면 건너뜀)
 함수와 순서는 `AgentScripts/README.md` "BoardQa 사용 순서", 요령은 CLAUDE.md §3 "에디터 플레이 확인". 각 호출은 `run_script`(file=`AgentScripts/QA/BoardQa.cs`)로 **따로** 부른다(같은 호출에서 열고 끌면 칸 배치 전이라 엉뚱한 칸에 그어진다).
-1. 시작 전에 저장 키를 지워 같은 조건에서 시작한다 — `eval`: `ColoringBoot.Progress` · `ColoringBoot.PlayStats` · `ColoringBoot.Symbols` · `ColoringBoot.Sound` · `ColoringBoot.Tutorial` · `ColoringBoot.Endless`와 읽다 버린 원본 백업 `ColoringBoot.Progress.Unread` · `ColoringBoot.PlayStats.Unread` · `ColoringBoot.Endless.Unread`를 `PlayerPrefs.DeleteKey` → `PlayerPrefs.Save()`.
+1. 시작 전에 저장 키를 지워 같은 조건에서 시작한다 — `eval`: `ColoringBoot.Progress` · `ColoringBoot.PlayStats` · `ColoringBoot.Symbols` · `ColoringBoot.Sound` · `ColoringBoot.Tutorial` · `ColoringBoot.Endless` · `ColoringBoot.Hints`와 읽다 버린 원본 백업 `ColoringBoot.Progress.Unread` · `ColoringBoot.PlayStats.Unread` · `ColoringBoot.Endless.Unread` · `ColoringBoot.Hints.Unread`를 `PlayerPrefs.DeleteKey` → `PlayerPrefs.Save()`.
 2. `editor_play` → `eval`로 `Application.runInBackground = true` → `Time.frameCount`가 느는지(안 늘면 `set_autotick` enable=true).
 3. `Flow` — 타이틀 화면인지 → `Press("TitleScreen/StartButton")` → `Flow`(저장 키가 없으니 따라 하기 1이 열려야 한다) → `Press("BoardScreen/BackButton")` → `Flow`(선택 화면 · 1번만 열림).
 4. `ChooseStage(1)` → (다음 호출) `State` → `SolveByDrag` → 약 1.5초 뒤 `State`(클리어 · 수 = 최소 수) → `Press("BoardScreen/ClearBanner/NextButton")` → `Flow`(다음 스테이지 또는 그림 화면).

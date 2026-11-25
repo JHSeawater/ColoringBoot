@@ -25,8 +25,9 @@ namespace ColoringBoot.Game
         [SerializeField] private GameObject _clearBanner;
         [SerializeField] private TMP_Text _clearLabel;
         [SerializeField] private GameObject _stuckBanner;
-        [SerializeField] private GameObject[] _overlays;   // 보드를 덮는 패널(옵션 · 기록) — 하나라도 열려 있으면 키보드 입력을 받지 않는다
+        [SerializeField] private GameObject[] _overlays;   // 보드를 덮는 패널(옵션 · 기록 · 건너뛰기 확인 창) — 하나라도 열려 있으면 키보드 입력을 받지 않는다
         [SerializeField] private Button _hintButton;
+        [SerializeField] private TMP_Text _hintLabel;      // 힌트 버튼 글자 — 남은 개수 · 0개면 남은 분 (2026-11-25)
         [SerializeField] private GameObject _guideBanner;  // 따라 하기 · 힌트 안내 한 줄 (2026-10-07)
         [SerializeField] private TMP_Text _guideLabel;
         [SerializeField] private SoundController _sound;
@@ -37,12 +38,13 @@ namespace ColoringBoot.Game
         private const long SlowHintMs = 50;       // 힌트 계산이 이보다 오래 걸리면 콘솔에 남긴다(휴대폰 확인용)
         private const string HintSearching = "힌트를 찾고 있어요";
         private const string HintNotFound = "힌트를 찾지 못했어요";
+        private const string HintText = "힌트";    // 힌트 버튼 글자(따라 하기 — 개수 없이)
+        private const int MinuteSeconds = 60;
         private const string WrongCellText = "손가락이 있는 칸에서 끌어 주세요";
         private const float GoalPulseScale = 0.12f;   // 따라 하기 1 클리어: 목표 그림이 커졌다 작아지는 정도 · 한 번 걸리는 초
         private const float GoalPulseCycle = 1f;
         private const float MaxCountedFrame = 1f;     // 이보다 긴 프레임은 앱이 뒤로 갔다 온 것 — 걸린 시간에 넣지 않는다(2026-11-10 Android 실측: 복귀 첫 프레임에 나가 있던 시간이 통째로 들어옴)
 
-        private IAdService _ads;
         private int _lesson = -1;    // 따라 하기 레슨(-1 = 아님) — TutorialLessons
         private bool _trapDone;      // 레슨의 일부러 막혀 보기를 마쳤는가
         private SaveData _data;
@@ -63,6 +65,12 @@ namespace ColoringBoot.Game
         private readonly System.Diagnostics.Stopwatch _hintWork = new System.Diagnostics.Stopwatch();   // 계산에 쓴 시간(프레임 몫의 합)
         private readonly System.Diagnostics.Stopwatch _hintWait = new System.Diagnostics.Stopwatch();   // 누른 때부터 결과까지
         private int _hintFrames;          // 탐색이 걸친 프레임 수
+        // 힌트 개수(2026-11-25, GDD §6): 다음 한 수를 보여 줄 때 1개를 쓴다. 판 상태가 그대로면 이미 값을 치른 수(_paidHint)를 쓰지 않고 다시 보인다 —
+        // 판 상태가 바뀌는 곳(받아들인 붓질 · 되돌리기 · 처음부터 · 판 열기)에서 지운다
+        private Hint? _paidHint;
+        private long _hintLabelDue = long.MaxValue;   // 힌트 버튼 글자가 다음에 바뀔 시각(유닉스 초)
+        private long _hintClock;                      // Update가 직전에 본 시각 — 시계가 뒤로 갔는지 본다
+        private bool _noHintsShown;                   // 안내 띠에 "힌트가 없어요 · 남은 N분"이 떠 있다 — 분이 바뀌면 고치고, 힌트가 차면 끈다
 
         // 지금 판을 풀었는가 — 무한 모드는 풀린 판을 떠날 때 다음 퍼즐로 넘어간다
         public bool IsSolved => _session != null && _session.IsSolved;
@@ -101,6 +109,7 @@ namespace ColoringBoot.Game
             FirstClear = false;
             _lesson = -1;
             _trapDone = false;
+            _paidHint = null;
             StopAfterStroke();
             StopHintSearch();
             _session = new PuzzleSession(new Board(stage));
@@ -130,9 +139,6 @@ namespace ColoringBoot.Game
             Refresh();
             return true;
         }
-
-        // 광고 자리 — 힌트는 보상형 광고를 거친다(지금은 NoAdService라 바로 준다)
-        public void SetAds(IAdService ads) => _ads = ads;
 
         // 스테이지 색 하나의 화면 색 — 판을 열 때와 같은 팔레트(주소 ?palette= 우선)로. 선택 화면의 깬 판 버튼 색(2026-11-23).
         // 빈칸이면 흰색(목표가 모두 빈칸인 판은 없다 — ContentRegressionTests가 모든 판을 풀어 본다)
@@ -193,6 +199,11 @@ namespace ColoringBoot.Game
         private void Update()
         {
             if (_session == null) return;
+            // 힌트 버튼 글자: 다음 충전 시각 · 표시 분이 바뀌는 시각이 지났을 때만 다시 쓴다(매 프레임은 시각 비교뿐).
+            // 기기 시계가 뒤로 갔을 때도 다시 쓴다 — 바뀔 시각이 옛 시계 기준이라 그만큼 글자가 멈춘다(2026-11-26 리뷰)
+            long now = Now();
+            if (now >= _hintLabelDue || now < _hintClock) RefreshHintLabel();
+            _hintClock = now;
             // 패널이 보드를 덮고 있으면 키보드로 뒤의 보드를 움직이지 않고, 걸린 시간도 세지 않는다 (2026-10-05 코드 점검 8 · DECISIONS 2026-11-13)
             if (IsCovered()) return;
             // 걸린 시간은 앱이 앞에 있고 아직 풀지 못했을 때만 센다
@@ -237,6 +248,7 @@ namespace ColoringBoot.Game
             for (int k = 0; k < count; k++) _pathBefore[k] = _session.ColorAt(_path[k]);
             bool wasDead = _session.IsDead;
             if (!_session.Brush(cell, dir)) return;
+            _paidHint = null;
             if (!_session.IsDead) _sound.PlayStroke(_session.MoveCount, _minMoves);   // 막히는 획은 물결 뒤 AfterStroke에서 wrong
             _data.Stats.Stroked(_stageId);
             if (_session.IsSolved)
@@ -320,6 +332,7 @@ namespace ColoringBoot.Game
             bool wasDead = _session != null && _session.IsDead;
             if (_session == null || _hintSearch != null || !_session.Undo()) return;
             if (_lesson >= 0 && wasDead) _trapDone = true;   // 따라 하기: 막혔다가 되돌리면 본 풀이로
+            _paidHint = null;
             StopAfterStroke();
             _boardView.CancelDrag();
             _data.Stats.Undid(_stageId);
@@ -334,6 +347,7 @@ namespace ColoringBoot.Game
             StopAfterStroke();
             _boardView.CancelDrag();
             _session.Restart();
+            _paidHint = null;
             _data.Stats.Restarted(_stageId);
             _data.SaveStats();
             Refresh();
@@ -377,7 +391,10 @@ namespace ColoringBoot.Game
             // 안내(따라 하기 · 힌트)는 상태가 바뀔 때마다 지운다 — 따라 하기면 다음 획 안내를 다시 보인다. 따라 하기에서는 힌트를 쓰지 않는다(버튼은 흐리게 — 혼자 풀기 레슨만 씀)
             _boardView.HideGuide();
             _guideBanner.SetActive(false);
+            _noHintsShown = false;
+            // 힌트가 0개여도 버튼은 켜 둔다 — 눌러야 남은 시간 안내가 나온다
             _hintButton.interactable = !solved && !searching && (_lesson < 0 || TutorialLessons.IsFree(_lesson));
+            RefreshHintLabel();
             if (_lesson >= 0 && !solved) ShowLessonGuide();
         }
 
@@ -411,12 +428,124 @@ namespace ColoringBoot.Game
             return guideCell && dir == guide.Direction;
         }
 
-        // 힌트 버튼 — 보상형 광고 자리를 거친다(지금은 바로). 횟수 제한 없음 · "완벽"과 무관 (GDD §5 · §6, 2026-10-07)
+        // 힌트 버튼 (GDD §6, 2026-11-25) — 최대 3개 · 30분마다 1개(HintStock). 0개면 탐색하지 않고 남은 시간을 안내한다(막다른 길도 알려 주지 않음).
+        // 1개 이상이면 탐색하고, 결과가 다음 한 수일 때만 1개를 쓴다(FinishHint). 혼자 풀기 레슨은 쓰지 않는다 — 0개여도 탐색. "완벽"과 무관
         private void RequestHint()
         {
             if (_session == null || _session.IsSolved || _hintSearch != null || (_lesson >= 0 && !TutorialLessons.IsFree(_lesson))) return;
-            _ads.ShowRewarded(ShowHint);
+            if (_paidHint.HasValue)
+            {
+                // 판 상태가 그대로다 — 이미 값을 치른 수를 탐색 · 소모 · 횟수 세기 없이 다시 보인다(0개여도)
+                _boardView.CancelDrag();
+                ShowNextHint(_paidHint.Value);
+                return;
+            }
+            if (_lesson < 0 && HintCount(Now()) == 0)
+            {
+                ShowNoHints();
+                return;
+            }
+            ShowHint();
         }
+
+        // 스케치북 건너뛰기용(GameFlow.SkipEndless) — 지금 힌트 개수. 0이면 남은 시간을 안내한다.
+        // 1개 이상이면(확인 창이 뜬다) 창 뒤에서 판이 바뀌지 않게 정리한다:
+        // 끌던 획을 버린다 — 다른 손가락으로 끌던 중이면 창이 뜬 뒤 손가락을 뗄 때 획이 그어진다(2026-11-26 리뷰).
+        // 진행 중인 힌트 탐색을 버린다(쓰지 않음) — 탐색은 창이 떠 있어도 계속 돌아, 두면 창 뒤에서 1개를 쓰고 [건너뛰기]로 1개를 더 쓴다
+        public int HintsForSkip()
+        {
+            int count = HintCount(Now());
+            if (count == 0)
+            {
+                ShowNoHints();
+                return 0;
+            }
+            _boardView.CancelDrag();
+            if (_hintSearch != null)
+            {
+                StopHintSearch();
+                Refresh();
+            }
+            return count;
+        }
+
+        // 스케치북 건너뛰기 값 — 힌트 1개를 쓰고 저장한다. 없으면 false와 남은 시간 안내
+        public bool SpendHintForSkip()
+        {
+            if (SpendHint()) return true;
+            ShowNoHints();
+            return false;
+        }
+
+        // 지금 힌트 개수. 기기 시계가 저장된 충전 시각보다 뒤라 충전 시계를 지금부터 다시 세게 됐으면 그 값을 한 번 저장한다(2026-11-26 코드 리뷰) —
+        // 저장하지 않으면 저장된 시각이 계속 미래라 켤 때마다 30분이 처음부터 다시 시작한다
+        private int HintCount(long now)
+        {
+            int count = _data.Hints.Count(now);
+            if (_data.Hints.TakeClockReset()) _data.SaveHints();
+            return count;
+        }
+
+        private bool SpendHint()
+        {
+            if (!_data.Hints.TrySpend(Now())) return false;
+            _data.SaveHints();
+            RefreshHintLabel();
+            return true;
+        }
+
+        // 힌트가 없다 — 다음 힌트까지 남은 시간을 안내 띠에(분은 올림 — 0분은 나오지 않는다).
+        // 막힌 판에서는 띄우지 않는다(2026-11-26 리뷰): 안내 띠는 막힘 띠와 같은 자리라 막힘 띠와 그 안의 되돌리기를 가린다 — 막힘은 바로 보여야 한다(CLAUDE.md §5).
+        // 남은 시간은 힌트 버튼 글자에 있다. 붓질 연출 중(막힘 띠가 뜨기 전)에 눌러도 연출을 끊지 않는다 — 연출이 도는 것은 막 막혔을 때뿐이다(풀린 판은 여기 오지 않는다)
+        private void ShowNoHints()
+        {
+            if (_session.IsDead) return;
+            ShowGuideText(NoHintsText(_data.Hints.SecondsToNext(Now())));
+            _noHintsShown = true;
+        }
+
+        private static string NoHintsText(long wait) => $"힌트가 없어요 · 다음 힌트까지 {Minutes(wait)}분";
+
+        // 힌트 버튼 글자 — 남은 개수, 0개면 다음 힌트까지 남은 분. 따라 하기는 힌트를 쓰지 않아 개수 없이.
+        // 글자가 다음에 바뀔 시각(_hintLabelDue)도 여기서 정한다
+        private void RefreshHintLabel()
+        {
+            if (_lesson >= 0)
+            {
+                _hintLabel.text = HintText;
+                _hintLabelDue = long.MaxValue;
+                return;
+            }
+            long now = Now();
+            int count = HintCount(now);
+            long wait = _data.Hints.SecondsToNext(now);
+            if (count > 0)
+            {
+                _hintLabel.text = $"힌트 {count}";
+                _hintLabelDue = wait > 0 ? now + wait : long.MaxValue;   // 가득이면 바뀔 일이 없다
+            }
+            else
+            {
+                _hintLabel.text = $"힌트 · {Minutes(wait)}분";
+                _hintLabelDue = now + (wait - 1) % MinuteSeconds + 1;    // 표시 분이 바뀌는 때
+            }
+            // 떠 있는 "힌트가 없어요" 안내도 같은 때 맞춘다 — 분이 바뀌면 문구를 고치고, 힌트가 찼으면 끈다(2026-11-26 리뷰)
+            if (!_noHintsShown) return;
+            if (count > 0)
+            {
+                _guideBanner.SetActive(false);
+                _noHintsShown = false;
+            }
+            else
+            {
+                _guideLabel.text = NoHintsText(wait);
+            }
+        }
+
+        private static long Minutes(long seconds) => (seconds + MinuteSeconds - 1) / MinuteSeconds;
+
+        // 지금 시각(유닉스 초) — 힌트 충전 계산에 넘긴다. WebGL에서는 브라우저 시계
+        private static long Now() => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         // 힌트 탐색을 시작한다. 첫 프레임 몫 안에 끝나면 바로 결과를 보이고, 아니면 "찾는 중" 안내를 띄우고 프레임마다 이어 돈다(CLAUDE.md §6)
         private void ShowHint()
@@ -502,10 +631,17 @@ namespace ColoringBoot.Game
             switch (hint.Kind)
             {
                 case HintKind.Next:
-                    // 줄의 출발 끝(붓이 처음 지나는 칸)에서 그 방향으로 끄는 모습을 보인다
-                    _session.Trace(hint.Move.Cell, hint.Move.Direction, _path, _pathBrushes);
-                    _boardView.ShowGuide(_path[0], hint.Move.Direction);
-                    ShowGuideText($"표시한 대로 그어 보세요 · 남은 {hint.Count}수");
+                    // 힌트는 결과가 다음 한 수일 때만, 결과가 나온 뒤에 쓴다(막다른 길 · 못 찾음은 쓰지 않음). 혼자 풀기 레슨은 쓰지 않는다
+                    if (_lesson < 0)
+                    {
+                        if (!SpendHint())
+                        {
+                            ShowNoHints();
+                            break;
+                        }
+                        _paidHint = hint;
+                    }
+                    ShowNextHint(hint);
                     break;
                 case HintKind.Undo:
                     ShowGuideText($"지금은 풀 수 없어요 · {hint.Count}수 되돌려 보세요");
@@ -516,9 +652,18 @@ namespace ColoringBoot.Game
             }
         }
 
+        // 다음 한 수 — 줄의 출발 끝(붓이 처음 지나는 칸)에서 그 방향으로 끄는 모습과 남은 수
+        private void ShowNextHint(Hint hint)
+        {
+            _session.Trace(hint.Move.Cell, hint.Move.Direction, _path, _pathBrushes);
+            _boardView.ShowGuide(_path[0], hint.Move.Direction);
+            ShowGuideText($"표시한 대로 그어 보세요 · 남은 {hint.Count}수");
+        }
+
         // 안내 띠는 막힘 띠와 같은 자리 — 안내를 보이는 동안 막힘 띠를 가린다(다음 Refresh에서 돌아온다)
         private void ShowGuideText(string text)
         {
+            _noHintsShown = false;
             _stuckBanner.SetActive(false);
             _guideLabel.text = text;
             _guideBanner.SetActive(true);

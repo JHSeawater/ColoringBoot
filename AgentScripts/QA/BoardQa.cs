@@ -139,6 +139,43 @@ public static class BoardQa
         return "최소 수보다 길게 푸는 길 없음";
     }
 
+    // 지금 상태에서 솔버 풀이의 첫 수 하나만 실제 끌기로 긋는다(2026-11-25 — 힌트 다시 보기 QA: 판 상태를 한 번 바꾼다)
+    public static string SolveStep()
+    {
+        PuzzleSession session = Session();
+        Board board = session.Board;
+        SolveResult result = Solver.Solve(board, Enumerable.Range(0, board.CellCount).Select(session.ColorAt).ToArray());
+        if (!result.Solved || result.Path.Count == 0) return "그을 풀이 없음";
+        HexCoord c = board.CoordOf(result.Path[0].Cell);
+        Drag(c.Q, c.R, (int)result.Path[0].Direction, 1.2f, true);
+        return $"({c.Q},{c.R}) {result.Path[0].Direction} → {State()}";
+    }
+
+    // 지금 상태에서 긋자마자 막히는 획 하나를 실제 끌기로 긋는다(2026-11-25 — 막다른 길 힌트 QA)
+    public static string DeadStroke()
+    {
+        PuzzleSession session = Session();
+        Board board = session.Board;
+        PaintColor[] state = Enumerable.Range(0, board.CellCount).Select(session.ColorAt).ToArray();
+        foreach (BoardMove move in board.Moves)
+        {
+            var next = (PaintColor[])state.Clone();
+            if (!board.Brush(next, move.Cell, move.Direction) || !board.IsDead(next)) continue;
+            HexCoord c = board.CoordOf(move.Cell);
+            Drag(c.Q, c.R, (int)move.Direction, 1.2f, true);
+            return $"({c.Q},{c.R}) {move.Direction} → {State()}";
+        }
+        return "막히는 획 없음";
+    }
+
+    // 따라 하기 레슨을 바로 연다(0부터) — 혼자 풀기 레슨의 힌트 QA(2026-11-25). 앞 레슨을 따라가지 않고 GameFlow.OpenLesson을 직접 부른다
+    public static string Lesson(int lesson)
+    {
+        var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
+        typeof(GameFlow).GetMethod("OpenLesson", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(flow, new object[] { lesson });
+        return $"레슨 {lesson} · 혼자 풀기 {TutorialLessons.IsFree(lesson)} · {Flow()}";
+    }
+
     // 클리어 띠 문구(띠는 연출 뒤 켜지지만 문구는 클리어 순간 정해진다)
     public static string ClearLabel() =>
         ((TMPro.TMP_Text)typeof(PuzzleController).GetField("_clearLabel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(UnityEngine.Object.FindAnyObjectByType<PuzzleController>())).text;
@@ -179,6 +216,9 @@ public static class BoardQa
         if (endless) text += " | " + string.Join(" / ", safe.Find("EndlessScreen").GetComponentsInChildren<TMPro.TMP_Text>().Where(l => l.transform.parent.name.EndsWith("Button") && l.transform.parent.name != "BackButton").Select(l => l.text.Replace("\n", " ")));
         if (select) text += $" | 목록의 무한 버튼 {safe.Find("SelectScreen/EndlessButton").gameObject.activeSelf}";
         if (board) text += $" | 건너뛰기 {safe.Find("BoardScreen/SkipButton").gameObject.activeSelf}";
+        // 건너뛰기 확인 창(2026-11-25): 보드 화면이 꺼져 있어도 창이 켜진 채 남았는지 본다
+        Transform confirm = safe.Find("BoardScreen/SkipConfirmPanel");
+        if (confirm != null) text += $" · 확인 창 {confirm.gameObject.activeSelf}{(confirm.gameObject.activeSelf ? $" \"{confirm.Find("Card/Count").GetComponentInChildren<TMPro.TMP_Text>().text}\"" : "")}";
         if (chapter)
         {
             Transform screen = safe.Find("ChapterScreen");
@@ -212,7 +252,7 @@ public static class BoardQa
             if (Active("StuckBanner")) text += " · 막힘 띠";
             // 따라 하기 · 힌트 안내(2026-10-07): 안내 띠 문구 · 손가락 표시 · 힌트 버튼
             if (Active("GuideBanner")) text += $" · 안내: {screen.Find("GuideBanner/Label").GetComponent<TMPro.TMP_Text>().text}";
-            text += $" · 손가락 {screen.Find("BoardArea/Guide")?.gameObject.activeSelf == true} · 힌트 버튼 {screen.Find("HintButton").GetComponent<Button>().interactable}";
+            text += $" · 손가락 {screen.Find("BoardArea/Guide")?.gameObject.activeSelf == true} · 힌트 버튼 {screen.Find("HintButton").GetComponent<Button>().interactable} \"{screen.Find("HintButton").GetComponentInChildren<TMPro.TMP_Text>().text}\"";
         }
         return text;
     }
@@ -311,6 +351,180 @@ public static class BoardQa
     // 힌트 탐색 상태 — 탐색 중인가 · 지금 판의 힌트 횟수 · 잠금 · 프레임 번호 · 화면 흐름
     public static string HintStatus() =>
         $"탐색 중 {Searching()} · 힌트 횟수 {(Session() == null ? "(판 없음)" : HintCount().ToString())} · [{Locks()}] · 프레임 {Time.frameCount} · {Flow()}";
+
+    // 힌트 개수 QA (2026-11-25, Docs/plans/2026-11-25-hint-stock.md) — SaveData는 GameFlow.Awake에서 한 번만 읽는다:
+    // 판을 열 때의 상태는 editor_play 전에 HintSeed로 PlayerPrefs에 쓰고, 플레이 중 충전은 HintPull로 메모리의 충전 시각을 당긴다
+    private const string HintsKey = "ColoringBoot.Hints";
+
+    // (플레이 전) 저장 값을 "count개 · 충전 시계가 minutesAgo분 전에 시작"으로 쓴다
+    public static string HintSeed(int count, int minutesAgo)
+    {
+        if (Application.isPlaying) return "플레이 전에 부른다 — 플레이 중에는 HintPull";
+        long anchor = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - minutesAgo * 60L;
+        PlayerPrefs.SetString(HintsKey, $"hints 1\n{count}\t{anchor}\n");
+        PlayerPrefs.Save();
+        return $"저장 값 \"{SavedHints()}\"";
+    }
+
+    // (플레이 중) 메모리의 충전 시각을 minutes분 앞당긴다 — 분 단위라 버튼 글자가 바뀌는 때(분 경계)는 그대로다. 저장 값은 건드리지 않는다
+    public static string HintPull(int minutes)
+    {
+        HintStock stock = Data().Hints;
+        FieldInfo anchor = typeof(HintStock).GetField("_anchor", BindingFlags.NonPublic | BindingFlags.Instance);
+        anchor.SetValue(stock, (long)anchor.GetValue(stock) - minutes * 60L);
+        return Hints();
+    }
+
+    // 힌트 개수 · 다음 힌트까지 남은 초 · 버튼 글자 · 저장 값(게임이 읽는 메모리 값은 그대로 두려고 직렬화한 사본으로 계산한다)
+    public static string Hints()
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        HintStock copy = HintStock.Deserialize(Data().Hints.Serialize(), out _);
+        Transform button = GameObject.Find("Canvas/SafeArea").transform.Find("BoardScreen/HintButton");
+        return $"힌트 {copy.Count(now)}개 · 다음까지 {copy.SecondsToNext(now)}초 · 버튼 \"{button.GetComponentInChildren<TMPro.TMP_Text>().text}\" · 저장 값 \"{SavedHints()}\"";
+    }
+
+    // 에디터 저장 키(ColoringBoot.*)를 지운다 — QA 전후, 플레이 밖에서
+    public static string ClearSave()
+    {
+        if (Application.isPlaying) return "플레이를 멈춘 뒤 부른다";
+        foreach (string key in new[] { "Progress", "PlayStats", "Endless", "Hints" })
+        {
+            PlayerPrefs.DeleteKey("ColoringBoot." + key);
+            PlayerPrefs.DeleteKey("ColoringBoot." + key + ".Unread");
+        }
+        foreach (string key in new[] { "Symbols", "Sound", "Tutorial" }) PlayerPrefs.DeleteKey("ColoringBoot." + key);
+        PlayerPrefs.Save();
+        return "ColoringBoot.* 저장 키 지움";
+    }
+
+    // 건너뛰기 확인 창 QA(2026-11-25): 힌트를 누른 같은 호출 안에서(탐색이 다음 프레임으로 넘어가기 전) 건너뛰기를 눌러, 돌던 탐색이 버려지는지 본다.
+    // 탐색이 여러 프레임에 걸치는 상태에서 쓴다(QuietDeadEnd 뒤 등). 창이 뜬 뒤의 [건너뛰기] · [취소]는 다른 호출에서 Press로
+    public static string SkipProbe()
+    {
+        Transform screen = GameObject.Find("Canvas/SafeArea/BoardScreen").transform;
+        screen.Find("HintButton").GetComponent<Button>().onClick.Invoke();
+        string text = $"힌트 누른 직후: 탐색 중 {Searching()} · 안내 \"{GuideText()}\"";
+        screen.Find("SkipButton").GetComponent<Button>().onClick.Invoke();
+        return text + $" → 건너뛰기 누른 직후: 탐색 중 {Searching()} · 안내 \"{GuideText()}\" · {Hints()} · {Flow()}";
+    }
+
+    // 스케치북 "어려움"의 지금 퍼즐 자리에 챕터 스테이지(파일 이름)를 끼워 넣고 연다 — 메모리만 바꾼다(묶음 파일 · 저장 값은 그대로).
+    // 스케치북 퍼즐은 작아 힌트 탐색이 한 프레임에 끝난다 → 탐색 중 건너뛰기를 보려면 큰 판이 필요하다. 예: EndlessWith("AutumnPumpkin") → 다른 호출에서 PumpkinDeadEnd()
+    public static string EndlessWith(string stageName)
+    {
+        const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
+        const int hard = 2;
+        var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
+        var chapters = (Chapter[])typeof(GameFlow).GetField("_chapters", Private).GetValue(flow);
+        TextAsset asset = chapters.SelectMany(c => c.Stages.Stages).FirstOrDefault(s => s.name == stageName);
+        if (asset == null) return $"스테이지 {stageName} 없음";
+        var pool = (Stage[])typeof(GameFlow).GetMethod("EndlessPool", Private).Invoke(flow, new object[] { hard });
+        pool[Data().Endless.Current("Hard") % pool.Length] = Stage.Parse(asset.text);
+        typeof(GameFlow).GetMethod("OpenEndless", Private).Invoke(flow, new object[] { hard });
+        return Flow();
+    }
+
+    // 챕터 4 호박 판의 조용한 막다른 길(다섯 획) — 여기서 힌트를 누르면 탐색이 여러 프레임에 걸친다("5수 되돌려 보세요", HintProbe 주석과 같은 획)
+    public static string PumpkinDeadEnd()
+    {
+        Drag(-1, 3, (int)HexDirection.Clock3, 1.2f, true);
+        Drag(-1, 2, (int)HexDirection.Clock11, 1.2f, true);
+        Drag(1, 4, (int)HexDirection.Clock1, 1.2f, true);
+        Drag(1, 4, (int)HexDirection.Clock7, 1.2f, true);
+        Drag(-1, 3, (int)HexDirection.Clock1, 1.2f, true);
+        return State();
+    }
+
+    // 지금 상태에서 한 획으로 가는 "조용한 막다른 길"(막힘 표시는 없지만 풀 수 없는 상태)을 실제 끌기로 만든다 — 힌트 탐색이 오래 걸리는 상태
+    public static string QuietDeadEnd()
+    {
+        PuzzleSession session = Session();
+        Board board = session.Board;
+        PaintColor[] state = Enumerable.Range(0, board.CellCount).Select(session.ColorAt).ToArray();
+        foreach (BoardMove move in board.Moves)
+        {
+            var next = (PaintColor[])state.Clone();
+            if (!board.Brush(next, move.Cell, move.Direction) || board.IsDead(next) || Solver.Solve(board, next).Solved) continue;
+            HexCoord c = board.CoordOf(move.Cell);
+            Drag(c.Q, c.R, (int)move.Direction, 1.2f, true);
+            return $"({c.Q},{c.R}) {move.Direction} → {State()}";
+        }
+        return "한 획으로 가는 조용한 막다른 길 없음";
+    }
+
+    // 리뷰 후속 QA(2026-11-26): 막히는 획을 긋고 같은 호출 안에서(물결이 끝나기 전) 힌트 — skip이면 건너뛰기 — 를 누른다.
+    // 힌트 0개일 때 막힘 띠가 가려지지 않는지는 1.5초 뒤 Flow로 본다
+    public static string DeadThenPress(bool skip)
+    {
+        string stroke = DeadStroke();
+        GameObject.Find("Canvas/SafeArea/BoardScreen").transform.Find(skip ? "SkipButton" : "HintButton").GetComponent<Button>().onClick.Invoke();
+        return $"{stroke} → 누른 직후 {Flow()}";
+    }
+
+    // 리뷰 후속 QA(2026-11-26): 색이 바뀌는 획 하나를 누른 채 끌다가(떼지 않음) 건너뛰기를 누르고, 그 뒤에 손가락을 뗀다 — 확인 창이 뜬 뒤 획이 그어지지 않아야 한다
+    public static string DragThenSkip()
+    {
+        PuzzleSession session = Session();
+        Board board = session.Board;
+        PaintColor[] state = Enumerable.Range(0, board.CellCount).Select(session.ColorAt).ToArray();
+        BoardMove stroke = board.Moves.First(m => board.Brush((PaintColor[])state.Clone(), m.Cell, m.Direction));
+        HexCoord at = board.CoordOf(stroke.Cell);
+        string before = Drag(at.Q, at.R, (int)stroke.Direction, 1.2f, false);
+        int moves = session.MoveCount;
+        GameObject.Find("Canvas/SafeArea/BoardScreen/SkipButton").GetComponent<Button>().onClick.Invoke();
+        ExecuteEvents.Execute(Board().gameObject, new PointerEventData(EventSystem.current) { pointerId = 0 }, ExecuteEvents.pointerUpHandler);
+        return $"끄는 중 [{before}] · 수 {moves} → 건너뛰기 뒤 손을 뗌: 수 {Session().MoveCount} · {Flow()}";
+    }
+
+    // 리뷰 후속 QA(2026-11-26): 플레이 중 기기 시계가 minutes분 뒤로 간 것과 같은 상태를 만든다 —
+    // 충전 시각 · 버튼 글자가 바뀔 시각 · 직전에 본 시각을 모두 그만큼 미래로 민다(시계는 바꾸지 않는다). 다음 프레임에 버튼 글자가 다시 맞춰져야 한다
+    public static string ClockBack(int minutes)
+    {
+        const BindingFlags Private = BindingFlags.NonPublic | BindingFlags.Instance;
+        long shift = minutes * 60L;
+        HintStock stock = Data().Hints;
+        FieldInfo anchor = typeof(HintStock).GetField("_anchor", Private);
+        anchor.SetValue(stock, (long)anchor.GetValue(stock) + shift);
+        var controller = UnityEngine.Object.FindAnyObjectByType<PuzzleController>();
+        foreach (string name in new[] { "_hintLabelDue", "_hintClock" })
+        {
+            FieldInfo field = typeof(PuzzleController).GetField(name, Private);
+            long value = (long)field.GetValue(controller);
+            if (value != long.MaxValue) field.SetValue(controller, value + shift);
+        }
+        Transform button = GameObject.Find("Canvas/SafeArea").transform.Find("BoardScreen/HintButton");
+        return $"시계를 {minutes}분 뒤로 돌린 상태 · 버튼(아직) \"{button.GetComponentInChildren<TMPro.TMP_Text>().text}\" · 프레임 {Time.frameCount}";
+    }
+
+    // 칸 (q, r) 자리에 실제 레이캐스트를 쏴 맨 위에 걸리는 오브젝트를 본다 — 덮개 패널이 보드 입력을 막는지(Drag는 보드에 이벤트를 직접 보내 덮개를 건너뛴다)
+    public static string TopHit(int q, int r)
+    {
+        int cell = Session().Board.IndexOf(new HexCoord(q, r));
+        if (cell < 0) return $"({q},{r}) 칸 없음";
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(null, Board().transform.GetChild(cell).position);
+        var results = new System.Collections.Generic.List<RaycastResult>();
+        EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = screen }, results);
+        if (results.Count == 0) return "걸리는 것 없음";
+        Transform hit = results[0].gameObject.transform;
+        return $"({q},{r}) @ {screen} 맨 위: {hit.parent?.name}/{hit.name}";
+    }
+
+    // Android 뒤로가기(GameFlow.HandleBack)를 직접 부른다 — 에디터 플레이로는 키 입력을 확인할 수 없다(CLAUDE.md §3)
+    public static string Back()
+    {
+        var flow = UnityEngine.Object.FindAnyObjectByType<GameFlow>();
+        typeof(GameFlow).GetMethod("HandleBack", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(flow, null);
+        return Flow();
+    }
+
+    // 저장 키 "ColoringBoot.<name>"의 값 그대로(줄바꿈은 |, 탭은 빈칸으로) — 예: Saved("Endless")
+    public static string Saved(string name) => PlayerPrefs.GetString("ColoringBoot." + name, "(없음)").Replace("\n", "|").Replace("\t", " ");
+
+    private static string SavedHints() => PlayerPrefs.GetString(HintsKey, "(없음)").Replace("\n", "|").Replace("\t", " ");
+
+    private static SaveData Data() =>
+        (SaveData)typeof(GameFlow).GetField("_data", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(UnityEngine.Object.FindAnyObjectByType<GameFlow>());
 
     private static bool Searching() => PuzzleField("_hintSearch") != null;
 

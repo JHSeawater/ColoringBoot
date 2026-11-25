@@ -69,6 +69,7 @@ namespace ColoringBoot.Game
         [SerializeField] private Button _endlessButton;        // 타이틀 — 따라 하기를 본 뒤에 보인다
         [SerializeField] private Button _selectEndlessButton;  // 스테이지 목록 아래 — 목록에서 타이틀로 돌아가는 버튼이 없으므로(Android 뒤로가기뿐)
         [SerializeField] private Button _skipButton;           // 보드 위쪽 가운데 — 무한 모드에서만
+        [SerializeField] private SkipConfirmView _skipConfirm; // 건너뛰기 확인 창 — 안 풀린 판을 건너뛰면 힌트 1개를 쓴다(2026-11-25)
 
         private SaveData _data;
         private IAdService _ads;
@@ -106,7 +107,6 @@ namespace ColoringBoot.Game
             }
             _data = new SaveData(store);
             _ads = new NoAdService();
-            _puzzle.SetAds(_ads);
             SetChapters(_chapters);
             UseChapter(0);
         }
@@ -166,6 +166,7 @@ namespace ColoringBoot.Game
             _endlessButton.onClick.AddListener(ShowEndlessFromTitle);
             _selectEndlessButton.onClick.AddListener(ShowEndlessFromSelect);
             _skipButton.onClick.AddListener(SkipEndless);
+            _skipConfirm.Confirmed += ConfirmSkip;
             _endless.TierChosen += OpenEndless;
             _endless.Back += LeaveEndless;
             _select.StageChosen += OpenStage;
@@ -186,6 +187,7 @@ namespace ColoringBoot.Game
             _endlessButton.onClick.RemoveListener(ShowEndlessFromTitle);
             _selectEndlessButton.onClick.RemoveListener(ShowEndlessFromSelect);
             _skipButton.onClick.RemoveListener(SkipEndless);
+            _skipConfirm.Confirmed -= ConfirmSkip;
             _endless.TierChosen -= OpenEndless;
             _endless.Back -= LeaveEndless;
             _select.StageChosen -= OpenStage;
@@ -220,6 +222,7 @@ namespace ColoringBoot.Game
             _lesson = lesson;
             _endlessTier = -1;
             _skipButton.gameObject.SetActive(false);
+            _skipConfirm.Hide();
             _paintCard.SetActive(false);
             if (!_puzzle.OpenLesson(_tutorialCatalog.Stages[lesson], lesson, _data))
             {
@@ -284,6 +287,7 @@ namespace ColoringBoot.Game
             }
             int justPainted = PaintPending ? _current : -1;
             _puzzle.Close();
+            _skipConfirm.Hide();
             _current = -1;
             _endlessTier = -1;
             _titleScreen.SetActive(false);
@@ -321,6 +325,7 @@ namespace ColoringBoot.Game
             _lesson = -1;
             _endlessTier = -1;
             _skipButton.gameObject.SetActive(false);
+            _skipConfirm.Hide();
             _paintCard.SetActive(false);
             if (!_puzzle.Open(_list.Stages[index], index + 1, _data, _paletteOverride))
             {
@@ -452,6 +457,10 @@ namespace ColoringBoot.Game
             {
                 _options.Hide();
             }
+            else if (_skipConfirm.gameObject.activeInHierarchy)
+            {
+                _skipConfirm.Hide();   // 건너뛰기 확인 창 = 취소
+            }
             else if (_boardScreen.activeSelf)
             {
                 _lesson = -1;   // 따라 하기 중 뒤로가기는 본 것으로 치지 않는다 — 실수로 눌러도 다음에 다시 자동으로 연다(2026-11-11)
@@ -521,6 +530,7 @@ namespace ColoringBoot.Game
         private void ShowEndless()
         {
             _puzzle.Close();
+            _skipConfirm.Hide();
             _endlessTier = -1;
             _current = -1;
             _lesson = -1;
@@ -553,6 +563,7 @@ namespace ColoringBoot.Game
             _puzzle.Open(pool[index], $"Endless{EndlessKeys[tier]}{index:D4}", $"{EndlessNames[tier]} {index + 1}번", _data, _paletteOverride);
             _nextLabel.text = NextText;
             _skipButton.gameObject.SetActive(true);
+            _skipConfirm.Hide();
             _paintCard.SetActive(false);
         }
 
@@ -564,23 +575,32 @@ namespace ColoringBoot.Game
             _data.SaveEndless();
         }
 
-        // 건너뛰기 — 안 풀린 판이면 힌트처럼 보상형 광고 자리를 거친 뒤 건너뛴 수를 센다(2026-10-17 사용자 결정), 풀린 판이면 푼 것으로 바로
+        // 건너뛰기 (GDD §5, 2026-11-25) — 풀린 판이면 푼 것으로 바로. 안 풀린 판이면 힌트 1개를 쓴다: 1개 이상이면 확인 창, 0개면 창 없이 남은 시간 안내(PuzzleController가 띄움)
         private void SkipEndless()
         {
-            if (_endlessTier < 0) return;
+            if (_endlessTier < 0 || SkipSolvedEndless()) return;
+            int hints = _puzzle.HintsForSkip();
+            if (hints > 0) _skipConfirm.Show(hints);
+        }
+
+        // 확인 창의 [건너뛰기] — 창은 이미 닫혔다(SkipConfirmView). 그사이 판이 풀렸으면 힌트 없이, 아니면 힌트 1개를 쓰고 건너뛴 수를 센다
+        private void ConfirmSkip()
+        {
+            if (_endlessTier < 0 || SkipSolvedEndless() || !_puzzle.SpendHintForSkip()) return;
             int tier = _endlessTier;
-            if (_puzzle.IsSolved)
-            {
-                FinishEndless();
-                OpenEndless(tier);
-                return;
-            }
-            _ads.ShowRewarded(() =>
-            {
-                _data.Endless.Skip(EndlessKeys[tier], EndlessPool(tier).Length);
-                _data.SaveEndless();
-                OpenEndless(tier);
-            });
+            _data.Endless.Skip(EndlessKeys[tier], EndlessPool(tier).Length);
+            _data.SaveEndless();
+            OpenEndless(tier);
+        }
+
+        // 풀린 판이면 푼 것으로 세고 다음 판을 연다(힌트를 쓰지 않는다)
+        private bool SkipSolvedEndless()
+        {
+            if (!_puzzle.IsSolved) return false;
+            int tier = _endlessTier;
+            FinishEndless();
+            OpenEndless(tier);
+            return true;
         }
 
         private Stage[] EndlessPool(int tier)
