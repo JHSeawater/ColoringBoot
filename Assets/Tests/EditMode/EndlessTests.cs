@@ -121,11 +121,15 @@ namespace ColoringBoot.Core.Tests
             Assert.IsNull(easy.ClearMoves);
         }
 
-        // 세 묶음 전체에서 거의 같은 퍼즐 없음 — 칸 모양이 같고 목표 색이 80% 이상 같으면 풀이가 거의 같다(2026-10-07 보통 3번 · 어려움 1번)
+        // 세 묶음 전체에서 거의 같은 퍼즐 없음 — 칸 모양이 같고 목표 색이 80% 이상 같으면 풀이가 거의 같다(2026-10-07 보통 3번 · 어려움 1번).
+        // 2026-11-27(사용자): 판을 돌리거나 뒤집어서(육각 격자 대칭 12가지), 기본색을 서로 바꿔서(6가지) 겹쳐도 같은 것으로 본다 —
+        // 뒤집은 꼴이 바로 다음 판에 나오고(쉬움 557 · 558번), 색만 바꾼 꼴이 난이도를 건너 다시 나왔다. 빌더(EndlessPoolBuilder.Seen)와 따로 짠 계산이다
         [Test]
         public void Pools_HaveNoNearDuplicates()
         {
-            var byShape = new Dictionary<string, List<(string name, Dictionary<HexCoord, PaintColor> targets)>>();
+            const double SimilarRatio = 0.8;
+            // 앞서 본 퍼즐은 12가지로 놓은 것을 모두 넣어 두고, 새 퍼즐은 그대로 놓은 것 하나만 같은 자리의 것들과 견준다
+            var byShape = new Dictionary<string, List<(string name, PaintColor[] targets)>>();
             var found = new List<string>();
             foreach (string tier in new[] { "Easy", "Normal", "Hard" })
             {
@@ -133,18 +137,69 @@ namespace ColoringBoot.Core.Tests
                 for (int i = 0; i < lines.Length; i++)
                 {
                     Stage stage = Stage.Parse(lines[i]);
-                    string shape = string.Join(";", stage.Cells.Select(c => $"{c.Coord.Q},{c.Coord.R}").OrderBy(s => s, StringComparer.Ordinal));
-                    Dictionary<HexCoord, PaintColor> targets = stage.Cells.ToDictionary(c => c.Coord, c => c.Target);
-                    if (!byShape.TryGetValue(shape, out var list)) byShape[shape] = list = new List<(string, Dictionary<HexCoord, PaintColor>)>();
-                    foreach (var other in list)
+                    string name = $"{tier} {i + 1}번";
+                    string shape = Placed(stage, 0, false, out PaintColor[] targets);
+                    if (byShape.TryGetValue(shape, out var others))
                     {
-                        int same = targets.Count(cell => other.targets[cell.Key] == cell.Value);
-                        if ((double)same / targets.Count >= 0.8) found.Add($"{tier} {i + 1}번 ≈ {other.name}");
+                        foreach (var other in others)
+                        {
+                            foreach (PaintColor[] swap in _colorSwaps)
+                            {
+                                int same = 0;
+                                for (int c = 0; c < targets.Length; c++)
+                                {
+                                    if (swap[(int)other.targets[c]] == targets[c]) same++;
+                                }
+                                if ((double)same / targets.Length < SimilarRatio) continue;
+                                found.Add($"{name} ≈ {other.name}");
+                                break;
+                            }
+                        }
                     }
-                    list.Add(($"{tier} {i + 1}번", targets));
+                    for (int turns = 0; turns < 6; turns++)
+                    {
+                        foreach (bool flip in new[] { false, true })
+                        {
+                            string key = Placed(stage, turns, flip, out PaintColor[] placed);
+                            if (!byShape.TryGetValue(key, out var list)) byShape[key] = list = new List<(string, PaintColor[])>();
+                            list.Add((name, placed));
+                        }
+                    }
                 }
             }
-            CollectionAssert.IsEmpty(found, "거의 같은 퍼즐");
+            CollectionAssert.IsEmpty(found.Distinct().Take(30), $"거의 같은 퍼즐 {found.Distinct().Count()}쌍");
+        }
+
+        // 기본색 셋을 서로 바꾸는 6가지 — [색 값] = 바꾼 색
+        private static readonly PaintColor[][] _colorSwaps = new[]
+        {
+            new[] { PaintColor.Red, PaintColor.Yellow, PaintColor.Blue }, new[] { PaintColor.Red, PaintColor.Blue, PaintColor.Yellow },
+            new[] { PaintColor.Yellow, PaintColor.Red, PaintColor.Blue }, new[] { PaintColor.Yellow, PaintColor.Blue, PaintColor.Red },
+            new[] { PaintColor.Blue, PaintColor.Red, PaintColor.Yellow }, new[] { PaintColor.Blue, PaintColor.Yellow, PaintColor.Red },
+        }.Select(to => Enumerable.Range(0, (int)PaintColor.Black + 1).Select(value =>
+        {
+            var color = (PaintColor)value;
+            return ((color & PaintColor.Red) != 0 ? to[0] : PaintColor.Empty)
+                | ((color & PaintColor.Yellow) != 0 ? to[1] : PaintColor.Empty)
+                | ((color & PaintColor.Blue) != 0 ? to[2] : PaintColor.Empty);
+        }).ToArray()).ToArray();
+
+        // 판을 60°씩 turns번 돌리고(flip이면 먼저 뒤집어) 놓은 것: 칸 자리 키(가장 왼쪽 · 위쪽 좌표를 0으로 당겨 좌표순으로)와 그 순서의 목표 색.
+        // 돌리기는 큐브 좌표 (x, y, z) = (q, -q - r, r)에서 (x, y, z) → (-z, -x, -y), 뒤집기는 x와 z를 맞바꾼다
+        private static string Placed(Stage stage, int turns, bool flip, out PaintColor[] targets)
+        {
+            var cells = new List<(int q, int r, PaintColor target)>();
+            foreach (StageCell cell in stage.Cells)
+            {
+                int x = cell.Coord.Q, z = cell.Coord.R, y = -x - z;
+                if (flip) (x, z) = (z, x);
+                for (int t = 0; t < turns; t++) (x, y, z) = (-z, -x, -y);
+                cells.Add((x, z, cell.Target));
+            }
+            int minQ = cells.Min(c => c.q), minR = cells.Min(c => c.r);
+            var sorted = cells.Select(c => (q: c.q - minQ, r: c.r - minR, c.target)).OrderBy(c => c.q).ThenBy(c => c.r).ToList();
+            targets = sorted.Select(c => c.target).ToArray();
+            return string.Join(";", sorted.Select(c => $"{c.q},{c.r}"));
         }
 
         // 묶음의 품질 조건(GDD §5 · §8, 2026-11-25 — 지적 M11): 섞인 색 비율(칠해지는 목표 칸 중) ≥ 0.3 · 막힐 수 있는 칸 비율(모든 칸 중) ≥ 난이도 하한.
