@@ -238,6 +238,14 @@ public static class QaScene
         }
         foreach (TextAsset stage in chapterStages.Concat(lab.Stages).Concat(tutorial.Stages))
             Expect(palettes.IndexOf(Stage.Parse(stage.text).Palette) >= 0, $"스테이지 {stage.name}의 팔레트가 목록에 있음");
+        // 스케치북 묶음의 팔레트(2026-11-27 — 5판마다 돌려 쓴다): 모든 줄의 팔레트가 목록에 있음(모르는 이름이면 게임은 기본 팔레트로 그린다)
+        for (int i = 0; i < pools.arraySize; i++)
+        {
+            var pool = pools.GetArrayElementAtIndex(i).objectReferenceValue as TextAsset;
+            string[] unknown = pool == null ? new string[0] : pool.text.Split('\n').Where(l => l.Trim().Length > 0)
+                .Select(l => Stage.Parse(l).Palette).Where(p => palettes.IndexOf(p) < 0).Distinct().ToArray();
+            Expect(unknown.Length == 0, $"무한 모드 묶음 {pool?.name}의 팔레트가 목록에 없음 [{string.Join(" · ", unknown)}]");
+        }
         foreach (string name in new[] { "HexFill", "HexRing", "Circle", "Arrow", "Lock", "Star", "RoundFill", "RoundRing", "FrameRing", "HexLine" })
         {
             var importer = (TextureImporter)AssetImporter.GetAtPath($"Assets/Art/Sprites/{name}.png");

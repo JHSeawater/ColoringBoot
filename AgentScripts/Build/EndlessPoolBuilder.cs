@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using ColoringBoot.Core;
+using ColoringBoot.Game;
 using UnityEditor;
 
 // 무한 모드 퍼즐 묶음 (GDD §5 · §8, 2026-10-07) — 생성기 조건으로 만들고 난이도별 기준으로 거른다(2026-11-27 확정 — 임시 기준 그대로, 난이도마다 1,000개).
@@ -15,6 +16,10 @@ using UnityEditor;
 public static class EndlessPoolBuilder
 {
     private const string Folder = "Assets/Data/Endless";
+    // 팔레트 돌려 쓰기(2026-11-27 사용자): 모든 난이도에서 팔레트 목록 전부를 PaletteRun판마다 목록 순서대로 바꾼다(첫 PaletteRun판은 기본).
+    // 번호만으로 정한다 — 생성기의 난수 순서를 건드리지 않아 퍼즐은 그대로다. EndlessTests.Pool_RotatesPalettes가 같은 규칙을 본다
+    private const string PaletteCatalogPath = "Assets/Data/Palettes/PaletteCatalog.asset";
+    private const int PaletteRun = 5;
     private const double MinMixedRatio = 0.3;     // 모든 난이도 — 섞기가 있는 퍼즐
     private const int MaxSeedsPerPuzzle = 5000;   // 한 퍼즐을 찾는 생성기 호출 상한(조건이 너무 좁으면 멈춘다)
 
@@ -135,6 +140,8 @@ public static class EndlessPoolBuilder
     public static string Build(string tier, int count, int seed)
     {
         if (!_tiers.TryGetValue(tier, out Tier t)) return $"난이도 없음: {tier} (Easy · Normal · Hard)";
+        var palettes = AssetDatabase.LoadAssetAtPath<PaletteCatalog>(PaletteCatalogPath);
+        if (palettes == null || palettes.Palettes.Count == 0) return $"팔레트 목록 없음: {PaletteCatalogPath}";
         var watch = Stopwatch.StartNew();
         var random = new SeededRandom((uint)seed);
         // 다른 난이도 묶음의 퍼즐을 먼저 넣어 두고 비교한다
@@ -173,7 +180,10 @@ public static class EndlessPoolBuilder
                 duplicates++;
                 continue;
             }
-            lines.Add(StageWriter.ToJson(generated.Stage));
+            // 기본 팔레트(목록의 첫 칸)는 이름을 적지 않는다 — 스테이지 코드에 palette가 없으면 기본이다
+            int palette = lines.Count / PaletteRun % palettes.Palettes.Count;
+            Stage stage = generated.Stage;
+            lines.Add(StageWriter.ToJson(new Stage(stage.Name, stage.Cells, palette == 0 ? null : palettes.Palettes[palette].Id, stage.MinMoves)));
         }
 
         Directory.CreateDirectory(Folder);
@@ -184,6 +194,6 @@ public static class EndlessPoolBuilder
         foreach (string line in lines) counts[Stage.Parse(line).MinMoves.Value]++;
         var histogram = new StringBuilder();
         for (int m = t.MinMoves; m <= t.MaxMoves; m++) histogram.Append($" {m}수 {counts[m]}");
-        return $"{path}: {lines.Count}개({histogram.ToString().Trim()}) · 생성기 호출 {calls} · 거의 같아 거름 {duplicates} · 범위 밖 {outOfRange} · {watch.Elapsed.TotalSeconds:F0}초 · {new FileInfo(path).Length:N0}바이트";
+        return $"{path}: {lines.Count}개({histogram.ToString().Trim()}) · 팔레트 {palettes.Palettes.Count}가지를 {PaletteRun}판마다 · 생성기 호출 {calls} · 거의 같아 거름 {duplicates} · 범위 밖 {outOfRange} · {watch.Elapsed.TotalSeconds:F0}초 · {new FileInfo(path).Length:N0}바이트";
     }
 }

@@ -227,6 +227,19 @@ namespace ColoringBoot.Core.Tests
             }
         }
 
+        // 팔레트 돌려 쓰기(GDD §5, 2026-11-27 사용자): 모든 난이도에서 팔레트 10가지를 5판마다 목록 순서대로 — 첫 5판은 기본(이름 없음).
+        // 출시 뒤 덧붙이는 줄도 번호에 맞는 팔레트여야 하고, 이미 있는 줄의 팔레트는 바뀌지 않아야 한다
+        [TestCase("Easy")]
+        [TestCase("Normal")]
+        [TestCase("Hard")]
+        public void Pool_RotatesPalettes(string tier)
+        {
+            string[] order = { null, "pastel", "garden", "spring", "beach", "shore", "autumn", "dusk", "night", "village" };
+            string[] lines = TestStages.ReadEndlessPool(tier);
+            for (int i = 0; i < lines.Length; i++)
+                Assert.AreEqual(order[i / 5 % order.Length], Stage.Parse(lines[i]).Palette, $"{tier} {i + 1}번");
+        }
+
         // 묶음: 모든 줄이 읽히고 · 풀리고 · minMoves = 솔버 최소 수 · 난이도 범위 안 · 같은 퍼즐 없음
         [TestCase("Easy", 3, 4)]
         [TestCase("Normal", 5, 6)]

@@ -36,7 +36,7 @@
 
 ## 3. 팔레트
 
-* 구현(2026-09-30): `ColorPalette._id`(스테이지 JSON의 이름 — `default` · `pastel` · `garden` · `spring`(2026-11-13 챕터 2용, 색은 GDD §2.3) · `beach` · `shore`(2026-11-16 챕터 3용, 색은 GDD §2.3) · `autumn` · `dusk`(2026-11-16 챕터 4용, 색은 GDD §2.3) · `night` · `village`(2026-11-16 챕터 5용, 색은 GDD §2.3)) · `PaletteCatalog`(`Assets/Data/Palettes/PaletteCatalog.asset`, 첫 칸 = 기본). 이름이 없으면 기본, 모르는 이름이면 기본 + 경고. 기호 글자색은 칸 색의 밝기(`Color.grayscale` > 0.6이면 어두운 글자).
+* 구현(2026-09-30): `ColorPalette._id`(스테이지 JSON의 이름 — `default` · `pastel` · `garden` · `spring`(2026-11-13 챕터 2용, 색은 GDD §2.3) · `beach` · `shore`(2026-11-16 챕터 3용, 색은 GDD §2.3) · `autumn` · `dusk`(2026-11-16 챕터 4용, 색은 GDD §2.3) · `night` · `village`(2026-11-16 챕터 5용, 색은 GDD §2.3)) · `PaletteCatalog`(`Assets/Data/Palettes/PaletteCatalog.asset`, 첫 칸 = 기본). 이름이 없으면 기본, 모르는 이름이면 기본 + 경고. 스케치북 묶음도 줄마다 `palette`를 적는다(2026-11-27 — 목록 전부를 5판마다 목록 순서대로, 첫 5판은 기본이라 이름 없음. `EndlessPoolBuilder`가 번호로 정하고 `EndlessTests.Pool_RotatesPalettes` · `QaScene`이 본다. 출시 뒤 덧붙이는 줄도 번호에 맞게). 기호 글자색은 칸 색의 밝기(`Color.grayscale` > 0.6이면 어두운 글자).
 
 ## 4. 스테이지 데이터 · 저장 형식
 
