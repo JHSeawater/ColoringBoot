@@ -43,7 +43,7 @@ namespace ColoringBoot.Core
             return true;
         }
 
-        // 한도까지 채운다(광고 보상 — Task 9.4)
+        // 한도까지 채운다(광고 보상 — Task 9.6)
         public void Fill() => _count = Max;
 
         // 시계가 뒤로 가 충전 시계를 지금부터 다시 세기로 했는가 — 한 번 물으면 지워진다. true면 저장한다(표현 계층):
