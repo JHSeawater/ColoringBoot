@@ -9,6 +9,22 @@
 
 ---
 
+### 📅 [2026-11-27] 출시 APK 1.0.0 다시 빌드 — 힌트 개수 포함
+
+2026-11-25 출시 APK는 힌트가 무제한인 옛 빌드라 다시 만들었다(사용자 "1번부터 하자. 버전은 1.0.0 그대로" — 스토어에 올리기 전이라 버전 코드 1 그대로).
+
+**작업 내용** (`TDD.md` §8 절차)
+- 빌드 전: 서명 키 비밀번호가 에디터에 들어 있는지만 확인(값은 읽지 않음) · EditMode 567/567 · `QaScene` 762항목.
+- 옛 APK는 지우지 않고 `Builds/Android/ColoringBoot-1.0.0-old-20261125.apk`로 옮김 → Android 전환 → `Builds/Android/ColoringBoot-1.0.0.apk` 빌드(커밋 `d6c5bf1`) → WebGL로 되돌림. 부산물 `UniversalRenderPipelineGlobalSettings.asset` 3줄은 되돌림(`UnityConnectSettings`는 이번엔 바뀌지 않음) — 작업 트리 깨끗.
+
+**확인한 것**
+- 빌드: Succeeded · 에러 0 · 경고 5(Pipeline 런타임 설정 없음 · TMP 셰이더 pragma · IL2CPP 큰 메서드 3) · 35,677,837바이트(+22,988).
+- `apksigner verify`: v2 통과 · `CN=Mulbada Studio` · 인증서 SHA-256 `ebcd8252…1358c`(지난번과 같음). `aapt2 dump badging`: `com.mulbadastudio.coloringboot` · 1.0.0(코드 1) · 타깃 36 · `arm64-v8a` · 권한 `INTERNET` + 앱 내부 서명 권한 · debuggable 아님.
+- 휴대폰(Galaxy S25 Edge): `adb install -r` 성공 — 처음 설치한 날(2026-11-25)은 그대로, 갱신 시각만 바뀜(기록 유지되는 덮어 설치).
+
+**사용자 확인 · 확인 못 함**
+- 휴대폰이 잠겨 있어 AI는 실행 화면 · 로그를 못 봤다. 안내한 네 가지(앱 실행과 옛 빌드 진행 기록 유지 · 힌트 버튼 개수와 줄어듦 · 건너뛰기 확인 창이 Android 뒤로가기로 창만 닫힘 · 한 번 더 누르면 목록)는 사용자 확인 — "휴대폰에서 확인했고 전부 괜찮다"(2026-11-27) → Task 9.1 `[QA]` 닫음.
+
 ### 📅 [2026-11-27] 토스 인앱 광고 정책 변경 대책(문서) · Unity CLI 1.1.0
 
 사용자가 앱인토스 카카오톡 공지(2026-12-26 광고대행 약관 개정 · 자연 유입 500명 조건)를 전달하며 대책을 요청. 결정과 근거는 `DECISIONS.md` 같은 날.
